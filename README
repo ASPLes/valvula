@@ -1,0 +1,8 @@
+About valvula
+~~~~~~~~~~~~~
+
+This is valvula: a high performance policy daemon written in C and making
+intensive use of threading and caching techniques.
+
+See more about valvula at: http://www.aspl.es/valvula
+
