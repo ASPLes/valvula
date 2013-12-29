@@ -39,7 +39,7 @@
 #include <signal.h>
 
 /* private include */
-#include <valvula_ctx_private.h>
+#include <valvula_private.h>
 
 #define LOG_DOMAIN "valvula"
 
@@ -273,8 +273,6 @@ void _valvula_log_common (ValvulaCtx        * ctx,
 	return;
 #else
 	/* log with mutex */
-	int    use_log_mutex = axl_false;
-	char * log_string;
 	struct timeval stamp;
 	char   buffer[1024];
 
@@ -283,89 +281,52 @@ void _valvula_log_common (ValvulaCtx        * ctx,
 		return;
 	} /* end if */
 
-	if (ctx == NULL) {
-		goto ctx_not_defined;
-	}
 
-	/* check if debug is filtered */
-	if (valvula_log_filter_is_enabled (ctx)) {
-		/* if the filter removed the current log level, return */
-		if ((ctx->debug_filter & log_level) == log_level)
-			return;
-	} /* end if */
+	/* get current stamp */
+	gettimeofday (&stamp, NULL);
 
-	/* acquire the mutex so multiple threads will not mix their
-	 * log messages together */
-	use_log_mutex = ctx->use_log_mutex;
-	if (use_log_mutex) 
-		valvula_mutex_lock (&ctx->log_mutex);
-
-	if( ctx->debug_handler) {
-		if (ctx->prepare_log_string) {
-			/* pass the string already prepared */
-			log_string = axl_strdup_printfv (message, args);
-			ctx->debug_handler (file, line, log_level, log_string, NULL);
-			axl_free (log_string);
-		} else {
-			/* call a custom debug handler if one has been set */
-			ctx->debug_handler (file, line, log_level, message, args);
-		} /* end if */
-
-	} else {
-		/* printout the process pid */
-	ctx_not_defined:
-
-		/* get current stamp */
-		gettimeofday (&stamp, NULL);
-
-		/* print the message */
-		vsnprintf (buffer, 1023, message, args);
+	/* print the message */
+	vsnprintf (buffer, 1023, message, args);
 				
 	/* drop a log according to the level */
 #if defined (__GNUC__)
-		if (valvula_color_log_is_enabled (ctx)) {
-			switch (log_level) {
-			case VALVULA_LEVEL_DEBUG:
-				fprintf (stdout, "\e[1;36m(%d.%d proc %d)\e[0m: (\e[1;32mdebug\e[0m) %s:%d %s\n", 
-					 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
-				break;
-			case VALVULA_LEVEL_WARNING:
-				fprintf (stdout, "\e[1;36m(%d.%d proc %d)\e[0m: (\e[1;33mwarning\e[0m) %s:%d %s\n", 
-					 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
-				break;
-			case VALVULA_LEVEL_CRITICAL:
-				fprintf (stdout, "\e[1;36m(%d.%d proc %d)\e[0m: (\e[1;31mcritical\e[0m) %s:%d %s\n", 
-					 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
-				break;
-			}
-		} else {
+	if (valvula_color_log_is_enabled (ctx)) {
+		switch (log_level) {
+		case VALVULA_LEVEL_DEBUG:
+			fprintf (stdout, "\e[1;36m(%d.%d proc %d)\e[0m: (\e[1;32mdebug\e[0m) %s:%d %s\n", 
+				 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
+			break;
+		case VALVULA_LEVEL_WARNING:
+			fprintf (stdout, "\e[1;36m(%d.%d proc %d)\e[0m: (\e[1;33mwarning\e[0m) %s:%d %s\n", 
+				 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
+			break;
+		case VALVULA_LEVEL_CRITICAL:
+			fprintf (stdout, "\e[1;36m(%d.%d proc %d)\e[0m: (\e[1;31mcritical\e[0m) %s:%d %s\n", 
+				 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
+			break;
+		}
+	} else {
 #endif /* __GNUC__ */
-			switch (log_level) {
-			case VALVULA_LEVEL_DEBUG:
-				fprintf (stdout, "(%d.%d proc %d): (debug) %s:%d %s\n", 
-					 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
-				break;
-			case VALVULA_LEVEL_WARNING:
-				fprintf (stdout, "(%d.%d proc %d): (warning) %s:%d %s\n", 
-					 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
-				break;
-			case VALVULA_LEVEL_CRITICAL:
-				fprintf (stdout, "(%d.%d proc %d): (critical) %s:%d %s\n", 
-					 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
-				break;
-			}
+		switch (log_level) {
+		case VALVULA_LEVEL_DEBUG:
+			fprintf (stdout, "(%d.%d proc %d): (debug) %s:%d %s\n", 
+				 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
+			break;
+		case VALVULA_LEVEL_WARNING:
+			fprintf (stdout, "(%d.%d proc %d): (warning) %s:%d %s\n", 
+				 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
+			break;
+		case VALVULA_LEVEL_CRITICAL:
+			fprintf (stdout, "(%d.%d proc %d): (critical) %s:%d %s\n", 
+				 (int) stamp.tv_sec, (int) stamp.tv_usec, getpid (), file ? file : "", line, buffer);
+			break;
+		}
 #if defined (__GNUC__)
-		} /* end if */
+	} /* end if */
 #endif
-		/* ensure that the log is dropped to the console */
-		fflush (stdout);
-		
-	} /* end if (ctx->debug_handler) */
-
-	/* check to release the mutex if defined the context */
-	if (use_log_mutex) 
-		valvula_mutex_unlock (&ctx->log_mutex);
-
+	/* ensure that the log is dropped to the console */
+	fflush (stdout);
+	
 #endif /* end ENABLE_VALVULA_LOG */
 
 
@@ -500,7 +461,6 @@ void _valvula_log2 (ValvulaCtx        * ctx,
 axl_bool    valvula_init_ctx (ValvulaCtx * ctx)
 {
 	int          thread_num;
-	int          soft_limit;
 
 	v_return_val_if_fail (ctx, axl_false);
 
@@ -521,32 +481,6 @@ axl_bool    valvula_init_ctx (ValvulaCtx * ctx)
 
 	/* init axl library */
 	axl_init ();
-
-	/* before starting, check if we are using select(2) system
-	 * call method, to adequate the number of sockets that can
-	 * *really* handle the FD_* function family, to the number of
-	 * sockets that is allowed to handle the process. This is to
-	 * avoid race conditions cause to properly create a
-	 * connection, which is later not possible to handle at the
-	 * select(2) I/O subsystem. */
-	if (valvula_io_waiting_get_current (ctx) == VALVULA_IO_WAIT_SELECT) {
-		/* now check if the current process soft limit is
-		 * allowed to handle more connection than
-		 * VALVULA_FD_SETSIZE */
-		valvula_conf_get (ctx, VALVULA_SOFT_SOCK_LIMIT, &soft_limit);
-		valvula_log (VALVULA_LEVEL_DEBUG, "select mechanism selected, reconfiguring current socket limit: soft_limit=%d > %d..",
-			    soft_limit, VALVULA_FD_SETSIZE);
-		if (soft_limit > (VALVULA_FD_SETSIZE - 1)) {
-			/* decrease the limit to avoid funny
-			 * problems. it is not required to be
-			 * privilege user to run the following
-			 * command. */
-			valvula_conf_set (ctx, VALVULA_SOFT_SOCK_LIMIT, (VALVULA_FD_SETSIZE - 1), NULL);
-			valvula_log (VALVULA_LEVEL_WARNING, 
-				    "found select(2) I/O configured, which can handled up to %d fds, reconfigured process with that value",
-				    VALVULA_FD_SETSIZE -1);
-		} /* end if */
-	} 
 
 	/* init reader subsystem */
 	valvula_log (VALVULA_LEVEL_DEBUG, "starting valvula reader..");
@@ -614,8 +548,6 @@ axl_bool valvula_init_check (ValvulaCtx * ctx)
  */
 void valvula_exit_ctx (ValvulaCtx * ctx, axl_bool  free_ctx)
 {
-	int            iterator;
-	axlDestroyFunc func;
 
 	/* check context is initialized */
 	if (! valvula_init_check (ctx))
@@ -648,9 +580,6 @@ void valvula_exit_ctx (ValvulaCtx * ctx, axl_bool  free_ctx)
 
 	/* stop valvula reader process */
 	valvula_reader_stop (ctx);
-
-	/* stop valvula sequencer */
-	valvula_sequencer_stop (ctx);
 
 #if defined(AXL_OS_WIN32)
 	WSACleanup ();
