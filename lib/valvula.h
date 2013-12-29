@@ -227,14 +227,6 @@
 	}                                                           \
 } while (0)
 
-BEGIN_C_DECLS
-
-/* Internal includes and external includes for Valvula API
- * consumers. */
-#include <valvula_reader.h>
-
-END_C_DECLS
-
 #if defined(AXL_OS_WIN32)
 #include <valvula_win32.h>
 #endif
@@ -327,6 +319,18 @@ if (!(expr)) { valvula_log (VALVULA_LEVEL_CRITICAL, "%s: %s", __AXL_PRETTY_FUNCT
 
 
 BEGIN_C_DECLS
+
+/* Internal includes and external includes for Valvula API
+ * consumers. */
+#include <valvula_types.h>
+#include <valvula_handlers.h>
+#include <valvula_support.h>
+#include <valvula_io.h>
+#include <valvula_ctx.h>
+#include <valvula_thread.h>
+#include <valvula_thread_pool.h>
+#include <valvula_reader.h>
+#include <valvula_listener.h>
 
 axl_bool valvula_init_ctx             (ValvulaCtx * ctx);
 

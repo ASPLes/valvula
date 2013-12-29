@@ -32,10 +32,25 @@ lib_LTLIBRARIES = libvalvula.la
 
 libvalvula_la_SOURCES =	\
 	valvula.c \
-	valvula_reader.c 
+	valvula_reader.c \
+	valvula_io.c \
+	valvula_thread.c \
+	valvula_thread_pool.c \
+	valvala_ctx.c \
+	valvula_support.c \
+	valvula_listener.c
 
 libvalvula_include_HEADERS = valvula.h \
-	valvula_reader.h 
+	valvula_reader.h \
+	valvula_support.h \
+	valvula_ctx.h \
+	valvula_private.h \
+	valvula_io.h \
+	valvula_handlers.h \
+	valvula_thread.h \
+	valvula_thread_pool.h \
+	valvula_types.h \
+	valvula_listener.h
 
 libvalvula_la_LIBADD = \
 	$(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS)

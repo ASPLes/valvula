@@ -36,8 +36,7 @@
 #include <valvula.h>
 
 /* local/private includes */
-#include <valvula_ctx_private.h>
-#include <valvula_connection_private.h>
+#include <valvula_private.h>
 
 #define LOG_DOMAIN "valvula-reader"
 
@@ -61,7 +60,6 @@ typedef enum {CONNECTION,
 typedef struct _ValvulaReaderData {
 	WatchType             type;
 	ValvulaConnection   * connection;
-	ValvulaForeachFunc    func;
 	axlPointer            user_data;
 	/* queue used to notify that the foreach operation was
 	 * finished: currently only used for type == FOREACH */
@@ -131,7 +129,7 @@ axl_bool   valvula_reader_register_watch (ValvulaReaderData * data, axlList * co
 	 * defined) */
 	connection = data->connection;
 #if defined(ENABLE_VALVULA_LOG)
-	ctx        = valvula_connection_get_ctx (connection);
+	ctx        = connection->ctx;
 #endif
 
 	switch (data->type) {
