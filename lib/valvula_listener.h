@@ -65,13 +65,6 @@ VALVULA_SOCKET     valvula_listener_sock_listen      (ValvulaCtx   * ctx,
 						      const char  * port,
 						      axlError   ** error);
 
-void          valvula_listener_accept_connections   (ValvulaCtx        * ctx,
-						     int                server_socket,
-						     ValvulaConnection * listener);
-
-void          valvula_listener_accept_connection    (ValvulaConnection * connection, 
-						     axl_bool           send_greetings);
-
 VALVULA_SOCKET valvula_listener_accept               (VALVULA_SOCKET server_socket);
 
 void          valvula_listener_wait                 (ValvulaCtx * ctx);

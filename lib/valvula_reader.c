@@ -341,7 +341,7 @@ VALVULA_SOCKET __valvula_reader_build_set_to_watch_aux (ValvulaCtx     * ctx,
 
 			/* set it as not connected */
 			if (valvula_connection_is_ok (connection, axl_false))
-				valvula_connection_shutdown (connection);
+				valvula_connection_close (connection);
 			valvula_connection_unref (connection, "valvula reader (add fail)");
 
 			continue;
@@ -470,7 +470,8 @@ int  __valvula_reader_check_listener_list (ValvulaCtx     * ctx,
 		if (valvula_io_waiting_invoke_is_set_fd_group (ctx, fds, on_reading, ctx)) {
 			/* init the listener incoming connection phase */
 			valvula_log (VALVULA_LEVEL_DEBUG, "listener (%d) have requests, processing..", fds);
-			valvula_listener_accept_connections (ctx, fds, connection);
+
+			/* valvula_listener_accept_connections (ctx, fds, connection); */
 
 			/* update checked connections */
 			checked++;
@@ -532,7 +533,7 @@ void __valvula_reader_close_connection (axlPointer pointer)
 	ValvulaConnection * conn = pointer;
 
 	/* unref the connection */
-	valvula_connection_shutdown (conn);
+	valvula_connection_close (conn);
 	valvula_connection_unref (conn, "valvula reader");
 
 	return;
@@ -557,7 +558,7 @@ void __valvula_reader_dispatch_connection (int                  fds,
 	switch (valvula_connection_get_role (connection)) {
 	case ValvulaRoleMasterListener:
 		/* listener connections */
-		valvula_listener_accept_connections (ctx, fds, connection);
+		/* valvula_listener_accept_connections (ctx, fds, connection);*/
 		break;
 	default:
 		/* call to process incoming data, activating all
@@ -598,7 +599,7 @@ axl_bool __valvula_reader_detect_and_cleanup_connection (axlListCursor * cursor)
 				     fds, errno);
 			/* close connection, but remove the socket reference to avoid closing some's socket */
 			conn->session = -1;
-			valvula_connection_shutdown (conn);
+			valvula_connection_close (conn);
 			
 			/* connection isn't ok, unref it */
 			valvula_connection_unref (conn, "valvula reader (process), wrong socket");
