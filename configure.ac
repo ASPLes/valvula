@@ -244,6 +244,7 @@ AC_SUBST(EXARG_FLAGS)
 AC_OUTPUT([
 Makefile
 lib/Makefile
+server/Makefile
 ])
 
 echo "-----------------------------------------------"

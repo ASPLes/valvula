@@ -104,8 +104,6 @@ ValvulaConnection  * valvula_connection_get_listener          (ValvulaConnection
 
 ValvulaCtx         * valvula_connection_get_ctx               (ValvulaConnection * connection);
 
-void                valvula_connection_shutdown               (ValvulaConnection * connection);
-
 /** 
  * @internal
  * Do not use the following functions, internal Valvula Library purposes.

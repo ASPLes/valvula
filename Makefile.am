@@ -1,4 +1,4 @@
-SUBDIRS = lib
+SUBDIRS = lib server
 EXTRA_DIST = VERSION 
 
 all-local: update-defs
