@@ -40,11 +40,6 @@
 
 #define LOG_DOMAIN "valvula-listener"
 
-typedef struct _ValvulaListenerOnAcceptData {
-	ValvulaOnAcceptedConnection on_accept;
-	axlPointer                 on_accept_data;
-}ValvulaListenerOnAcceptData;
-
 int  __valvula_listener_get_port (const char  * port)
 {
 	return strtol (port, NULL, 10);
@@ -122,7 +117,7 @@ VALVULA_SOCKET     valvula_listener_sock_listen      (ValvulaCtx   * ctx,
 	/* resolve hostname */
 	he = gethostbyname (host);
         if (he == NULL) {
-		axl_error_report (error, ValvulaNameResolvFailure, "unable to get hostname by calling gethostbyname");
+		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to get hostname by calling gethostbyname");
 		return -1;
 	} /* end if */
 
@@ -130,9 +125,7 @@ VALVULA_SOCKET     valvula_listener_sock_listen      (ValvulaCtx   * ctx,
 	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) <= 2) {
 		/* do not allow creating sockets reusing stdin (0),
 		   stdout (1), stderr (2) */
-		valvula_log (VALVULA_LEVEL_DEBUG, "failed to create listener socket: %d (errno=%d:%s)", fd, errno, valvula_errno_get_error (errno));
-		axl_error_report (error, ValvulaSocketCreationError, 
-				  "failed to create listener socket: %d (errno=%d:%s)", fd, errno, valvula_errno_get_error (errno));
+		valvula_log (VALVULA_LEVEL_DEBUG, "failed to create listener socket: %d (errno=%d:%s)", fd, errno, strerror (errno));
 		return -1;
         } /* end if */
 
@@ -160,22 +153,18 @@ VALVULA_SOCKET     valvula_listener_sock_listen      (ValvulaCtx   * ctx,
 	valvula_log (VALVULA_LEVEL_DEBUG, "bind(2) call returned: %d", bind_res);
 	if (bind_res == VALVULA_SOCKET_ERROR) {
 		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to bind address (port:%u already in use or insufficient permissions). Closing socket: %d", int_port, fd);
-		axl_error_report (error, ValvulaBindError, "unable to bind address (port:%u already in use or insufficient permissions). Closing socket: %d", int_port, fd);
 		valvula_close_socket (fd);
 		return -1;
 	}
 	
-	/* get current backlog configuration */
-	valvula_conf_get (ctx, VALVULA_LISTENER_BACKLOG, &backlog);
-	
 	if (listen(fd, backlog) == VALVULA_SOCKET_ERROR) {
-		axl_error_report (error, ValvulaSocketCreationError, "an error have occur while executing listen");
+		valvula_log (VALVULA_LEVEL_CRITICAL, "an error have occur while executing listen");
 		return -1;
         } /* end if */
 
 	/* notify listener */
 	if (getsockname (fd, (struct sockaddr *) &sin, &sin_size) < 0) {
-		axl_error_report (error, ValvulaNameResolvFailure, "an error have happen while executing getsockname");
+		valvula_log (VALVULA_LEVEL_CRITICAL, "an error have happen while executing getsockname");
 		return -1;
 	} /* end if */
 

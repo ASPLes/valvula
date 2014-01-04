@@ -56,7 +56,37 @@ struct _ValvulaCtx {
 	ValvulaMutex exit_mutex;
 	ValvulaMutex ref_mutex;
 	ValvulaMutex inet_ntoa_mutex;
-	
+
+	/*** queues ***/
+	ValvulaAsyncQueue * reader_stopped;	
+	ValvulaAsyncQueue * reader_queue;	
+
+	/*** lists ***/
+	axlList           * srv_list;
+	axlList           * conn_list;
+	axlListCursor     * srv_cursor;
+	axlListCursor     * conn_cursor;
+
+	axlPointer          on_reading;
+
+	ValvulaThread       reader_thread;
+
+	/**** valvula io waiting module state ****/
+	ValvulaIoWaitingType waiting_type;
+	ValvulaIoCreateFdGroup  waiting_create;
+	ValvulaIoDestroyFdGroup waiting_destroy;
+	ValvulaIoClearFdGroup   waiting_clear;
+	ValvulaIoWaitOnFdGroup  waiting_wait_on;
+	ValvulaIoAddToFdGroup   waiting_add_to;
+	ValvulaIoIsSetFdGroup   waiting_is_set;
+	ValvulaIoHaveDispatch   waiting_have_dispatch;
+	ValvulaIoDispatch       waiting_dispatch;
+
+	/*** thread pool ***/
+	ValvulaThreadPool       * thread_pool;
+	axl_bool                  thread_pool_being_stopped;
+	axl_bool                  skip_thread_pool_wait;
+	axl_bool                  thread_pool_exclusive;
 };
 
 /** 
@@ -64,6 +94,8 @@ struct _ValvulaCtx {
  */
 struct _ValvulaConnection {
 	ValvulaCtx * ctx;
+
+	VALVULA_SOCKET session;
 };
 
 #endif

@@ -33,7 +33,7 @@
  *      Email address:
  *         info@aspl.es - http://www.aspl.es/valvula
  */
-#include <valvula.h>
+#include <valvula_reader.h>
 
 /* local/private includes */
 #include <valvula_private.h>
@@ -53,8 +53,7 @@ typedef enum {CONNECTION,
 	      LISTENER, 
 	      TERMINATE, 
 	      IO_WAIT_CHANGED,
-	      IO_WAIT_READY,
-	      FOREACH
+	      IO_WAIT_READY
 } WatchType;
 
 typedef struct _ValvulaReaderData {
@@ -121,16 +120,10 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 axl_bool   valvula_reader_register_watch (ValvulaReaderData * data, axlList * con_list, axlList * srv_list)
 {
 	ValvulaConnection * connection;
-#if defined(ENABLE_VALVULA_LOG)
-	ValvulaCtx        * ctx;
-#endif
 
 	/* get a reference to the connection (no matter if it is not
 	 * defined) */
 	connection = data->connection;
-#if defined(ENABLE_VALVULA_LOG)
-	ctx        = connection->ctx;
-#endif
 
 	switch (data->type) {
 	case CONNECTION:
@@ -138,7 +131,6 @@ axl_bool   valvula_reader_register_watch (ValvulaReaderData * data, axlList * co
 		if (!valvula_connection_is_ok (connection, axl_false)) {
 			/* check if we can free this connection */
 			valvula_connection_unref (connection, "valvula reader (watch)");
-			valvula_log (VALVULA_LEVEL_DEBUG, "received a non-valid connection, ignoring it");
 
 			/* release data */
 			axl_free (data);
@@ -146,23 +138,15 @@ axl_bool   valvula_reader_register_watch (ValvulaReaderData * data, axlList * co
 		}
 			
 		/* now we have a first connection, we can start to wait */
-		valvula_log (VALVULA_LEVEL_DEBUG, "new connection (conn-id=%d) to be watched (%d)", 
-			    valvula_connection_get_id (connection), valvula_connection_get_socket (connection));
 		axl_list_append (con_list, connection);
 
 		break;
 	case LISTENER:
-		valvula_log (VALVULA_LEVEL_DEBUG, "new listener connection to be watched (socket: %d --> %s:%s, conn-id: %d)",
-			    valvula_connection_get_socket (connection), 
-			    valvula_connection_get_host (connection), 
-			    valvula_connection_get_port (connection),
-			    valvula_connection_get_id (connection));
 		axl_list_append (srv_list, connection);
 		break;
 	case TERMINATE:
 	case IO_WAIT_CHANGED:
 	case IO_WAIT_READY:
-	case FOREACH:
 		/* just unref valvula reader data */
 		break;
 	} /* end switch */
@@ -209,58 +193,6 @@ ValvulaReaderData * __valvula_reader_change_io_mech (ValvulaCtx        * ctx,
 }
 
 
-/* do a foreach operation */
-void valvula_reader_foreach_impl (ValvulaCtx        * ctx, 
-				  axlList           * con_list, 
-				  axlList           * srv_list, 
-				  ValvulaReaderData * data)
-{
-	axlListCursor * cursor;
-
-	valvula_log (VALVULA_LEVEL_DEBUG, "doing valvula reader foreach notification..");
-
-	/* check for null function */
-	if (data->func == NULL) 
-		goto foreach_impl_notify;
-
-	/* foreach the connection list */
-	cursor = axl_list_cursor_new (con_list);
-	while (axl_list_cursor_has_item (cursor)) {
-
-		/* notify, if the connection is ok */
-		if (valvula_connection_is_ok (axl_list_cursor_get (cursor), axl_false)) {
-			data->func (axl_list_cursor_get (cursor), data->user_data);
-		} /* end if */
-
-		/* next cursor */
-		axl_list_cursor_next (cursor);
-	} /* end while */
-	
-	/* free cursor */
-	axl_list_cursor_free (cursor);
-
-	/* foreach the connection list */
-	cursor = axl_list_cursor_new (srv_list);
-	while (axl_list_cursor_has_item (cursor)) {
-		/* notify, if the connection is ok */
-		if (valvula_connection_is_ok (axl_list_cursor_get (cursor), axl_false)) {
-			data->func (axl_list_cursor_get (cursor), data->user_data);
-		} /* end if */
-
-		/* next cursor */
-		axl_list_cursor_next (cursor);
-	} /* end while */
-
-	/* free cursor */
-	axl_list_cursor_free (cursor);
-
-	/* notify that the foreach operation was completed */
- foreach_impl_notify:
-	valvula_async_queue_push (data->notify, INT_TO_PTR (1));
-
-	return;
-}
-
 /** 
  * @internal
  * @brief Read the next item on the valvula reader to be processed
@@ -299,10 +231,6 @@ axl_bool      valvula_reader_read_queue (ValvulaCtx  * ctx,
 							       con_list, 
 							       srv_list, 
 							       data);
-		} else if (data->type == FOREACH) {
-			/* do a foreach operation */
-			valvula_reader_foreach_impl (ctx, con_list, srv_list, data);
-
 		} /* end if */
 
 	}while (!valvula_reader_register_watch (data, con_list, srv_list));
@@ -350,10 +278,6 @@ axl_bool      valvula_reader_read_pending (ValvulaCtx  * ctx,
 			/* change io mechanism */
 			data = __valvula_reader_change_io_mech (ctx, on_reading, con_list, srv_list, data);
 
-		} else if (data->type == FOREACH) {
-			/* do a foreach operation */
-			valvula_reader_foreach_impl (ctx, con_list, srv_list, data);
-
 		} /* end if */
 
 		/* watch the request received, maybe a connection or a
@@ -377,21 +301,12 @@ VALVULA_SOCKET __valvula_reader_build_set_to_watch_aux (ValvulaCtx     * ctx,
 	VALVULA_SOCKET      max_fds     = current_max;
 	VALVULA_SOCKET      fds         = 0;
 	ValvulaConnection * connection;
-	long               time_stamp  = 0;
 
-	/* get current time stamp if idle handler is defined */
-	if (ctx->global_idle_handler)
-		time_stamp = (long) time (NULL);
-	
 	axl_list_cursor_first (cursor);
 	while (axl_list_cursor_has_item (cursor)) {
 
 		/* get current connection */
 		connection = axl_list_cursor_get (cursor);
-
-		/* check for idle status */
-		if (ctx->global_idle_handler)
-			valvula_connection_check_idle_status (connection, ctx, time_stamp);
 
 		/* check ok status */
 		if (! valvula_connection_is_ok (connection, axl_false)) {
@@ -404,32 +319,6 @@ VALVULA_SOCKET __valvula_reader_build_set_to_watch_aux (ValvulaCtx     * ctx,
 			/* connection isn't ok, unref it */
 			valvula_connection_unref (connection, "valvula reader (build set)");
 
-			continue;
-		} /* end if */
-
-		/* check if the connection must be unwatched */
-		if (connection->reader_unwatch) {
-			/* remove the unwatch flag from the connection */
-			connection->reader_unwatch = axl_false;
-
-			/* FIRST: remove current cursor to ensure the
-			 * connection is out of our handling before
-			 * finishing the reference the reader owns */
-			axl_list_cursor_unlink (cursor);
-
-			/* connection isn't ok, unref it */
-			valvula_connection_unref (connection, "valvula reader (process: unwatch)");
-
-			continue;
-		} /* end if */
-
-		/* check if the connection is blocked (no I/O read to
-		 * perform on it) */
-		if (valvula_connection_is_blocked (connection)) {
-			/* valvula_log (VALVULA_LEVEL_DEBUG, "connection id=%d has I/O read blocked (valvula_connection_block)", 
-			   valvula_connection_get_id (connection)); */
-			/* get the next */
-			axl_list_cursor_next (cursor);
 			continue;
 		} /* end if */
 
@@ -452,7 +341,7 @@ VALVULA_SOCKET __valvula_reader_build_set_to_watch_aux (ValvulaCtx     * ctx,
 
 			/* set it as not connected */
 			if (valvula_connection_is_ok (connection, axl_false))
-				__valvula_connection_shutdown_and_record_error (connection, ValvulaError, "valvula reader (add fail)");
+				valvula_connection_shutdown (connection);
 			valvula_connection_unref (connection, "valvula reader (add fail)");
 
 			continue;
@@ -636,7 +525,7 @@ void __valvula_reader_stop_process (ValvulaCtx     * ctx,
 	valvula_io_waiting_invoke_destroy_fd_group (ctx, on_reading); 
 
 	/* signal that the valvula reader process is stopped */
-	QUEUE_PUSH (ctx->reader_stopped, INT_TO_PTR (1));
+	valvula_async_queue_push (ctx->reader_stopped, INT_TO_PTR (1));
 
 	return;
 }
@@ -670,14 +559,6 @@ void __valvula_reader_dispatch_connection (int                  fds,
 
 	switch (valvula_connection_get_role (connection)) {
 	case ValvulaRoleMasterListener:
-		/* check if there are pre read handler to be executed on this 
-		   connection. */
-		if (valvula_connection_is_defined_preread_handler (connection)) {
-			/* if defined preread handler invoke it and return. */
-			valvula_connection_invoke_preread_handler (connection);
-			return;
-		} /* end if */
-
 		/* listener connections */
 		valvula_listener_accept_connections (ctx, fds, connection);
 		break;
@@ -714,7 +595,7 @@ axl_bool __valvula_reader_detect_and_cleanup_connection (axlListCursor * cursor)
 			  
 			/* get context */
 #if defined(ENABLE_VALVULA_LOG)
-			ctx = CONN_CTX (conn);
+			ctx = conn->ctx;
 #endif
 			valvula_log (VALVULA_LEVEL_CRITICAL, "Found connection-id=%d, with session=%d not working (errno=%d), shutting down",
 				    valvula_connection_get_id (conn), fds, errno);
@@ -773,8 +654,6 @@ axlPointer __valvula_reader_run (ValvulaCtx * ctx)
 	int                error_tries = 0;
 
 	/* initialize the read set */
-	if (ctx->on_reading != NULL)
-		valvula_io_waiting_invoke_destroy_fd_group (ctx, ctx->on_reading);
 	ctx->on_reading  = valvula_io_waiting_invoke_create_fd_group (ctx, READ_OPERATIONS);
 
 	/* create lists */
@@ -800,12 +679,6 @@ axlPointer __valvula_reader_run (ValvulaCtx * ctx)
 		valvula_io_waiting_invoke_clear_fd_group (ctx, ctx->on_reading);
 
 		if ((axl_list_length (ctx->conn_list) == 0) && (axl_list_length (ctx->srv_list) == 0)) {
-			/* check if we have to terminate the process
-			 * in the case no more connections are
-			 * available: useful when the current instance
-			 * is running in the context of turbulence */
-			valvula_ctx_check_on_finish (ctx);
-
 			valvula_log (VALVULA_LEVEL_DEBUG, "no more connection to watch for, putting thread to sleep");
 			goto __valvula_reader_run_first_connection;
 		}
@@ -836,7 +709,7 @@ axlPointer __valvula_reader_run (ValvulaCtx * ctx)
 			if (error_tries == 2) {
 				valvula_log (VALVULA_LEVEL_CRITICAL, 
 					    "tries have been reached on reader, error was=(errno=%d): %s exiting..",
-					    errno, valvula_errno_get_last_error ());
+					     errno, strerror (errno));
 				return NULL;
 			} /* end if */
 			continue;
@@ -901,22 +774,6 @@ int  valvula_reader_connections_watched         (ValvulaCtx        * ctx)
 }
 
 /** 
- * @internal Function used to unwatch the provided connection from the
- * valvula reader loop.
- *
- * @param ctx The context where the unread operation will take place.
- * @param connection The connection where to be unwatched from the reader...
- */
-void valvula_reader_unwatch_connection          (ValvulaCtx        * ctx,
-						ValvulaConnection * connection)
-{
-	v_return_if_fail (ctx && connection);
-	/* flag connection valvula reader unwatch */
-	connection->reader_unwatch = axl_true;
-	return;
-}
-
-/** 
  * @internal
  * 
  * Adds a new connection to be watched on valvula reader process. This
@@ -953,7 +810,7 @@ void valvula_reader_watch_connection (ValvulaCtx        * ctx,
 	data->connection = connection;
 
 	/* push data */
-	QUEUE_PUSH (ctx->reader_queue, data);
+	valvula_async_queue_push (ctx->reader_queue, data);
 
 	return;
 }
@@ -976,21 +833,9 @@ void valvula_reader_watch_listener   (ValvulaCtx        * ctx,
 	data->connection = listener;
 
 	/* push data */
-	QUEUE_PUSH (ctx->reader_queue, data);
+	valvula_async_queue_push (ctx->reader_queue, data);
 
 	return;
-}
-
-/** 
- * @internal Function used to configure the connection so the next
- * call to terminate the list of connections will not close the
- * connection socket.
- */
-axl_bool __valvula_reader_configure_conn (axlPointer ptr, axlPointer data)
-{
-	/* set the connection socket to be not closed */
-	valvula_connection_set_close_socket ((ValvulaConnection *) ptr, axl_false);
-	return axl_false; /* not found so all items are iterated */
 }
 
 /** 
@@ -1007,40 +852,10 @@ axl_bool  valvula_reader_run (ValvulaCtx * ctx)
 {
 	v_return_val_if_fail (ctx, axl_false);
 
-	/* check connection list to be previously created to terminate
-	   it without closing sockets associated to each connection */
-	if (ctx->conn_list != NULL) {
-		valvula_log (VALVULA_LEVEL_DEBUG, "releasing previous client connections, installed: %d",
-			    axl_list_length (ctx->conn_list));
-		ctx->reader_cleanup = axl_true;
-		axl_list_lookup (ctx->conn_list, __valvula_reader_configure_conn, NULL);
-		axl_list_cursor_free (ctx->conn_cursor);
-		axl_list_free (ctx->conn_list);
-		ctx->conn_list   = NULL;
-		ctx->conn_cursor = NULL;
-	} /* end if */
-	if (ctx->srv_list != NULL) {
-		valvula_log (VALVULA_LEVEL_DEBUG, "releasing previous listener connections, installed: %d",
-			    axl_list_length (ctx->srv_list));
-		ctx->reader_cleanup = axl_true;
-		axl_list_lookup (ctx->srv_list, __valvula_reader_configure_conn, NULL);
-		axl_list_cursor_free (ctx->srv_cursor);
-		axl_list_free (ctx->srv_list);
-		ctx->srv_list   = NULL;
-		ctx->srv_cursor = NULL;
-	} /* end if */
-
-	/* clear reader cleanup flag */
-	ctx->reader_cleanup = axl_false;
-
 	/* reader_queue */
-	if (ctx->reader_queue != NULL)
-		valvula_async_queue_release (ctx->reader_queue);
 	ctx->reader_queue   = valvula_async_queue_new ();
 
 	/* reader stopped */
-	if (ctx->reader_stopped != NULL) 
-		valvula_async_queue_release (ctx->reader_stopped);
 	ctx->reader_stopped = valvula_async_queue_new ();
 
 	/* create the valvula reader main thread */
@@ -1073,7 +888,7 @@ void valvula_reader_stop (ValvulaCtx * ctx)
 
 	/* push data */
 	valvula_log (VALVULA_LEVEL_DEBUG, "pushing data stop signal..");
-	QUEUE_PUSH (ctx->reader_queue, data);
+	valvula_async_queue_push (ctx->reader_queue, data);
 	valvula_log (VALVULA_LEVEL_DEBUG, "signal sent reader ..");
 
 	/* waiting until the reader is stoped */
@@ -1117,7 +932,7 @@ axl_bool  valvula_reader_notify_change_io_api               (ValvulaCtx * ctx)
 
 	/* push data */
 	valvula_log (VALVULA_LEVEL_DEBUG, "pushing signal to notify I/O change..");
-	QUEUE_PUSH (ctx->reader_queue, data);
+	valvula_async_queue_push (ctx->reader_queue, data);
 
 	/* waiting until the reader is stoped */
 	valvula_async_queue_pop (ctx->reader_stopped);
@@ -1142,7 +957,7 @@ void valvula_reader_notify_change_done_io_api   (ValvulaCtx * ctx)
 
 	/* push data */
 	valvula_log (VALVULA_LEVEL_DEBUG, "pushing signal to notify I/O is ready..");
-	QUEUE_PUSH (ctx->reader_queue, data);
+	valvula_async_queue_push (ctx->reader_queue, data);
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "notification done..");
 

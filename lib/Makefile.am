@@ -30,15 +30,15 @@ libvalvula_includedir = $(includedir)/valvula
 
 lib_LTLIBRARIES = libvalvula.la
 
-libvalvula_la_SOURCES =	\
-	valvula.c \
+libvalvula_la_SOURCES =	valvula.c \
 	valvula_reader.c \
 	valvula_io.c \
 	valvula_thread.c \
 	valvula_thread_pool.c \
 	valvala_ctx.c \
 	valvula_support.c \
-	valvula_listener.c
+	valvula_listener.c \
+	valvula_connection.c
 
 libvalvula_include_HEADERS = valvula.h \
 	valvula_reader.h \
@@ -50,7 +50,8 @@ libvalvula_include_HEADERS = valvula.h \
 	valvula_thread.h \
 	valvula_thread_pool.h \
 	valvula_types.h \
-	valvula_listener.h
+	valvula_listener.h \
+	valvula_connection.h
 
 libvalvula_la_LIBADD = \
 	$(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS)

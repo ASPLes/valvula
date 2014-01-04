@@ -320,5 +320,37 @@ typedef enum {
 	VALVULA_IO_WAIT_EPOLL  = 3,
 } ValvulaIoWaitingType;
 
+typedef enum {
+	/** 
+	 * @brief This value is used to represent an unknown role state.
+	 */
+	ValvulaRoleUnknown,
+	
+	/** 
+	 * @brief The connection is acting as an Initiator one.
+	 */
+	ValvulaRoleInitiator,
+
+	/** 
+	 * @brief The connection is acting as a Listener one.
+	 */
+	ValvulaRoleListener,
+	
+	/** 
+	 * @brief This especial value for the this enumeration allows
+	 * to know that the connection is a listener connection
+	 * accepting connections. 
+	 *
+	 * Connections reference that were received with the following
+	 * functions are the only ones that can have this value:
+	 *
+	 * - \ref valvula_listener_new
+	 * - \ref valvula_listener_new2
+	 * - \ref valvula_listener_new_full
+	 */
+	ValvulaRoleMasterListener
+	
+} ValvulaPeerRole;
+
 
 #endif

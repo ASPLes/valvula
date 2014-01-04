@@ -37,7 +37,7 @@
 #include <valvula.h>
 
 /* local include */
-#include <valvula_ctx_private.h>
+#include <valvula_private.h>
 
 #define LOG_DOMAIN "valvula-thread-pool"
 
