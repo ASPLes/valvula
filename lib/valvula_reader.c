@@ -449,9 +449,6 @@ int  __valvula_reader_check_listener_list (ValvulaCtx     * ctx,
 		connection = axl_list_cursor_get (srv_cursor);
 
 		if (!valvula_connection_is_ok (connection, axl_false)) {
-			valvula_log (VALVULA_LEVEL_DEBUG, "valvula reader found listener id=%d not operational, unreference",
-				    valvula_connection_get_id (connection));
-
 			/* FIRST: remove current cursor to ensure the
 			 * connection is out of our handling before
 			 * finishing the reference the reader owns */
@@ -597,8 +594,8 @@ axl_bool __valvula_reader_detect_and_cleanup_connection (axlListCursor * cursor)
 #if defined(ENABLE_VALVULA_LOG)
 			ctx = conn->ctx;
 #endif
-			valvula_log (VALVULA_LEVEL_CRITICAL, "Found connection-id=%d, with session=%d not working (errno=%d), shutting down",
-				    valvula_connection_get_id (conn), fds, errno);
+			valvula_log (VALVULA_LEVEL_CRITICAL, "Found with session=%d not working (errno=%d), shutting down",
+				     fds, errno);
 			/* close connection, but remove the socket reference to avoid closing some's socket */
 			conn->session = -1;
 			valvula_connection_shutdown (conn);
@@ -798,11 +795,6 @@ void valvula_reader_watch_connection (ValvulaCtx        * ctx,
 		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to increase connection reference count, dropping connection");
 		return;
 	}
-
-	valvula_log (VALVULA_LEVEL_DEBUG, "Accepting conn-id=%d into reader queue %p, library status: %d", 
-		    valvula_connection_get_id (connection),
-		    ctx->reader_queue,
-		    valvula_is_exiting (ctx));
 
 	/* prepare data to be queued */
 	data             = axl_new (ValvulaReaderData, 1);

@@ -55,11 +55,19 @@ struct _ValvulaCtx {
 	/** mutexes **/
 	ValvulaMutex exit_mutex;
 	ValvulaMutex ref_mutex;
+	int          ref_count;
 	ValvulaMutex inet_ntoa_mutex;
+
+	ValvulaMutex         listener_unlock;
+	ValvulaAsyncQueue  * listener_wait_lock;
+	ValvulaMutex         listener_mutex;
 
 	/*** queues ***/
 	ValvulaAsyncQueue * reader_stopped;	
 	ValvulaAsyncQueue * reader_queue;	
+
+	ValvulaMutex        connection_hostname_mutex;
+	axlHash           * connection_hostname;
 
 	/*** lists ***/
 	axlList           * srv_list;
@@ -87,6 +95,10 @@ struct _ValvulaCtx {
 	axl_bool                  thread_pool_being_stopped;
 	axl_bool                  skip_thread_pool_wait;
 	axl_bool                  thread_pool_exclusive;
+
+	/*** valvula hash ***/
+	ValvulaHash             * data;
+
 };
 
 /** 
@@ -96,6 +108,38 @@ struct _ValvulaConnection {
 	ValvulaCtx * ctx;
 
 	VALVULA_SOCKET session;
+
+	ValvulaMutex   ref_mutex;
+	int            ref_count;
+	
+	ValvulaMutex    op_mutex;
+
+	char          * host;
+	char          * port;
+	char          * host_ip;
+	char          * local_addr;
+	char          * local_port;
+
+	ValvulaPeerRole role;
+	
+	ValvulaConnection * listener;
+};
+
+struct _ValvulaHash {
+	axlHash          * table;
+	ValvulaMutex        mutex;
+	int                ref_count;
+
+	/* configuration functions */
+	axlHashFunc        hash_func;
+	axlEqualFunc       key_equal_func;
+
+	/* destroy functions */
+	axlDestroyFunc     key_destroy;
+	axlDestroyFunc     value_destroy;
+	
+	/* watchers */
+	ValvulaAsyncQueue * changed_queue;
 };
 
 #endif

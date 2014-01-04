@@ -40,6 +40,15 @@
 
 #define LOG_DOMAIN "valvula-listener"
 
+typedef struct _ValvulaListenerData {
+	char                     * host;
+	int                        port;
+	axlPointer                 user_data;
+	axl_bool                   threaded;
+	axl_bool                   register_conn;
+	ValvulaCtx                * ctx;
+}ValvulaListenerData;
+
 int  __valvula_listener_get_port (const char  * port)
 {
 	return strtol (port, NULL, 10);
@@ -179,20 +188,12 @@ axlPointer __valvula_listener_new (ValvulaListenerData * data)
 	axl_bool             threaded      = data->threaded;
 	axl_bool             register_conn = data->register_conn;
 	char               * str_port      = axl_strdup_printf ("%d", data->port);
-	axlPointer           user_data     = data->user_data;
 	const char         * message       = NULL;
 	ValvulaConnection   * listener      = NULL;
 	ValvulaCtx          * ctx           = data->ctx;
-	ValvulaStatus         status        = ValvulaOk;
-	char               * host_used;
 	axlError           * error         = NULL;
 	VALVULA_SOCKET        fd;
-	struct sockaddr_in   sin;
 
-	/* handlers received (may be both null) */
-	ValvulaListenerReady      on_ready       = data->on_ready;
-	ValvulaListenerReadyFull  on_ready_full  = data->on_ready_full;
-	
 	/* free data */
 	axl_free (data);
 
@@ -208,65 +209,34 @@ axlPointer __valvula_listener_new (ValvulaListenerData * data)
 	 * connection around it */
 	listener = valvula_connection_new_empty (ctx, fd, ValvulaRoleMasterListener);
 
-	valvula_log (VALVULA_LEVEL_DEBUG, "listener reference created (%p, id: %d, socket: %d)", listener, 
-		    valvula_connection_get_id (listener), fd);
-
 	/* handle returned socket or error */
 	switch (fd) {
 	case -2:
-		__valvula_connection_shutdown_and_record_error (
-			listener, ValvulaWrongReference, "Failed to start listener because valvula_listener_sock_listener reported NULL parameter received");
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to start listener because valvula_listener_sock_listener reported NULL parameter received");
 		break;
 	case -1:
-		__valvula_connection_shutdown_and_record_error (
-			listener, ValvulaProtocolError,"Failed to start listener, valvula_listener_sock_listener reported (code: %d): %s",
-			axl_error_get_code (error), axl_error_get (error));
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to start listener, valvula_listener_sock_listener reported (code: %d): %s",
+			     axl_error_get_code (error), axl_error_get (error));
 		break;
 	default:
 		/* register the listener socket at the Valvula Reader process.  */
 		if (register_conn)
 			valvula_reader_watch_listener (ctx, listener);
-		if (threaded) {
-			valvula_log (VALVULA_LEVEL_DEBUG, "doing listener notification (threaded mode)");
-			/* notify listener created */
-			host_used = valvula_support_inet_ntoa (ctx, &sin);
-			if (on_ready != NULL) {
-				on_ready (host_used, ntohs (sin.sin_port), ValvulaOk, "server ready for requests", user_data);
-			} /* end if */
-			
-			if (on_ready_full != NULL) {
-				on_ready_full (host_used, ntohs (sin.sin_port), ValvulaOk, "server ready for requests", listener, user_data);
-			} /* end if */
-			axl_free (host_used);
-		} /* end if */
-
-		/* call to notify connection created */
-		if (! valvula_connection_actions_notify (ctx, &listener, CONNECTION_STAGE_POST_CREATED)) {
-			/* action reporting failure, unref the connection */
-			__valvula_connection_shutdown_and_record_error (
-				listener, ValvulaConnectionFiltered, "valvula master listener post created action failed");
-		} /* end if */
 
 		/* the listener reference */
 		valvula_log (VALVULA_LEVEL_DEBUG, "returning listener running at %s:%s (non-threaded mode)", 
-			    valvula_connection_get_host (listener), valvula_connection_get_port (listener));
+			     valvula_connection_get_host (listener), valvula_connection_get_port (listener));
 		return listener;
 	} /* end switch */
 
 	/* according to the invocation */
-	if (threaded) {
-		/* notify error found to handlers */
-		if (on_ready != NULL) 
-			on_ready      (NULL, 0, status, (char*) message, user_data);
-		if (on_ready_full != NULL) 
-			on_ready_full (NULL, 0, status, (char*) message, NULL, user_data);
-	} else {
-		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to start valvula server, error was: %s, unblocking valvula_listener_wait",
-		       message);
+	if (! threaded) {
+		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to start valvula server, error was: %s, unblocking valvula_listener_wait", message);
+
 		/* notify the listener that an error was found
 		 * (because the server didn't suply a handler) */
 		valvula_mutex_lock (&ctx->listener_unlock);
-		QUEUE_PUSH (ctx->listener_wait_lock, INT_TO_PTR (axl_true));
+		valvula_async_queue_push (ctx->listener_wait_lock, INT_TO_PTR (axl_true));
 		ctx->listener_wait_lock = NULL;
 		valvula_mutex_unlock (&ctx->listener_unlock);
 	} /* end if */
@@ -281,13 +251,10 @@ axlPointer __valvula_listener_new (ValvulaListenerData * data)
 /** 
  * @internal Implementation to support listener creation functions valvula_listener_new*
  */
-ValvulaConnection * __valvula_listener_new_common  (ValvulaCtx               * ctx,
-						  const char              * host,
-						  int                       port,
-						  axl_bool                  register_conn,
-						  ValvulaListenerReady       on_ready, 
-						  ValvulaListenerReadyFull   on_ready_full,
-						  axlPointer                user_data)
+ValvulaConnection * __valvula_listener_new_common  (ValvulaCtx              * ctx,
+						    const char              * host,
+						    int                       port,
+						    axl_bool                  register_conn)
 {
 	ValvulaListenerData * data;
 
@@ -302,12 +269,8 @@ ValvulaConnection * __valvula_listener_new_common  (ValvulaCtx               * c
 	data                = axl_new (ValvulaListenerData, 1);
 	data->host          = axl_strdup (host);
 	data->port          = port;
-	data->on_ready      = on_ready;
-	data->on_ready_full = on_ready_full;
-	data->user_data     = user_data;
 	data->ctx           = ctx;
 	data->register_conn = register_conn;
-	data->threaded      = (on_ready != NULL) || (on_ready_full != NULL);
 	
 	/* make request */
 	if (data->threaded) {
@@ -514,14 +477,12 @@ ValvulaConnection * __valvula_listener_new_common  (ValvulaCtx               * c
  *
  * This problem do not affect to new clients connecting to old servers.
  */
-ValvulaConnection * valvula_listener_new (ValvulaCtx           * ctx,
-					const char          * host, 
-					const char          * port, 
-					ValvulaListenerReady   on_ready, 
-					axlPointer            user_data)
+ValvulaConnection * valvula_listener_new (ValvulaCtx          * ctx,
+					  const char          * host, 
+					  const char          * port)
 {
 	/* call to int port API */
-	return __valvula_listener_new_common (ctx, host, __valvula_listener_get_port (port), axl_true, on_ready, NULL, user_data);
+	return __valvula_listener_new_common (ctx, host, __valvula_listener_get_port (port), axl_true);
 }
 
 /** 
@@ -565,14 +526,12 @@ ValvulaConnection * valvula_listener_new (ValvulaCtx           * ctx,
  * To close immediately a listener you can use \ref
  * valvula_connection_shutdown.
  */
-ValvulaConnection * valvula_listener_new_full  (ValvulaCtx   * ctx,
-					      const char  * host,
-					      const char  * port,
-					      ValvulaListenerReadyFull on_ready_full, 
-					      axlPointer user_data)
+ValvulaConnection * valvula_listener_new_full  (ValvulaCtx  * ctx,
+						const char  * host,
+						const char  * port)
 {
 	/* call to int port API */
-	return __valvula_listener_new_common (ctx, host, __valvula_listener_get_port (port), axl_true, NULL, on_ready_full, user_data);
+	return __valvula_listener_new_common (ctx, host, __valvula_listener_get_port (port), axl_true);
 }
 
 /** 
@@ -606,15 +565,13 @@ ValvulaConnection * valvula_listener_new_full  (ValvulaCtx   * ctx,
  * the caller passes register_conn = axl_false makes the reference
  * returned or notified to be owned by the caller.
  */
-ValvulaConnection * valvula_listener_new_full2       (ValvulaCtx                * ctx,
+ValvulaConnection * valvula_listener_new_full2       (ValvulaCtx             * ctx,
 						    const char               * host,
 						    const char               * port,
-						    axl_bool                   register_conn,
-						    ValvulaListenerReadyFull    on_ready_full, 
-						    axlPointer                 user_data)
+						    axl_bool                   register_conn)
 {
 	/* call to int port API */
-	return __valvula_listener_new_common (ctx, host, __valvula_listener_get_port (port), register_conn, NULL, on_ready_full, user_data);
+	return __valvula_listener_new_common (ctx, host, __valvula_listener_get_port (port), register_conn);
 }
 
 /** 
@@ -653,14 +610,12 @@ ValvulaConnection * valvula_listener_new_full2       (ValvulaCtx                
  * To close immediately a listener you can use \ref valvula_connection_shutdown.
  */
 ValvulaConnection * valvula_listener_new2    (ValvulaCtx   * ctx,
-					    const char  * host,
-					    int           port,
-					    ValvulaListenerReady on_ready, 
-					    axlPointer user_data)
+					      const char  * host,
+					      int           port)
 {
 
 	/* call to common API */
-	return __valvula_listener_new_common (ctx, host, port, axl_true, on_ready, NULL, user_data);
+	return __valvula_listener_new_common (ctx, host, port, axl_true);
 }
 
 
@@ -747,7 +702,7 @@ void valvula_listener_unlock (ValvulaCtx * ctx)
 
 		/* notify waiters */
 		if (valvula_async_queue_waiters (ctx->listener_wait_lock) > 0) {
-			QUEUE_PUSH (ctx->listener_wait_lock, INT_TO_PTR (axl_true));
+			valvula_async_queue_push (ctx->listener_wait_lock, INT_TO_PTR (axl_true));
 		} else {
 			/* unref */
 			valvula_async_queue_unref (ctx->listener_wait_lock);
@@ -779,20 +734,6 @@ void valvula_listener_unlock (ValvulaCtx * ctx)
  **/
 void valvula_listener_init (ValvulaCtx * ctx)
 {
-	/* do not lock if the data is already initialized */
-	if (ctx != NULL && ctx->listener_wait_lock != NULL &&
-	    ctx->listener_on_accept_handlers != NULL)
-		return;
-
-	/* init lock */
-	valvula_mutex_lock (&ctx->listener_mutex);
-	
-	/* init the server on accept connection list */
-	if (ctx->listener_on_accept_handlers == NULL)
-		ctx->listener_on_accept_handlers = axl_list_new (axl_list_always_return_1, axl_free);
-
-	/* unlock */
-	valvula_mutex_unlock (&ctx->listener_mutex);
 	return;
 }
 
@@ -806,12 +747,6 @@ void valvula_listener_cleanup (ValvulaCtx * ctx)
 	ValvulaAsyncQueue * queue;
 	v_return_if_fail (ctx);
 
-	axl_list_free (ctx->listener_on_accept_handlers);
-	ctx->listener_on_accept_handlers = NULL;
-	
-	axl_free (ctx->listener_default_realm);
-	ctx->listener_default_realm = NULL;
-
 	/* acquire queue and nullify */
 	queue = ctx->listener_wait_lock;
 	ctx->listener_wait_lock = NULL;
@@ -824,56 +759,6 @@ void valvula_listener_cleanup (ValvulaCtx * ctx)
 		valvula_async_queue_unref (queue);
 	}
 
-
-	return;
-}
-
-/** 
- * @brief Allows to shutdown the listener provided and all connections
- * that were created due to its function.
- *
- * The function perform a shutdown (no BEEP close session phase) on
- * the listener and connections created.
- * 
- * @param listener The listener to shutdown.
- *
- * @param also_created_conns axl_true to shutdown all connections 
- */
-void          valvula_listener_shutdown (ValvulaConnection * listener,
-					 axl_bool            also_created_conns)
-{
-	ValvulaCtx        * ctx;
-	ValvulaAsyncQueue * notify = NULL;
-
-	/* check parameters */
-	if (! valvula_connection_is_ok (listener, axl_false))
-		return;
-	
-	/* get ctx */
-	ctx = valvula_connection_get_ctx (listener);
-
-	valvula_log (VALVULA_LEVEL_DEBUG, "shutting down listener..");
-	
-	/* ref the listener during the operation */
-	valvula_connection_ref (listener, "listener-shutdown");
-
-	/* now do a foreach over all connections registered in the
-	 * reader */
-	if (also_created_conns) {
-		/* call to shutdown all associated connections */
-		notify = valvula_reader_foreach (ctx, 
-						__valvula_listener_shutdown_foreach, 
-						INT_TO_PTR (valvula_connection_get_id (listener)));
-		/* wait to finish */
-		valvula_async_queue_pop (notify);
-		valvula_async_queue_unref (notify);
-	} /* end if */
-
-	/* shutdown the listener */
-	__valvula_connection_shutdown_and_record_error (listener, ValvulaOk, "listener shutted down");
-
-	/* unref the listener now finished */
-	valvula_connection_unref (listener, "listener-shutdown");
 
 	return;
 }

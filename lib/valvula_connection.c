@@ -53,34 +53,6 @@
 
 
 /** 
- * @internal Support function for connection identificators.
- *
- * This is used to generate and return the next connection identifier.
- *
- * @param ctx The context where the operation will be performed.
- *
- * @return Next connection identifier available.
- */
-int  __valvula_connection_get_next_id (ValvulaCtx * ctx)
-{
-	/* get current context */
-	int         result;
-
-	/* lock */
-	valvula_mutex_lock (&ctx->connection_id_mutex);
-	
-	/* increase */
-	result = ctx->connection_id;
-	ctx->connection_id++;
-
-	/* unlock */
-	valvula_mutex_unlock (&ctx->connection_id_mutex);
-
-	return result;
-}
-
-
-/** 
  * \brief Allows to change connection semantic to blocking.
  *
  * This function should not be useful for Valvula Library consumers
@@ -116,16 +88,13 @@ axl_bool      valvula_connection_set_blocking_socket (ValvulaConnection    * con
 	}
 #else
 	if ((flags = fcntl (connection->session, F_GETFL, 0)) < 0) {
-		__valvula_connection_shutdown_and_record_error (
-			connection, ValvulaError,
-			"unable to get socket flags to set non-blocking I/O");
+		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to get socket flags to set non-blocking I/O");
 		return axl_false;
 	}
 	valvula_log (VALVULA_LEVEL_DEBUG, "actual flags state before setting blocking: %d", flags);
 	flags &= ~O_NONBLOCK;
 	if (fcntl (connection->session, F_SETFL, flags) < 0) {
-		__valvula_connection_shutdown_and_record_error (
-			connection, ValvulaError, "unable to set non-blocking I/O");
+		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to set non-blocking I/O");
 		return axl_false;
 	}
 	valvula_log (VALVULA_LEVEL_DEBUG, "actual flags state after setting blocking: %d", flags);
@@ -171,17 +140,14 @@ axl_bool      valvula_connection_set_nonblocking_socket (ValvulaConnection * con
 	}
 #else
 	if ((flags = fcntl (connection->session, F_GETFL, 0)) < 0) {
-		__valvula_connection_shutdown_and_record_error (
-			connection, ValvulaError,
-			"unable to get socket flags to set non-blocking I/O");
+		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to get socket flags to set non-blocking I/O");
 		return axl_false;
 	}
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "actual flags state before setting nonblocking: %d", flags);
 	flags |= O_NONBLOCK;
 	if (fcntl (connection->session, F_SETFL, flags) < 0) {
-		__valvula_connection_shutdown_and_record_error (
-			connection, ValvulaError, "unable to set non-blocking I/O");
+		valvula_log (VALVULA_LEVEL_CRITICAL,  "unable to set non-blocking I/O");
 		return axl_false;
 	}
 	valvula_log (VALVULA_LEVEL_DEBUG, "actual flags state after setting nonblocking: %d", flags);
@@ -336,151 +302,6 @@ struct in_addr * valvula_gethostbyname (ValvulaCtx  * ctx,
 	
 }
 
-/** 
- * @brief Allows to create a plain socket connection against the host
- * and port provided. 
- *
- * @param ctx The context where the connection happens.
- *
- * @param host The host server to connect to.
- *
- * @param port The port server to connect to.
- *
- * @param timeout Parameter where optionally is returned the timeout
- * defined by the library (\ref valvula_connection_get_connect_timeout)
- * that remains after only doing a socket connected. The value is only
- * returned if the caller provide a reference.
- *
- * @param error Optional axlError reference to report an error code
- * and a textual diagnostic.
- *
- * @return A connected socket or -1 if it fails. The particular error
- * is reported at axlError optional reference.
- */
-VALVULA_SOCKET valvula_connection_sock_connect (ValvulaCtx   * ctx,
-					      const char  * host,
-					      const char  * port,
-					      int         * timeout,
-					      axlError   ** error)
-{
-	struct in_addr     * haddr;
-	struct sockaddr_in   saddr;
-	int		     err          = 0;
-	VALVULA_SOCKET        session;
-
-	/*
-	 * standard tcp socket voodo connection (I would like to know
-	 * who was the great mind designer of this api)
-	 */
-	haddr = valvula_gethostbyname (ctx, host);
-        if (haddr == NULL) {
-		valvula_log (VALVULA_LEVEL_WARNING, "unable to get host name by using gethostbyname host=%s",
-			    host);
-		axl_error_report (error, ValvulaNameResolvFailure, "unable to get host name by using gethostbyname");
-		return -1;
-	}
-
-	/* create the socket and check if it */
-	session      = socket (AF_INET, SOCK_STREAM, 0);
-	if (session == VALVULA_INVALID_SOCKET) {
-		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to create socket");
-		axl_error_report (error, ValvulaNameResolvFailure, "unable to create socket (socket call have failed)");
-		return -1;
-	} /* end if */
-
-	/* check socket limit */
-	if (! valvula_connection_check_socket_limit (ctx, session)) {
-		axl_error_report (error, ValvulaSocketSanityError, "Unable to create more connections, socket limit reached");
-		return -1;
-	}
-
-	/* do a sanity check on socket created */
-	if (!valvula_connection_do_sanity_check (ctx, session)) {
-		/* close the socket */
-		valvula_close_socket (session);
-
-		/* report error */
-		axl_error_report (error, ValvulaSocketSanityError, 
-				  "created socket descriptor using a reserved socket descriptor (%d), this is likely to cause troubles");
-		return -1;
-	} /* end if */
-	
-	/* disable nagle */
-	valvula_connection_set_sock_tcp_nodelay (session, axl_true);
-
-	/* prepare socket configuration to operate using TCP/IP
-	 * socket */
-        memset(&saddr, 0, sizeof(saddr));
-        memcpy(&saddr.sin_addr, haddr, sizeof(struct in_addr));
-        saddr.sin_family    = AF_INET;
-        saddr.sin_port      = htons((uint16_t) strtod (port, NULL));
-	
-	/* get current valvula connection timeout to check if the
-	 * application have requested to configure a particular TCP
-	 * connect timeout. */
-	if (timeout) {
-		(*timeout)  = valvula_connection_get_connect_timeout (ctx); 
-		if ((*timeout) > 0) {
-			/* translate hold value for timeout into seconds  */
-			(*timeout) = (int) (*timeout) / (int) 1000000;
-			
-			/* set non blocking connection */
-			valvula_connection_set_sock_block (session, axl_false);
-		} /* end if */
-	} /* end if */
-
-	/* do a tcp connect */
-        if (connect (session, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
-		if(timeout == 0 || (errno != VALVULA_EINPROGRESS && errno != VALVULA_EWOULDBLOCK)) { 
-			shutdown (session, SHUT_RDWR);
-			valvula_close_socket (session);
-			valvula_log (VALVULA_LEVEL_WARNING, "unable to connect to remote host errno=%d, timeout reached",
-				    errno);
-			axl_error_report (error, ValvulaConnectionError, "unable to connect to remote host");
-			return -1;
-		} /* end if */
-	} /* end if */
-
-	/* if a connection timeout is defined, wait until connect */
-	if (timeout && ((*timeout) > 0)) {
-		/* wait for write operation, signaling that the
-		 * connection is available */
-		err = __valvula_connection_wait_on (ctx, WRITE_OPERATIONS, session, timeout);
-
-#if defined(AXL_OS_WIN32)
-		/* under windows we have to also we to be readable */
-
-		/* NOTE: the following code was commented because
-		 * starting from 1.1.3 BEEP listener do send content
-		 * inmmediately (greetings) but waits for client
-		 * greetings to reply with the proper values. The
-		 * following waiting code causes select(2) call to not
-		 * report TCP proper connection until some data is
-		 * received, which is obviously a windows winsock
-		 * bug. */
-		if (err > 0) {  
-/*			valvula_log (VALVULA_LEVEL_DEBUG, "connect ok, but need to check readable state for socket %d..", session); */
-/*			err = __valvula_connection_wait_on (ctx, READ_OPERATIONS, session, timeout); */
-		} /* end if */
-#endif
-		
-		if(err <= 0){
-			/* timeout reached while waiting for the connection to terminate */
-			shutdown (session, SHUT_RDWR);
-			valvula_close_socket (session);
-			valvula_log (VALVULA_LEVEL_WARNING, "unable to connect to remote host (timeout)");
-			axl_error_report (error, ValvulaNameResolvFailure, "unable to connect to remote host (timeout)");
-			return -1;
-		} /* end if */
-	} /* end if */
-
-	/* return socket created */
-
-
-	return session;
-}
-			
-
 /**
  * @internal Reference counting update implementation.
  */
@@ -507,17 +328,37 @@ axl_bool               valvula_connection_ref_internal                    (Valvu
 	/* increase and log the connection increased */
 	connection->ref_count++;
 
-	valvula_log (VALVULA_LEVEL_DEBUG, "%d increased connection id=%d (%p) reference to %d by %s\n",
-		    valvula_getpid (),
-		    connection->id, connection,
-		    connection->ref_count, who ? who : "??" ); 
-
 	/* unlock ref/unref options over this connection */
 	valvula_mutex_unlock (&connection->ref_mutex);
 
 	return axl_true;
 }
 
+
+/** 
+ * @brief Allows to create a new working connection with the provided
+ * socket, role and context.
+ */
+ValvulaConnection  * valvula_connection_new_empty              (ValvulaCtx      * ctx,
+								VALVULA_SOCKET    _socket,
+								ValvulaPeerRole   role)
+{
+	ValvulaConnection * conn;
+
+	if (ctx == NULL || _socket < 0)
+		return NULL;
+
+	conn = axl_new (ValvulaConnection, 1);
+	if (conn == NULL)
+		return NULL;
+
+	valvula_mutex_create (&conn->ref_mutex);
+	conn->ref_count = 1;
+	conn->ctx       = ctx;
+	conn->session   = _socket;
+
+	return conn;
+}
 /** 
  * @brief Increase internal valvula connection reference counting.
  * 
@@ -630,11 +471,6 @@ void               valvula_connection_unref                  (ValvulaConnection 
 	/* decrease reference counting */
 	connection->ref_count--;
 
-	valvula_log (VALVULA_LEVEL_DEBUG, "%d decreased connection id=%d (%p) reference count to %d decreased by %s\n", 
-		valvula_getpid (),
-		connection->id, connection,
-		connection->ref_count, who ? who : "??");  
-		
 	/* get current count */
 	count = connection->ref_count;
 	valvula_mutex_unlock (&(connection->ref_mutex));
@@ -707,7 +543,7 @@ axl_bool                valvula_connection_is_ok (ValvulaConnection * connection
 
 	/* check for the socket this connection has */
 	valvula_mutex_lock  (&(connection->ref_mutex));
-	result = (connection->session < 0) || (! connection->is_connected);
+	result = (connection->session < 0);
 	valvula_mutex_unlock  (&(connection->ref_mutex));
 
 	/* implement free_on_fail flag */
@@ -718,6 +554,43 @@ axl_bool                valvula_connection_is_ok (ValvulaConnection * connection
 	
 	/* return current connection status. */
 	return ! result;
+}
+
+/** 
+ * @brief Allows to close the provided connection.
+ *
+ * @param connection The connection to be closed. After this, the
+ * connection cannot be used anymore.
+ * 
+ */
+void                valvula_connection_close                  (ValvulaConnection * connection)
+{
+	if (connection == NULL)
+		return;
+
+	valvula_close_socket (connection->session);
+	connection->session = -1;
+
+	return;
+}
+
+void                valvula_connection_free (ValvulaConnection * conn)
+{
+	if (conn == NULL)
+		return;
+
+	valvula_mutex_destroy (&conn->ref_mutex);
+
+	valvula_mutex_destroy (&conn->op_mutex);
+
+	axl_free (conn->host);
+	axl_free (conn->host_ip);
+	axl_free (conn->port);
+	axl_free (conn->local_addr);
+	axl_free (conn->local_port);
+
+	axl_free (conn);
+	return;
 }
 
 /** 
@@ -827,88 +700,6 @@ const char        * valvula_connection_get_host_ip            (ValvulaConnection
 }
 
 /** 
- * @brief  Returns the connection unique identifier.
- *
- * The connection identifier is a unique integer assigned to all
- * connection created under Valvula Library. This allows Valvula programmer to
- * use this identifier for its own application purposes
- *
- * @param connection The connection to get the the unique integer
- * identifier from.
- * 
- * @return the unique identifier.
- */
-int                valvula_connection_get_id               (ValvulaConnection * connection)
-{
-	if (connection == NULL)
-		return -1;
-
-	return connection->id;
-}
-
-/** 
- * @brief Allows to get the serverName under which the remote BEEP
- * peer is working. 
- *
- * During the BEEP session, the first channel created under a provided
- * serverName attribute is meaningful for the rest of the
- * session. This means that the connection gets flagged with the
- * serverName under which is acting.
- * 
- * @param connection The connection that is required to return its
- * server name value.
- * 
- * @return The serverName value or NULL if no server name was
- * configured.
- */
-const char        * valvula_connection_get_server_name        (ValvulaConnection * connection)
-{
-	if (connection == NULL)
-		return NULL;
-	
-	/* return current serverName configured */
-	return connection->serverName;
-}
-
-/** 
- * @internal Function that allows to configure the serverName for the
- * first caller. Rest of the callers will fail to set the name (the
- * function will do nothing) if the serverName is found to be
- * configured.
- * 
- * @param connection The connection to configure its serverName.
- * @param serverName The server name value to configured.
- */
-void                valvula_connection_set_server_name         (ValvulaConnection * connection,
-							       const char       * serverName)
-{
-#if defined(ENABLE_VALVULA_LOG)
-	ValvulaCtx * ctx = CONN_CTX (connection);
-#endif
-	int iterator = 0;
-
-	/* check if the connection is null or the serverName is
-	 * null */
-	if (connection == NULL || serverName == NULL || connection->serverName != NULL)
-		return;
-
-	/* configure serverName */
-	connection->serverName = axl_strdup (serverName);
-
-	/* remove : values and the rest behind it */
-	while (connection->serverName[iterator]) {
-		if (connection->serverName[iterator] == ':')
-			connection->serverName[iterator] = 0;
-
-		/* next iterator*/
-		iterator++;
-	}
-	valvula_log (VALVULA_LEVEL_DEBUG, "Received serverName %s and configured %s", serverName, connection->serverName);
-	
-	return;
-}
-
-/** 
  * @brief Returns the actual port this connection is connected to.
  *
  * In the case the connection you have provided have the \ref
@@ -959,199 +750,6 @@ const char        * valvula_connection_get_local_port         (ValvulaConnection
 	return connection->local_port;
 }
 
-/** 
- * @brief Sets user defined data associated with the given connection.
- *
- * The function allows to store arbitrary data associated to the given
- * connection. Data stored will be indexed by the provided key,
- * allowing to retrieve the information using: \ref
- * valvula_connection_get_data.
- *
- * If the value provided is NULL, this will be considered as a
- * removing request for the given key and its associated data.
- * 
- * See also \ref valvula_connection_set_data_full function. It is an
- * alternative API that allows configuring a set of destroy handlers
- * for key and data stored.
- *
- * @param connection The connection where data will be associated.
- *
- * @param key The string key indexing the data stored associated to
- * the given key.
- *
- * @param value The value to be stored. NULL to remove previous data
- * stored.
- */
-void               valvula_connection_set_data               (ValvulaConnection * connection,
-							     const char       * key,
-							     axlPointer         value)
-{
-	/* use the full version so all source code is supported in one
-	 * function. */
-	valvula_connection_set_data_full (connection, (axlPointer) key, value, NULL, NULL);
-	return;
-}
-
-/** 
- * @brief Allows to remove a key/value pair installed by
- * valvula_connection_set_data and valvula_connection_set_data_full
- * without calling destroy functions associated.
- *
- * @param connection The connection where the key/value entry will be
- * removed without calling destroy function associated (if any) to
- * both (key and value).
- *
- * @param key The key that identifies the entry to be deleted.
- * 
- */
-void                valvula_connection_delete_key_data        (ValvulaConnection * connection,
-							      const char       * key)
-{
-	if (connection == NULL || connection->data == NULL)
-		return;
-	valvula_hash_delete (connection->data, (axlPointer) key);
-	return;
-}
-/** 
- * @brief Allows to store user space data into the connection like
- * \ref valvula_connection_set_data does but configuring functions to
- * be called once required to deallocate data stored.
- *
- * While storing user defined data into the connection it could be
- * necessary to also define destroy functions for the value stored and
- * the key stored. This allows to not worry about to free those data
- * (including the key) once the connection is dropped.
- *
- * This function allows to store data into the given connection
- * defining destroy functions for the key and the value stored, per item.
- * 
- * \code
- * [...]
- * void destroy_data_1 (axlPointer data) 
- * {
- *     // perform a memory deallocation for data1
- * }
- * 
- * void destroy_data_2 (axlPointer data) 
- * {
- *     // perform a memory deallocation for data2
- * }
- * [...]
- * // store data 1 providing a destroy value function
- * valvula_connection_set_data_full (connection, "some:data:1", 
- *                                  data_1, NULL, destroy_data_1);
- *
- * // store data 2 providing a destroy value function
- * valvula_connection_set_data_full (connection, "some:data:2",
- *                                  data_2, NULL, destroy_data_2);
- * [...]
- * \endcode
- * 
- *
- * @param connection    The connection where the data will be stored.
- * @param key           The unique string key value.
- * @param value         The value to be stored associated to the given key.
- * @param key_destroy   An optional key destroy function used to destroy (deallocate) memory used by the key.
- * @param value_destroy An optional value destroy function used to destroy (deallocate) memory used by the value.
- */
-void                valvula_connection_set_data_full          (ValvulaConnection * connection,
-							      char             * key,
-							      axlPointer         value,
-							      axlDestroyFunc     key_destroy,
-							      axlDestroyFunc     value_destroy)
-{
-
-	/* check reference */
-	if (connection == NULL || key == NULL)
-		return;
-
-	/* check if the value is not null. It it is null, remove the
-	 * value. */
-	if (value == NULL) {
-		valvula_hash_remove (connection->data, key);
-		return;
-	}
-
-	/* store the data selected replacing previous one */
-	valvula_hash_replace_full (connection->data, 
-				  key, key_destroy, 
-				  value, value_destroy);
-	
-	/* return from setting the value */
-	return;
-}
-
-/** 
- * @brief Allows to set a commonly used user land pointer associated
- * to the provided connection.
- *
- * Though you can use \ref valvula_connection_set_data_full or \ref valvula_connection_set_data, this function allows to set a pointer
- * that can be retreived by using \ref valvula_connection_get_hook with a low cpu usage.
- *
- * @param connection The connection where the user land pointer is associated.
- *
- * @param ptr The pointer that will be associated to the connection.
- */
-void                valvula_connection_set_hook               (ValvulaConnection * connection,
-							      axlPointer         ptr)
-{
-	if (connection == NULL)
-		return;
-	connection->hook = ptr;
-	return;
-}
-
-/** 
- * @brief Allows to get the user land pointer configured by \ref valvula_connection_set_hook.
- *
- * @param connection The connection where the user land pointer is
- * being queried.
- *
- * @return The pointer stored.
- */
-axlPointer          valvula_connection_get_hook               (ValvulaConnection * connection)
-{
-	if (connection == NULL)
-		return NULL;
-	return connection->hook;
-}
-
-
-/** 
- * @brief Gets stored value indexed by the given key inside the given connection.
- *
- * The function returns stored data using \ref
- * valvula_connection_set_data or \ref valvula_connection_set_data_full.
- * 
- * @param connection the connection where the value will be looked up.
- * @param key the key to look up.
- * 
- * @return the value or NULL if fails.
- */
-axlPointer         valvula_connection_get_data               (ValvulaConnection * connection,
-							     const char       * key)
-{
- 	v_return_val_if_fail (connection,       NULL);
- 	v_return_val_if_fail (key,              NULL);
- 	v_return_val_if_fail (connection->data, NULL);
-
-	return valvula_hash_lookup (connection->data, (axlPointer) key);
-}
-
-/** 
- * @brief Allows to get current data hash object used by the provided
- * connection. This way you can use this hash object directly with
- * \ref valvula_hash "valvula hash API".
- *
- * @param connection The connection where the hash has been requested..
- *
- * @return A reference to the hash or NULL if it fails.
- */
-ValvulaHash        * valvula_connection_get_data_hash          (ValvulaConnection * connection)
-{
-	v_return_val_if_fail (connection, NULL);
-	return connection->data;
-}
 
 /** 
  * @brief Allows to get current connection role.
