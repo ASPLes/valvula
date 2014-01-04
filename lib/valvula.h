@@ -331,6 +331,7 @@ BEGIN_C_DECLS
 #include <valvula_thread_pool.h>
 #include <valvula_reader.h>
 #include <valvula_listener.h>
+#include <valvula_connection.h>
 
 axl_bool valvula_init_ctx             (ValvulaCtx * ctx);
 
@@ -362,6 +363,21 @@ void     valvula_color_log_enable     (ValvulaCtx * ctx,
  * any idea to solve this issue. */
 int  setenv  (const char *name, const char *value, int overwrite);
 #endif
+
+/** internal definitions **/
+void _valvula_log (ValvulaCtx        * ctx,
+		   const       char * file,
+		   int                line,
+		   ValvulaDebugLevel   log_level,
+		   const char       * message,
+		   ...);
+
+void _valvula_log2 (ValvulaCtx        * ctx,
+		   const       char * file,
+		   int                line,
+		   ValvulaDebugLevel   log_level,
+		   const char       * message,
+		    ...);
 
 END_C_DECLS
 

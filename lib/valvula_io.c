@@ -255,16 +255,10 @@ typedef struct _ValvulaPoll {
  */
 axlPointer __valvula_io_waiting_poll_create (ValvulaCtx * ctx, ValvulaIoWaitingFor wait_to) 
 {
-	int          max;
+	int          max = 4096;
 	ValvulaPoll * poll;
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "creating empty poll(2) set");
-
-	/* support up to 4096 connections */
-	if (! valvula_conf_get (ctx, VALVULA_HARD_SOCK_LIMIT, &max)) {
-		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to get current max hard sock limit");
-		return NULL;
-	} /* end if */
 
 	/* check if max points to something not useful */
 	if (max <= 0)
@@ -333,16 +327,11 @@ axl_bool  __valvula_io_waiting_poll_add_to (int                fds,
 {
 	ValvulaPoll * poll   = (ValvulaPoll *) __fd_set;
 	ValvulaCtx  * ctx    = poll->ctx;
-	int          max;
+	int           max    = 4096;
 
 	/* check if max size reached */
 	if (poll->length == poll->max) {
-		/* support up to 4096 connections */
-		if (! valvula_conf_get (ctx, VALVULA_HARD_SOCK_LIMIT, &max)) {
-			valvula_log (VALVULA_LEVEL_CRITICAL, "unable to get current max hard sock limit, closing socket");
-			return axl_false;
-		} /* end if */
-
+	
 		if (poll->max >= max) {
 			valvula_log (VALVULA_LEVEL_DEBUG, "unable to accept more sockets, max poll set reached.");
 			return axl_false;
@@ -507,24 +496,14 @@ typedef struct _ValvulaEPoll {
  */
 axlPointer __valvula_io_waiting_epoll_create (ValvulaCtx * ctx, ValvulaIoWaitingFor wait_to) 
 {
-	int           max;
 	int           set;
+	int           max = 4096;
 	ValvulaEPoll * epoll;
-
-	/* get current max support */
-	if (! valvula_conf_get (ctx, VALVULA_HARD_SOCK_LIMIT, &max)) {
-		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to get current max hard sock limit");
-		return NULL;
-	} /* end if */
-
-	/* check if max points to something not useful */
-	if (max <= 0)
-		max = 4096;
 
 	set = epoll_create (max);
 	if (set == -1) {
 		valvula_log (VALVULA_LEVEL_CRITICAL, "failed to create the epoll interface (epoll_create system call have failed): %s",
-			    valvula_errno_get_last_error ());
+			     strerror (errno));
 		return NULL;
 	} /* end if */
 
@@ -598,17 +577,12 @@ axl_bool  __valvula_io_waiting_epoll_add_to (int                fds,
 {
 	ValvulaEPoll *        epoll  = (ValvulaEPoll *) __fd_set;
 	ValvulaCtx   *        ctx    = epoll->ctx;
-	int                  max;
+	int                   max    = 4096;
 	struct epoll_event   ev;
 
 	/* check if max size reached */
 	if (epoll->length == epoll->max) {
-		/* support up to 4096 connections */
-		if (! valvula_conf_get (ctx, VALVULA_HARD_SOCK_LIMIT, &max)) {
-			valvula_log (VALVULA_LEVEL_CRITICAL, "unable to get current max hard sock limit, closing socket");
-			return axl_false;
-		} /* end if */
-
+	
 		if (epoll->max >= max) {
 			valvula_log (VALVULA_LEVEL_DEBUG, "unable to accept more sockets, max poll set reached (%d).", epoll->max);
 			return axl_false;
@@ -639,7 +613,7 @@ axl_bool  __valvula_io_waiting_epoll_add_to (int                fds,
 		
 		valvula_log (VALVULA_LEVEL_CRITICAL, 
 			    "failed to add to the epoll fd=%d, epoll_ctl system call have failed: %s",
-			    fds, valvula_errno_get_last_error ());
+			     fds, strerror (errno));
 		return axl_false;
 	} /* end if */
 

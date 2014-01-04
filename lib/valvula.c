@@ -348,11 +348,11 @@ void _valvula_log_common (ValvulaCtx        * ctx,
  * @param message The message logged.
  */
 void _valvula_log (ValvulaCtx        * ctx,
-		  const       char * file,
-		  int                line,
-		  ValvulaDebugLevel   log_level,
-		  const char       * message,
-		  ...)
+		   const       char * file,
+		   int                line,
+		   ValvulaDebugLevel   log_level,
+		   const char       * message,
+		   ...)
 {
 
 #ifndef ENABLE_VALVULA_LOG

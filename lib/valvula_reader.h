@@ -44,9 +44,6 @@ void valvula_reader_watch_listener              (ValvulaCtx        * ctx,
 void valvula_reader_watch_connection            (ValvulaCtx         * ctx,
 						 ValvulaConnection  * connection);
 
-void valvula_reader_unwatch_connection          (ValvulaCtx        * ctx,
-						 ValvulaConnection * connection);
-
 int  valvula_reader_connections_watched         (ValvulaCtx        * ctx);
 
 int  valvula_reader_run                         (ValvulaCtx * ctx);
