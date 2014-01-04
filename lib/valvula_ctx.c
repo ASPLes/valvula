@@ -53,21 +53,12 @@ ValvulaCtx * valvula_ctx_new (void)
 	ctx->data     = valvula_hash_new (axl_hash_string, axl_hash_equal_string);
 	VALVULA_CHECK_REF2 (ctx->data, NULL, ctx, axl_free);
 
-	/**** valvula_frame_factory.c: init module ****/
-	ctx->frame_id = 1;
-
-	/* init mutex for the log */
-	valvula_mutex_create (&ctx->log_mutex);
-
 	/**** valvula_thread_pool.c: init ****/
 	ctx->thread_pool_exclusive = axl_true;
 
 	/* init reference counting */
 	valvula_mutex_create (&ctx->ref_mutex);
 	ctx->ref_count = 1;
-
-	/* set default serverName acquire value */
-	ctx->serverName_acquire = axl_true;
 
 	/* return context created */
 	return ctx;
@@ -318,9 +309,6 @@ void        valvula_ctx_free2 (ValvulaCtx * ctx, const char * who)
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "finishing ValvulaCtx %p", ctx);
 
-	/* release log mutex */
-	valvula_mutex_destroy (&ctx->log_mutex);
-	
 	/* release and clean mutex */
 	valvula_mutex_unlock (&ctx->ref_mutex);
 	valvula_mutex_destroy (&ctx->ref_mutex);

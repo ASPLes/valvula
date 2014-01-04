@@ -326,6 +326,7 @@ BEGIN_C_DECLS
 #include <valvula_handlers.h>
 #include <valvula_support.h>
 #include <valvula_io.h>
+#include <valvula_hash.h>
 #include <valvula_ctx.h>
 #include <valvula_thread.h>
 #include <valvula_thread_pool.h>

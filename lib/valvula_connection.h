@@ -44,8 +44,9 @@
  * @{
  */
 
-ValvulaConnection  * valvula_connection_new                    (ValvulaCtx      * ctx,
-								VALVULA_SOCKET     _socket);
+ValvulaConnection  * valvula_connection_new_empty              (ValvulaCtx      * ctx,
+								VALVULA_SOCKET    _socket,
+								ValvulaPeerRole   role);
 
 VALVULA_SOCKET       valvula_connection_sock_connect           (ValvulaCtx   * ctx,
 								const char  * host,
@@ -66,6 +67,8 @@ int                 valvula_connection_ref_count              (ValvulaConnection
 axl_bool            valvula_connection_is_ok                  (ValvulaConnection * connection, 
 							      axl_bool           free_on_fail);
 
+void                valvula_connection_close                  (ValvulaConnection * connection);
+
 void                valvula_connection_free                   (ValvulaConnection * connection);
 
 VALVULA_SOCKET       valvula_connection_get_socket             (ValvulaConnection * connection);
@@ -85,8 +88,6 @@ void                valvula_connection_set_host_and_port      (ValvulaConnection
 							      const char       * port,
 							      const char       * host_ip);
 
-int                 valvula_connection_get_id                 (ValvulaConnection * connection);
-
 axl_bool            valvula_connection_set_blocking_socket    (ValvulaConnection * connection);
 
 axl_bool            valvula_connection_set_nonblocking_socket (ValvulaConnection * connection);
@@ -97,28 +98,7 @@ axl_bool            valvula_connection_set_sock_tcp_nodelay   (VALVULA_SOCKET so
 axl_bool            valvula_connection_set_sock_block         (VALVULA_SOCKET socket,
 							      axl_bool      enable);
 
-void                valvula_connection_set_data               (ValvulaConnection * connection,
-							      const char       * key,
-							      axlPointer         value);
-
-void                valvula_connection_set_data_full          (ValvulaConnection * connection,
-							      char             * key,
-							      axlPointer         value,
-							      axlDestroyFunc     key_destroy,
-							      axlDestroyFunc     value_destroy);
-
 ValvulaPeerRole      valvula_connection_get_role               (ValvulaConnection * connection);
-
-void                valvula_connection_set_hook               (ValvulaConnection * connection,
-							      axlPointer         ptr);
-
-axlPointer          valvula_connection_get_hook               (ValvulaConnection * connection);
-
-void                valvula_connection_delete_key_data        (ValvulaConnection * connection,
-							      const char       * key);
-
-axlPointer          valvula_connection_get_data               (ValvulaConnection * connection,
-							      const char       * key);
 
 ValvulaConnection  * valvula_connection_get_listener          (ValvulaConnection * connection);
 

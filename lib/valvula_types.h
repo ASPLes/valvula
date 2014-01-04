@@ -209,6 +209,33 @@ typedef enum  {
 	VALVULA_THREAD_CONF_DETACHED = 2,
 }ValvulaThreadConf;
 
+
+/** 
+ * @brief Valvula Operation Status.
+ * 
+ * This enum is used to represent different Valvula Library status,
+ * especially while operating with \ref ValvulaConnection
+ * references. Values described by this enumeration are returned by
+ * \ref valvula_connection_get_status.
+ */
+typedef enum {
+	/** 
+	 * @brief Represents an Error while Valvula Library was operating.
+	 *
+	 * The operation asked to be done by Valvula Library could be
+	 * completed.
+	 */
+	ValvulaError                  = 1,
+	/** 
+	 * @brief Represents the operation have been successfully completed.
+	 *
+	 * The operation asked to be done by Valvula Library have been
+	 * completed.
+	 */
+	ValvulaOk                     = 2,
+} ValvulaStatus;
+
+
 /** 
  * @brief A single valvula context definition. 
  */
@@ -219,6 +246,11 @@ typedef struct _ValvulaCtx ValvulaCtx;
  * handled or a server that can receive new connections.
  */
 typedef struct _ValvulaConnection ValvulaConnection;
+
+/** 
+ * @brief Thread safe hash definition.
+ */
+typedef struct _ValvulaHash ValvulaHash;
 
 typedef enum {
 	/** 
