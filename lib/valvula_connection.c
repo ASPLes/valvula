@@ -309,19 +309,10 @@ axl_bool               valvula_connection_ref_internal                    (Valvu
 									  const char       * who,
 									  axl_bool           check_ref)
 {
-#if defined(ENABLE_VALVULA_LOG)
-	ValvulaCtx * ctx;
-#endif
-
 	v_return_val_if_fail (connection, axl_false);
 	if (check_ref)
 		v_return_val_if_fail (valvula_connection_is_ok (connection, axl_false), axl_false);
 
-#if defined(ENABLE_VALVULA_LOG)
-	/* get a reference to the ctx */
-	ctx = connection->ctx;
-#endif
-	
 	/* lock ref/unref operations over this connection */
 	valvula_mutex_lock   (&connection->ref_mutex);
 
@@ -451,9 +442,6 @@ void               valvula_connection_unref                  (ValvulaConnection 
 							     char const       * who)
 {
 
-#if defined(ENABLE_VALVULA_LOG)
-	ValvulaCtx  * ctx;
-#endif
 	int          count;
 
 	/* do not operate if no reference is received */
@@ -462,11 +450,6 @@ void               valvula_connection_unref                  (ValvulaConnection 
 
 	/* lock the connection being unrefered */
 	valvula_mutex_lock     (&(connection->ref_mutex));
-
-#if defined(ENABLE_VALVULA_LOG)
-	/* get context */
-	ctx = connection->ctx;
-#endif
 
 	/* decrease reference counting */
 	connection->ref_count--;

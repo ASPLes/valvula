@@ -64,6 +64,6 @@ libvalvula.def: update-def
 
 update-def:
 	echo "EXPORTS" > libvalvula.def
-	cat .libs/libvalvula-1.1.exp | grep -v io_waiting_poll | grep -v io_waiting_epoll | grep -v __valvula >> libvalvula.def
+	cat .libs/libvalvula.exp | grep -v io_waiting_poll | grep -v io_waiting_epoll | grep -v __valvula >> libvalvula.def
 	echo "__valvula_connection_set_not_connected" >> libvalvula.def
 	echo "gettimeofday" >> libvalvula.def
