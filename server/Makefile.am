@@ -21,7 +21,9 @@ INCLUDES = -I$(top_srcdir)/lib  $(AXL_CFLAGS)  $(PTHREAD_CFLAGS) \
 LIBS            = $(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS) $(NOPOLL_LIBS)
 
 valvulad_SOURCES   = \
-	valvulad.c \
+	valvulad.c valvulad.h \
+	valvulad_config.c valvulad_config.h \
+	valvulad_log.c valvulad_log.h \
 	exarg.c \
 	exarg.h
 
