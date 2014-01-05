@@ -439,12 +439,25 @@ void valvulad_error (ValvuladCtx * ctx, axl_bool ignore_debug, const char * file
 
 int main (int argc, char ** argv) 
 {
+	axl_bool      result;
+	ValvuladCtx * ctx = NULL;
 
 	/* parse arguments */
 	install_arguments (argc, argv);
 
-	/* parse configuration file */
+	/* init here valvula library and valvulaD context */
+	
 
+	/* parse configuration file */
+	if (exarg_is_defined ("config"))
+		result = valvulad_config_load (ctx, exarg_get_string ("config"));
+	else
+		result = valvulad_config_load (ctx, "/etc/valvula/valvula.conf");
+
+	if (! result) {
+		error ("Failed to load configuration file");
+		exit (-1);
+	}
 
 	/* finalize daemon */
 	exarg_end ();
