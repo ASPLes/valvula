@@ -1,5 +1,8 @@
 EXTRA_DIST = exarg.h exarg.c 
 
+etcdir = $(sysconfdir)/valvula
+etc_DATA = valvula.example.conf
+
 if ENABLE_POLL_SUPPORT
 INCLUDE_VALVULA_POLL=-DVALVULA_HAVE_POLL=1
 endif
