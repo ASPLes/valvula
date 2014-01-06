@@ -61,8 +61,8 @@ void      valvulad_log_configure (ValvuladCtx * ctx,
 void      valvulad_log_manager_start (ValvuladCtx * ctx);
 
 void      valvulad_log_manager_register (ValvuladCtx * ctx,
-					   LogReportType   type,
-					   int             descriptor);
+					 LogReportType   type,
+					 int             descriptor);
 
 axl_bool  valvulad_log_is_enabled    (ValvuladCtx * ctx);
 

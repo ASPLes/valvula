@@ -436,6 +436,32 @@ void valvulad_error (ValvuladCtx * ctx, axl_bool ignore_debug, const char * file
 	return;
 }
 
+axl_bool valvulad_init (ValvuladCtx ** result) {
+	ValvuladCtx * ctx;
+	
+	/* init context */
+	ctx = axl_new (ValvuladCtx, 1);
+	if (ctx == NULL)
+		return axl_false;
+
+	/* create library context */
+	ctx->ctx = valvula_ctx_new ();
+	if (ctx->ctx == NULL)
+		return axl_false;
+
+	if (! valvula_init_ctx (ctx->ctx))
+		return axl_false;
+
+	if (exarg_is_defined ("debug")) {
+		
+	}
+
+	msg ("Valvulad context initialized");
+
+	/* setup result */
+	(*result) = ctx;
+	return axl_true;
+}
 
 int main (int argc, char ** argv) 
 {
@@ -446,7 +472,10 @@ int main (int argc, char ** argv)
 	install_arguments (argc, argv);
 
 	/* init here valvula library and valvulaD context */
-	
+	if (! valvulad_init (&ctx)) {
+		error ("Failed to initialize ValvulaD context, unable to start server");
+		exit (-1);
+	} /* end if */
 
 	/* parse configuration file */
 	if (exarg_is_defined ("config"))
