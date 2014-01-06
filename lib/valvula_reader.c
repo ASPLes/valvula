@@ -441,6 +441,8 @@ int  __valvula_reader_check_listener_list (ValvulaCtx     * ctx,
 	int                checked  = 0;
 	ValvulaConnection * connection;
 
+	valvula_log (VALVULA_LEVEL_DEBUG, "Checking activity at listeners..");
+
 	/* check all listeners */
 	axl_list_cursor_first (srv_cursor);
 	while (axl_list_cursor_has_item (srv_cursor)) {
@@ -558,7 +560,7 @@ void __valvula_reader_dispatch_connection (int                  fds,
 	switch (valvula_connection_get_role (connection)) {
 	case ValvulaRoleMasterListener:
 		/* listener connections */
-		/* valvula_listener_accept_connections (ctx, fds, connection);*/
+		valvula_listener_accept_connections (ctx, fds, connection);
 		break;
 	default:
 		/* call to process incoming data, activating all
@@ -662,6 +664,8 @@ axlPointer __valvula_reader_run (ValvulaCtx * ctx)
 	ctx->conn_cursor = axl_list_cursor_new (ctx->conn_list);
 	ctx->srv_cursor = axl_list_cursor_new (ctx->srv_list);
 
+	
+
 	/* first step. Waiting blocked for our first connection to
 	 * listen */
  __valvula_reader_run_first_connection:
@@ -673,6 +677,7 @@ axlPointer __valvula_reader_run (ValvulaCtx * ctx)
 	}
 
 	while (axl_true) {
+
 		/* reset descriptor set */
 		valvula_io_waiting_invoke_clear_fd_group (ctx, ctx->on_reading);
 
@@ -719,6 +724,8 @@ axlPointer __valvula_reader_run (ValvulaCtx * ctx)
 			__valvula_reader_stop_process (ctx, ctx->on_reading, ctx->conn_cursor, ctx->srv_cursor);
 			return NULL;
 		}
+
+		valvula_log (VALVULA_LEVEL_DEBUG, "Found %d requests to process..", result);
 
 
 		/* check for each listener */

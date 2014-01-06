@@ -68,7 +68,11 @@ void install_arguments (int argc, char ** argv)
 
 	/* install default debug options. */
 	exarg_install_arg ("debug", "d", EXARG_NONE,
-			   "Makes all log produced by the application, to be also dropped to the console in sort form.");
+			   "Activates debug information to be showed in the console (terminal).");
+
+	/* install default debug options. */
+	exarg_install_arg ("verbose", "o", EXARG_NONE,
+			   "Makes valvula server to produce some logs while operating.");
 
 	/* install exarg options */
 	exarg_install_arg ("config", "c", EXARG_STRING, 
@@ -452,8 +456,13 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 	if (! valvula_init_ctx (ctx->ctx))
 		return axl_false;
 
+	if (exarg_is_defined ("verbose")) {
+		ctx->console_enabled = axl_true;
+		ctx->console_color_debug = axl_true;
+	}
 	if (exarg_is_defined ("debug")) {
-		
+		valvula_log_enable (ctx->ctx, axl_true);
+		valvula_color_log_enable (ctx->ctx, axl_true);
 	}
 
 	msg ("Valvulad context initialized");
@@ -487,6 +496,15 @@ int main (int argc, char ** argv)
 		error ("Failed to load configuration file");
 		exit (-1);
 	}
+
+	if (! valvulad_run_config (ctx)) {
+		error ("Failed to start configuration, unable to start the server");
+		exit (-1);
+	} /* end if */
+
+	/* now wait for requests */
+	msg ("Valvula server started, processing requests..");
+	valvula_listener_wait (ctx->ctx);
 
 	/* finalize daemon */
 	exarg_end ();
