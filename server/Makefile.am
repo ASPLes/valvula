@@ -27,8 +27,8 @@ valvulad_SOURCES   = \
 	valvulad.c valvulad.h \
 	valvulad_config.c valvulad_config.h \
 	valvulad_log.c valvulad_log.h \
-	exarg.c \
-	exarg.h
+	exarg.c exarg.h \
+	valvulad_run.c valvulad_run.h
 
 valvulad_LDADD     = $(LIBS) $(top_builddir)/lib/libvalvula.la
 

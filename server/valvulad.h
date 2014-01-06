@@ -60,6 +60,7 @@ typedef struct _ValvuladCtx {
 /* common includes */
 #include <valvulad_config.h>
 #include <valvulad_log.h>
+#include <valvulad_run.h>
 
 axl_bool  valvulad_log_enabled      (ValvuladCtx * ctx);
 
