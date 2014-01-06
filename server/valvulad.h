@@ -41,18 +41,20 @@
 #include <exarg.h>
 
 typedef struct _ValvuladCtx {
-	axlDoc   * config;
+	axlDoc     * config;
 
-	axl_bool   console_debug;
-	axl_bool   console_enabled;
-	axl_bool   console_debug2;
-	axl_bool   console_debug3;
-	axl_bool   console_color_debug;
-	axl_bool   use_syslog;
+	axl_bool     console_debug;
+	axl_bool     console_enabled;
+	axl_bool     console_debug2;
+	axl_bool     console_debug3;
+	axl_bool     console_color_debug;
+	axl_bool     use_syslog;
 
-	int        pid;
+	int          pid;
 
-	char     * config_path;
+	char       * config_path;
+
+	ValvulaCtx * ctx;
 } ValvuladCtx;
 
 /* common includes */
