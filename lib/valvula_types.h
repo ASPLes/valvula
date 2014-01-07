@@ -384,5 +384,47 @@ typedef enum {
 	
 } ValvulaPeerRole;
 
+typedef struct _ValvulaRequest {
+	/* protocol declaration and state of the request */
+	char * request;
+	char * protocol_state;
+	char * protocol_name;
+
+	/* message description */
+	char * queue_id;
+	int    size;
+
+	/* sender/recipient */
+	char * sender;
+	char * recipient;
+	int    recipient_count;
+
+	/* network information */
+	char * helo_name;
+	char * client_address;
+	char * client_name;
+	char * reverse_client;
+	char * instance;
+
+	/* SASL auth content */
+	char * sasl_method;
+	char * sasl_username;
+	char * sasl_sender;
+	
+	/* certificate info */
+	char * ccert_subject;
+	char * ccert_issuer;
+	char * ccert_fingerprint;
+	char * ccert_pubkey_fingerprint;
+	char * encryption_protocol;
+	char * encryption_cipher;
+	char * encryption_keysize;
+	
+	/* additional info */
+	char * etrn_domain;
+	char * stress;
+	
+} ValvulaRequest;
+
 
 #endif

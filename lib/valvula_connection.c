@@ -347,6 +347,7 @@ ValvulaConnection  * valvula_connection_new_empty              (ValvulaCtx      
 	conn->ref_count = 1;
 	conn->ctx       = ctx;
 	conn->session   = _socket;
+	conn->role      = role;
 
 	return conn;
 }

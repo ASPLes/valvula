@@ -123,6 +123,8 @@ struct _ValvulaConnection {
 	ValvulaPeerRole role;
 	
 	ValvulaConnection * listener;
+
+	char              * pending_line;
 };
 
 struct _ValvulaHash {

@@ -65,6 +65,127 @@ typedef struct _ValvulaReaderData {
 	ValvulaAsyncQueue   * notify;
 }ValvulaReaderData;
 
+/**
+ * @brief Read the next line, byte by byte until it gets a \n or
+ * maxlen is reached. Some code errors are used to manage exceptions
+ * (see return values)
+ * 
+ * @param connection The connection where the read operation will be done.
+ *
+ * @param buffer A buffer to store content read from the network.
+ *
+ * @param maxlen max content to read from the network.
+ * 
+ * @return  values returned by this function follows:
+ *  0 - remote peer have closed the connection
+ * -1 - an error have happened while reading
+ * -2 - could read because this connection is on non-blocking mode and there is no data.
+ *  n - some data was read.
+ * 
+ **/
+int          valvula_readline (ValvulaConnection * connection, char  * buffer, int  maxlen)
+{
+	int         n, rc;
+	int         desp;
+	char        c, *ptr;
+#if defined(ENABLE_VALVULA_LOG)
+	char      * error_msg;
+#endif
+#if defined(ENABLE_VALVULA_LOG) && ! defined(SHOW_FORMAT_BUGS)
+	ValvulaCtx * ctx = valvula_connection_get_ctx (connection);
+#endif
+
+	/* avoid calling to read when no good socket is defined */
+	if (connection->session == -1)
+		return -1;
+
+	/* clear the buffer received */
+	/* memset (buffer, 0, maxlen * sizeof (char ));  */
+
+	/* check for pending line read */
+	desp         = 0;
+	if (connection->pending_line) {
+		/* get size and check exceeded values */
+		desp = strlen (connection->pending_line);
+		if (desp >= maxlen) {
+			valvula_connection_close (connection);
+			valvula_log (VALVULA_LEVEL_CRITICAL, "found fragmented frame line header but allowed size was exceeded (desp:%d >= maxlen:%d)",
+				     desp, maxlen);
+			return -1;
+		} /* end if */
+
+		/* now store content into the buffer */
+		memcpy (buffer, connection->pending_line, desp);
+
+		/* clear from the connection the line */
+		axl_free (connection->pending_line);
+		connection->pending_line = NULL;
+	}
+
+
+	/* read current next line */
+	ptr = (buffer + desp);
+	for (n = 1; n < (maxlen - desp); n++) {
+	__valvula_frame_readline_again:
+		if (( rc = recv (connection->session, &c, 1, 0)) == 1) {
+			*ptr++ = c;
+			if (c == '\x0A')
+				break;
+		}else if (rc == 0) {
+			if (n == 1)
+				return 0;
+			else
+				break;
+		} else {
+			if (errno == VALVULA_EINTR) 
+				goto __valvula_frame_readline_again;
+			if ((errno == VALVULA_EWOULDBLOCK) || (errno == VALVULA_EAGAIN) || (rc == -2)) {
+				if (n > 0) {
+					/* store content read until now */
+					if ((n + desp - 1) > 0) {
+						buffer[n+desp - 1] = 0;
+						/* valvula_log (VALVULA_LEVEL_WARNING, "storing partially line read: '%s' n:%d, desp:%d", buffer, n, desp);*/
+						connection->pending_line = axl_strdup (buffer);
+					} /* end if */
+				} /* end if */
+				return (-2);
+			}
+			
+#if defined(ENABLE_VALVULA_LOG)
+			/* if the connection is closed, just return
+			 * without logging a message */
+			if (valvula_connection_is_ok (connection, axl_false)) {
+				error_msg = strerror (errno);
+				valvula_log (VALVULA_LEVEL_CRITICAL, "unable to read a line from conn-id (socket %d, rc %d), error was: %s",
+					     valvula_connection_get_socket (connection), rc,
+					     error_msg ? error_msg : "");
+			} /* end if */
+#endif
+			return (-1);
+		} /* end if */
+	} /* end for */
+
+	*ptr = 0;
+	return (n + desp);
+
+}
+
+axlPointer valvula_reader_process_request (axlPointer _connection)
+{
+	/* get variables */
+	ValvulaConnection * connection = _connection;
+	ValvulaCtx        * ctx = connection->ctx;
+
+	if (ctx->request) {
+		/* call to notify request and get a response */
+		ctx->request (ctx, connection, connection->request, ctx->request_data);
+	}
+
+
+	return NULL;
+}
+
+
 /** 
  * @internal
  * 
@@ -101,6 +222,102 @@ typedef struct _ValvulaReaderData {
 void __valvula_reader_process_socket (ValvulaCtx        * ctx, 
 				      ValvulaConnection * connection)
 {
+
+	char   buffer[2048];
+	int    bytes_read;
+	char * items;
+
+	bytes_read = valvula_readline (connection, buffer, 2048);
+	if (bytes_read == -1) 
+		return;
+	if (bytes_read == -2) 
+		return; /* not ready yet */
+
+	if (bytes_read) {
+		valvula_log (VALVULA_LEVEL_DEBUG, "Found content line: %s (%d bytes)", buffer, bytes_read);
+	}
+
+	/* prepare request type to hold all info */
+	if (! connection->request)
+		connection->request = axl_new (ValvulaRequest, 1);
+
+	/* check for empty line so we can process the request */
+	axl_trim (buffer);
+
+	if (strlen (buffer) == 0) {
+		/* process request */
+		valvula_thread_pool_new_taks (ctx, valvula_reader_process_request, connection);
+		return;
+	} /* end if */
+
+	/* parse line and attach to the connection request */	
+	items = axl_split (buffer, 1, "=");
+	if (items == NULL || items[0] == NULL || items[1] == NULL) {
+		axl_freev (items);
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to process line received, empty content found or malformed");
+		return;
+	} /* end if */
+
+	if (axl_cmp (items[0], "request"))
+		connection->request->request = items[1];
+	else if (axl_cmp (items[0], "protocol_state"))
+		connection->request->protocol_state = items[1];
+	else if (axl_cmp (items[0], "protocol_name"))
+		connection->request->protocol_name = items[1];
+
+	else if (axl_cmp (items[0], "queue_id"))
+		connection->request->queue_id = items[1];
+	else if (axl_cmp (items[0], "size"))
+		connection->request->size = (int) valvula_support_strtod (items[1], NULL);
+
+	else if (axl_cmp (items[0], "sender"))
+		connection->request->sender = items[1];
+	else if (axl_cmp (items[0], "recipient"))
+		connection->request->recipient = items[1];
+	else if (axl_cmp (items[0], "recipient_count"))
+		connection->request->recipient_count = items[1];
+
+	else if (axl_cmp (items[0], "helo_name"))
+		connection->request->helo_name = items[1];
+	else if (axl_cmp (items[0], "client_address"))
+		connection->request->client_address = items[1];
+	else if (axl_cmp (items[0], "client_name"))
+		connection->request->client_name = items[1];
+	else if (axl_cmp (items[0], "reverse_client"))
+		connection->request->reverse_client = items[1];
+	else if (axl_cmp (items[0], "instance"))
+		connection->request->instance = items[1];
+
+	else if (axl_cmp (items[0], "sasl_method"))
+		connection->request->sasl_method = items[1];
+	else if (axl_cmp (items[0], "sasl_username"))
+		connection->request->sasl_username = items[1];
+	else if (axl_cmp (items[0], "sasl_sender"))
+		connection->request->sasl_sender = items[1];
+
+	else if (axl_cmp (items[0], "ccert_subject"))
+		connection->request->ccert_subject = items[1];
+	else if (axl_cmp (items[0], "ccert_issuer"))
+		connection->request->ccert_issuer = items[1];
+	else if (axl_cmp (items[0], "ccert_fingerprint"))
+		connection->request->ccert_fingerprint = items[1];
+	else if (axl_cmp (items[0], "ccert_pubkey_fingerprint"))
+		connection->request->ccert_pubkey_fingerprint = items[1];
+
+	else if (axl_cmp (items[0], "encryption_protocol"))
+		connection->request->encryption_protocol = items[1];
+	else if (axl_cmp (items[0], "encryption_cipher"))
+		connection->request->encryption_cipher = items[1];
+	else if (axl_cmp (items[0], "encryption_keysize"))
+		connection->request->encryption_keysize = items[1];
+
+	else if (axl_cmp (items[0], "etrn_domain"))
+		connection->request->etrn_domain = items[1];
+	else if (axl_cmp (items[0], "stress"))
+		connection->request->stress = items[1];
+
+	/* release memory not needed */
+	axl_freev (items);
 
 	/* that's all I can do */
 	return;
@@ -289,6 +506,30 @@ axl_bool      valvula_reader_read_pending (ValvulaCtx  * ctx,
 	return should_continue;
 }
 
+void valvula_reader_accept_connections (ValvulaCtx * ctx, int fds, ValvulaConnection * connection)
+{
+	VALVULA_SOCKET      new_socket = valvula_listener_accept (fds);
+	ValvulaConnection * conn;
+
+	if (new_socket < 0) {
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to accept incoming socket from %d (errno=%d)",
+			     fds, errno);
+		return;
+	} /* end if */
+
+	/* create connection */
+	conn = valvula_connection_new_empty (ctx, new_socket, ValvulaRoleListener);
+	if (conn == NULL) {
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to create connection reference (ValvulaConnection)");
+		return;
+	}
+
+	/* watch listener */
+	axl_list_append (ctx->conn_list, conn);
+	
+	return;
+}
+
 /** 
  * @internal Auxiliar function that populates the reading set of file
  * descriptors (on_reading), returning the max fds.
@@ -472,8 +713,7 @@ int  __valvula_reader_check_listener_list (ValvulaCtx     * ctx,
 		if (valvula_io_waiting_invoke_is_set_fd_group (ctx, fds, on_reading, ctx)) {
 			/* init the listener incoming connection phase */
 			valvula_log (VALVULA_LEVEL_DEBUG, "listener (%d) have requests, processing..", fds);
-
-			/* valvula_listener_accept_connections (ctx, fds, connection); */
+			valvula_reader_accept_connections (ctx, fds, connection);
 
 			/* update checked connections */
 			checked++;
@@ -560,7 +800,7 @@ void __valvula_reader_dispatch_connection (int                  fds,
 	switch (valvula_connection_get_role (connection)) {
 	case ValvulaRoleMasterListener:
 		/* listener connections */
-		valvula_listener_accept_connections (ctx, fds, connection);
+		valvula_reader_accept_connections (ctx, fds, connection);
 		break;
 	default:
 		/* call to process incoming data, activating all
@@ -724,9 +964,6 @@ axlPointer __valvula_reader_run (ValvulaCtx * ctx)
 			__valvula_reader_stop_process (ctx, ctx->on_reading, ctx->conn_cursor, ctx->srv_cursor);
 			return NULL;
 		}
-
-		valvula_log (VALVULA_LEVEL_DEBUG, "Found %d requests to process..", result);
-
 
 		/* check for each listener */
 		if (result > 0) {
