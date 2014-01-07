@@ -125,6 +125,7 @@ valvula_mutex_create
 valvula_mutex_destroy
 valvula_mutex_lock
 valvula_mutex_unlock
+valvula_reader_accept_connections
 valvula_reader_connections_watched
 valvula_reader_notify_change_done_io_api
 valvula_reader_notify_change_io_api
@@ -135,6 +136,7 @@ valvula_reader_run
 valvula_reader_stop
 valvula_reader_watch_connection
 valvula_reader_watch_listener
+valvula_readline
 valvula_support_build_filename
 valvula_support_file_test
 valvula_support_getenv
