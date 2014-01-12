@@ -61,7 +61,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 		
 		/* start listener */
 		listener = valvula_listener_new (ctx->ctx, ATTR_VALUE (node, "host"), ATTR_VALUE (node, "port"));
-		if (! valvula_connection_is_ok (listener, axl_false)) {
+		if (! valvula_connection_is_ok (listener)) {
 			error ("Failed to start listener at %s:%s, found error", ATTR_VALUE (node, "host"), ATTR_VALUE (node, "port"));
 			return axl_false;
 		}

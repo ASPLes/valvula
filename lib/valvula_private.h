@@ -52,11 +52,16 @@ struct _ValvulaCtx {
 	axl_bool valvula_initialized;
 	axl_bool valvula_exit;
 
+	ValvulaState default_state;
+
 	/** mutexes **/
 	ValvulaMutex exit_mutex;
 	ValvulaMutex ref_mutex;
 	int          ref_count;
 	ValvulaMutex inet_ntoa_mutex;
+
+	ValvulaHash            * process_handler_registry;
+	ValvulaRequestRegistry * first_handler;
 
 	ValvulaMutex         listener_unlock;
 	ValvulaAsyncQueue  * listener_wait_lock;
@@ -125,6 +130,9 @@ struct _ValvulaConnection {
 	ValvulaConnection * listener;
 
 	char              * pending_line;
+
+	ValvulaRequest    * request;
+	axl_bool            process_launched;
 };
 
 struct _ValvulaHash {
@@ -142,6 +150,14 @@ struct _ValvulaHash {
 	
 	/* watchers */
 	ValvulaAsyncQueue * changed_queue;
+};
+
+struct _ValvulaRequestRegistry {
+	ValvulaCtx              * ctx;
+	ValvulaProcessRequest     process_handler;
+	int                       priority;
+	int                       port;
+	axlPointer                user_data;
 };
 
 #endif

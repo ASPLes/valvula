@@ -311,7 +311,7 @@ axl_bool               valvula_connection_ref_internal                    (Valvu
 {
 	v_return_val_if_fail (connection, axl_false);
 	if (check_ref)
-		v_return_val_if_fail (valvula_connection_is_ok (connection, axl_false), axl_false);
+		v_return_val_if_fail (valvula_connection_is_ok (connection), axl_false);
 
 	/* lock ref/unref operations over this connection */
 	valvula_mutex_lock   (&connection->ref_mutex);
@@ -516,8 +516,7 @@ int                 valvula_connection_ref_count              (ValvulaConnection
  * 
  * @return current connection status for the given connection
  */
-axl_bool                valvula_connection_is_ok (ValvulaConnection * connection, 
-						 axl_bool           free_on_fail)
+axl_bool                valvula_connection_is_ok (ValvulaConnection * connection)
 {
 	axl_bool  result = axl_false;
 
@@ -530,12 +529,6 @@ axl_bool                valvula_connection_is_ok (ValvulaConnection * connection
 	result = (connection->session < 0);
 	valvula_mutex_unlock  (&(connection->ref_mutex));
 
-	/* implement free_on_fail flag */
-	if (free_on_fail && result) {
-		valvula_connection_close (connection);
-		return axl_false;
-	} /* end if */
-	
 	/* return current connection status. */
 	return ! result;
 }
