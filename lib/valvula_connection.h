@@ -64,8 +64,7 @@ void                valvula_connection_unref                  (ValvulaConnection
 
 int                 valvula_connection_ref_count              (ValvulaConnection * connection);
 
-axl_bool            valvula_connection_is_ok                  (ValvulaConnection * connection, 
-							      axl_bool           free_on_fail);
+axl_bool            valvula_connection_is_ok                  (ValvulaConnection * connection);
 
 void                valvula_connection_close                  (ValvulaConnection * connection);
 

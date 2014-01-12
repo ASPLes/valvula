@@ -81,7 +81,7 @@ axl_bool valvula_support_file_test                  (const char * path,
 char   * valvula_support_build_filename             (const char  * name, ...);
 
 double   valvula_support_strtod                     (const char  * param,
-						    char       ** string_aux);
+						     char       ** string_aux);
 
 int      valvula_support_itoa                       (unsigned int   value,
 						    char         * buffer,

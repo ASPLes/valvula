@@ -68,8 +68,8 @@ void valvula_thread_pool_exit                (ValvulaCtx * ctx);
 void valvula_thread_pool_being_closed        (ValvulaCtx * ctx);
 
 void valvula_thread_pool_new_task            (ValvulaCtx        * ctx,
-					     ValvulaThreadFunc   func, 
-					     axlPointer         data);
+					      ValvulaThreadFunc   func, 
+					      axlPointer         data);
 
 int  valvula_thread_pool_new_event           (ValvulaCtx              * ctx,
 					     long                     microseconds,

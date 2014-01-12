@@ -200,14 +200,14 @@ axlPointer __valvula_listener_new (ValvulaListenerData * data)
 	/* allocate listener */
 	fd = valvula_listener_sock_listen (ctx, host, str_port, &error);
 	
-	/* unref the host and port value */
-	axl_free (str_port);
-	axl_free (host);
-
 	/* listener ok */
 	/* seems listener to be created, now create the BEEP
 	 * connection around it */
 	listener = valvula_connection_new_empty (ctx, fd, ValvulaRoleMasterListener);
+
+	/* configure listener */
+	listener->port = str_port;
+	listener->host = host;
 
 	/* handle returned socket or error */
 	switch (fd) {

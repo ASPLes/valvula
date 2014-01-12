@@ -283,4 +283,37 @@ typedef axl_bool (* ValvulaThreadAsyncEvent)        (ValvulaCtx  * ctx,
 						     axlPointer   user_data,
 						     axlPointer   user_data2);
 
+/** 
+ * @brief Handler definition for those set of functions that are able
+ * to process an incoming request and reports what action should be
+ * reported by Valvala to the gateway software (i.e. postfix).
+ *
+ * This is a key handler and provides one of the basic functions of
+ * Valvula. Everything valvula receives a request, it tries to call
+ * registered \ref ValvulaProcessRequest handlers to find out what to
+ * report to the gateway software (i.e. postfix).
+ *
+ * @param ctx The context where the operation/request is taking place.
+ *
+ * @param connection The connection where the operation/request was received.
+ *
+ * @param request The request that was received and is been asked to be resolved.
+ *
+ * @param request_data User defined pointer passed to this handler.
+ *
+ * @param message Optional pointer to a message or particular content
+ * that is allowed by the handler itself. The content and how it is
+ * formated depends on the value that returns the handler. Check every
+ * code available at \ref ValvulaState to know more about the kind of
+ * message you can report. In any case, the handler, if wants to report something, must allocate the string using axl_strdup, axl_strdup_printf or axl_new (char, <num of chars). Once the engine is done with the message, memory is released using axl_free.
+ *
+ * @return An allowed \ref ValvulaState value reporting what to do
+ * with the request received.
+ */
+typedef ValvulaState (* ValvulaProcessRequest) (ValvulaCtx        * ctx, 
+						ValvulaConnection * connection, 
+						ValvulaRequest    * request,
+						axlPointer          request_data,
+						char             ** message);
+
 #endif

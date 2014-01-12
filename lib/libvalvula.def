@@ -58,8 +58,10 @@ valvula_ctx_new
 valvula_ctx_ref
 valvula_ctx_ref2
 valvula_ctx_ref_count
+valvula_ctx_register_request_handler
 valvula_ctx_set_data
 valvula_ctx_set_data_full
+valvula_ctx_set_default_reply_state
 valvula_ctx_unref
 valvula_ctx_unref2
 valvula_exit_ctx
@@ -129,6 +131,7 @@ valvula_reader_accept_connections
 valvula_reader_connections_watched
 valvula_reader_notify_change_done_io_api
 valvula_reader_notify_change_io_api
+valvula_reader_process_request
 valvula_reader_read_pending
 valvula_reader_read_queue
 valvula_reader_register_watch

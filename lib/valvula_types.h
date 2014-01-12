@@ -426,5 +426,73 @@ typedef struct _ValvulaRequest {
 	
 } ValvulaRequest;
 
+/** 
+ * @brief These are valvula states that can be returned by
+ * handlers. More information at:
+ *
+ * http://www.postfix.org/access.5.html
+ */ 
+typedef enum {
+	/** 
+	 * @brief Allows requested action and stops further processing.
+	 */
+	VALVULA_STATE_OK = 0,
+	/** 
+	 * @brief Pretend that the request hasn't any key found so
+	 * nothing can be said in any direction (negative or possitive).
+	 */
+	VALVULA_STATE_DUNNO = 1,
+	/** 
+	 * @brief Rejects the operation requested.
+	 */
+	VALVULA_STATE_REJECT = 2,
+	/** 
+	 * @brief Defer (reject temporally) the operation if rest of
+	 * rules allows the operation.
+	 */
+	VALVULA_STATE_DEFER_IF_PERMIT = 3,
+	/** 
+	 * @brief Defer (reject temporally) the operation if rest of
+	 * rules denies the operation.
+	 */
+	VALVULA_STATE_DEFER_IF_REJECT = 4,
+	/** 
+	 * @brief Defer (reject temporally) the operation.
+	 */
+	VALVULA_STATE_DEFER = 5,
+	/** 
+	 * @brief Bcc a copy of the message to the especific recipient. Recipient is configured by the returning "message variable".
+	 */
+	VALVULA_STATE_BCC = 6,
+	/** 
+	 * @brief Allows to discard the message. Works like reject but
+	 * without reporting a failure to the remote peer.
+	 */
+	VALVULA_STATE_DISCARD = 7,
+	/** 
+	 * @brief Holds the message until it is resumed manually by an
+	 * administrator or a software.
+	 */
+	VALVULA_STATE_HOLD = 8,
+	/** 
+	 * @brief Allows to add an additional header to the message. The header, with format "header: content" is specified by "message variable".
+	 */
+	VALVULA_STATE_PREPEND = 9,
+	/** 
+	 * @brief Allows to redirect the message to the particular recipient as defined by "message variable".
+	 */
+	VALVULA_STATE_REDIRECT = 10,
+	/** 
+	 * @brief Allows to log a message as defined by "message variable".
+	 */
+	VALVULA_STATE_LOG = 11
+} ValvulaState;
+
+/** 
+ * @brief A process handler registry. This type represents a single
+ * process/request handler that was registered by \ref valvula_ctx_register_request_handler.
+ */
+typedef struct _ValvulaRequestRegistry ValvulaRequestRegistry;
+
 
 #endif

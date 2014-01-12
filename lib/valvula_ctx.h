@@ -42,6 +42,15 @@ BEGIN_C_DECLS
 
 ValvulaCtx * valvula_ctx_new                       (void);
 
+ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx             * ctx, 
+								 ValvulaProcessRequest    process_handler, 
+								 int                      priority, 
+								 int                      port,
+								 axlPointer               user_data);
+
+void        valvula_ctx_set_default_reply_state   (ValvulaCtx       * ctx,
+						   ValvulaState       state);
+
 void        valvula_ctx_set_data                  (ValvulaCtx       * ctx, 
 						   const char      * key, 
 						   axlPointer        value);

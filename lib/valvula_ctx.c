@@ -60,8 +60,113 @@ ValvulaCtx * valvula_ctx_new (void)
 	valvula_mutex_create (&ctx->ref_mutex);
 	ctx->ref_count = 1;
 
+	/* default state */
+	ctx->default_state = VALVULA_STATE_DUNNO;
+
 	/* return context created */
 	return ctx;
+}
+
+/** 
+ * @brief Allows to register a new process handler with the provided priority under the given port.
+ *
+ * The process handler is a function that is called every time a
+ * request has to be resolved. For that, Valvula's engine uses the
+ * port to know if the handler must be called and the priority.
+ *
+ * The port is an indication about when the handler should be
+ * considered for execution. In the case -1 is provided, then the
+ * handler is always considered. In the case a number is provided,
+ * then that number is compared with the listener's port where the
+ * request was received. If it matches, then it is considered for
+ * execution (according to its priority). 
+ *
+ * You can use the same port or -1 for all your handlers and all
+ * handlers will be considered, considering their priority.
+ *
+ * The priority value, that can be a value between 1 and 32768, is an
+ * indication to Valvula's engine about what handler must be called
+ * first. A priority of 1 is higher than 32768, that is, a handler
+ * with priority 1 is called first a handler with priority 32768.
+ *
+ * @param ctx The context where the operation takes place.
+ *
+ * @param process_handler The handler that is going to be registered.
+ *
+ * @param priority The priority to give to the handler (between 1 and 32768).
+ *
+ * @param port The port to restrict the handler or -1 to have it
+ * executed in all ports.
+ *
+ * @param user_data User defined pointer to be passed to the process_handler when it is called.
+ *
+ * @return A registry pointer that represents the registry of this
+ * handler in this context. You can use this reference to remove the
+ * handler or query its settings. The function returns NULL in case of
+ * a failure while registering the handler.
+ *
+ * 
+ */
+ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx             * ctx, 
+								 ValvulaProcessRequest    process_handler, 
+								 int                      priority, 
+								 int                      port,
+								 axlPointer               user_data)
+{
+	ValvulaRequestRegistry * registry;
+
+	if (ctx == NULL || process_handler == NULL)
+		return NULL;
+	if (priority < 1 || priority > 32768)
+		return NULL;
+
+	/* allow memory and check */
+	registry = axl_new (ValvulaRequestRegistry, 1);
+	if (registry == NULL)
+		return NULL;
+
+	/* set all parameters */
+	registry->ctx             = ctx;
+	registry->process_handler = process_handler;
+	registry->priority        = priority;
+	registry->port            = port;
+	registry->user_data       = user_data;
+	
+	valvula_mutex_lock (&ctx->ref_mutex);
+
+	/* create request registry hash to store all process handlers */
+	if (ctx->process_handler_registry == NULL)
+		ctx->process_handler_registry = valvula_hash_new (axl_hash_int, axl_hash_equal_int);
+	
+	/* register */
+	valvula_hash_replace_full (ctx->process_handler_registry, registry, axl_free, registry, NULL);
+
+	/* now update first handler to run */
+	if (ctx->first_handler->priority > registry->priority)
+		ctx->first_handler = registry;
+	
+	valvula_mutex_unlock (&ctx->ref_mutex);
+
+	return registry;
+}
+
+/** 
+ * @brief Allows to set default reply state to be used in the case no
+ * handler is configured or no handler is found for a given port.
+ *
+ * @param ctx The context to be configured.
+ *
+ * @param state The state to be used. By default \ref VALVULA_STATE_DUNNO is used.
+ */
+void        valvula_ctx_set_default_reply_state   (ValvulaCtx       * ctx,
+						   ValvulaState       state)
+{
+	/* check and configure state */
+	if (! ctx)
+		return;
+	ctx->default_state = state;
+
+	return;
 }
 
 /** 
