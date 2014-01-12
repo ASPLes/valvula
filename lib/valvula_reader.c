@@ -193,10 +193,11 @@ axl_bool __valvula_reader_find_next_registry (axlPointer key, axlPointer data, a
 	return axl_false; /* dont stop iterating */
 }
 
-void __valvula_reader_send (ValvulaConnection * connection, const char * message)
+void __valvula_reader_send (ValvulaConnection * connection, const char * _message)
 {
 	ValvulaCtx * ctx = connection->ctx;
 	int          bytes_written;
+	char       * message = axl_strdup_printf ("action=%s\n\n", _message);
 
 	/* send content and catch bytes written */
 	bytes_written = send (connection->session, message, strlen (message), 0);
@@ -205,7 +206,14 @@ void __valvula_reader_send (ValvulaConnection * connection, const char * message
 	if (bytes_written != strlen (message)) {
 		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to send message %s, reported bytes written %d but expected %d",
 			     message, bytes_written, strlen (message));
+	} else {
+		valvula_log (VALVULA_LEVEL_DEBUG, "Sending reply '%s' over session=%d (%p)",
+			     message, connection->session, connection);
 	} /* end if */
+
+	/* release message */
+	axl_free (message);
+
 	return;
 }
 
