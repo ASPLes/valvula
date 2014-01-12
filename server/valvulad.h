@@ -198,4 +198,6 @@ void  valvulad_access   (ValvuladCtx * ctx, const char * file, int line, const c
 #define tbc_access(m,...)   do{printf (m, ##__VA_ARGS__);}while(0)
 #endif
 
+char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid);
+
 #endif

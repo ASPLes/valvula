@@ -34,6 +34,15 @@
  *         info@aspl.es - http://www.aspl.es/valvula
  */
 #include <valvulad.h>
+#include <signal.h>
+
+#ifndef mkstemp
+int mkstemp (char *template);
+#endif
+
+
+/* global context */
+ValvuladCtx * ctx = NULL;
 
 #define HELP_HEADER "ValvulaD: a high performance policy daemon\n\
 Copyright (C) 2014  Advanced Software Production Line, S.L.\n\n"
@@ -64,7 +73,7 @@ void install_arguments (int argc, char ** argv)
 
 	/* install default debug options. */
 	exarg_install_arg ("version", "v", EXARG_NONE,
-			   "Show turbulence version.");
+			   "Show Valvulad version.");
 
 	/* install default debug options. */
 	exarg_install_arg ("debug", "d", EXARG_NONE,
@@ -472,10 +481,47 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 	return axl_true;
 }
 
+void valvulad_exit (ValvuladCtx * ctx)
+{
+	/* release all context resources */
+	axl_doc_free (ctx->config);
+	axl_free (ctx->config_path);
+	axl_free (ctx);
+
+	return;
+}
+
+
+
+void valvulad_signal (int _signal)
+{
+	ValvuladCtx * ctxd     = ctx;
+	ValvulaCtx  * temp_ctx = ctx->ctx;
+	ValvulaCtx  * ctx      = temp_ctx;
+	char        * bt_file  = NULL;
+	char        * cmd;
+
+	/* unlock listener */
+	if (_signal == SIGINT || _signal == SIGTERM) 
+		valvula_listener_unlock (ctx);
+	else if (_signal == SIGSEGV || _signal == SIGABRT) {
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Critical signal received: %d", _signal);
+		bt_file = valvulad_support_get_backtrace (ctxd, getpid ());
+		if (bt_file && valvula_support_file_test (bt_file, FILE_EXISTS)) {
+			cmd = axl_strdup_printf ("cat %s", bt_file);
+			system (cmd);
+			axl_free (cmd);
+		} /* end if */
+		axl_free (bt_file);
+	} /* end if */
+	
+
+	return;
+}
+
 int main (int argc, char ** argv) 
 {
 	axl_bool      result;
-	ValvuladCtx * ctx = NULL;
 
 	/* parse arguments */
 	install_arguments (argc, argv);
@@ -502,12 +548,161 @@ int main (int argc, char ** argv)
 		exit (-1);
 	} /* end if */
 
+	/* install signal handling */
+	signal (SIGINT,  valvulad_signal); 		
+	signal (SIGSEGV, valvulad_signal);
+	signal (SIGABRT, valvulad_signal);
+	signal (SIGTERM, valvulad_signal); 
+
+#if defined(AXL_OS_UNIX)
+/*	signal (SIGKILL, signal_handler); */
+	signal (SIGQUIT, valvulad_signal);
+
+	/* check for sighup */
+	signal (SIGHUP,  valvulad_signal);
+#endif
+
 	/* now wait for requests */
 	msg ("Valvula server started, processing requests..");
 	valvula_listener_wait (ctx->ctx);
+
+	msg ("Valvula server is finishing, releasing resources..");
+	valvula_exit_ctx (ctx->ctx, axl_true);
+
+	/* free valvula server context */
+	valvulad_exit (ctx);
 
 	/* finalize daemon */
 	exarg_end ();
 
 	return 0;
+}
+
+#define write_and_check(str, len) do {					\
+	if (write (temp_file, str, len) != len) {			\
+		error ("Unable to write expected string: %s", str);     \
+		close (temp_file);					\
+		axl_free (temp_name);					\
+		axl_free (str_pid);					\
+		return NULL;						\
+	}								\
+} while (0)
+
+/** 
+ * @brief Allows to get process backtrace (including all threads) of
+ * the given process id.
+ *
+ * @param ctx The context where the operation is implemented.
+ *
+ * @param pid The process id for which the backtrace is requested. Use
+ * getpid () to get current process id.
+ *
+ * @return A newly allocated string containing the path to the file
+ * where the backtrace was generated or NULL if it fails.
+ */
+char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid)
+{
+#if defined(AXL_OS_UNIX)
+	FILE               * file_handle;
+	int                  temp_file;
+	char               * temp_name;
+	char               * str_pid;
+	char               * command;
+	int                  status;
+	char               * backtrace_file = NULL;
+
+	temp_name = axl_strdup ("/tmp/valvulad-backtrace.XXXXXX");
+	temp_file = mkstemp (temp_name);
+	if (temp_file == -1) {
+		error ("Bad signal found but unable to create gdb commands file to feed gdb");
+		return NULL;
+	} /* end if */
+
+	str_pid = axl_strdup_printf ("%d", getpid ());
+	if (str_pid == NULL) {
+		error ("Bad signal found but unable to get str pid version, memory failure");
+		close (temp_file);
+		return NULL;
+	}
+	
+	/* write personalized gdb commands */
+	write_and_check ("attach ", 7);
+	write_and_check (str_pid, strlen (str_pid));
+
+	axl_free (str_pid);
+	str_pid = NULL;
+
+	write_and_check ("\n", 1);
+	write_and_check ("set pagination 0\n", 17);
+	write_and_check ("thread apply all bt\n", 20);
+	write_and_check ("quit\n", 5);
+	
+	/* close temp file */
+	close (temp_file);
+	
+	/* build the command to get gdb output */
+	while (1) {
+		backtrace_file = axl_strdup_printf ("/tmp/valvulad-backtrace.%d.%d.%d.gdb", time (NULL), pid, getuid ());
+		file_handle    = fopen (backtrace_file, "w");
+		if (file_handle == NULL) {
+			msg ("Changing path because path %s is not allowed to the current uid=%d", backtrace_file, getuid ());
+			axl_free (backtrace_file);
+			backtrace_file = axl_strdup_printf ("/tmp/valvulad-backtrace.%d.%d.%d.gdb", time (NULL), pid, getuid ());
+		} else {
+			fclose (file_handle);
+			msg ("Checked that %s is writable/readable for the current usid=%d", backtrace_file, getuid ());
+			break;
+		} /* end if */
+
+		/* check path again */
+		file_handle    = fopen (backtrace_file, "w");
+		if (file_handle == NULL) {
+			error ("Failed to produce backtrace, alternative path %s is not allowed to the current uid=%d", backtrace_file, getuid ());
+			axl_free (backtrace_file);
+			return NULL;
+		}
+		fclose (file_handle);
+		break; /* reached this point alternative path has worked */
+	} /* end while */
+
+	if (backtrace_file == NULL) {
+		error ("Failed to produce backtrace, internal reference is NULL");
+		return NULL;
+	}
+
+	/* place some system information */
+	command  = axl_strdup_printf ("echo \"Valvulad backtrace at `hostname -f`, created at `date`\" > %s", backtrace_file);
+	status   = system (command);
+	msg ("Running: %s, exit status: %d", command, status);
+	axl_free (command);
+
+	/* get profile path id */
+	command  = axl_strdup_printf ("echo \"Failure found at main process.\" >> %s", backtrace_file);
+	status   = system (command);
+	msg ("Running: %s, exit status: %d", command, status);
+	axl_free (command);
+
+	/* get place some pid information */
+	command  = axl_strdup_printf ("echo -e 'Process that failed was %d. Here is the backtrace:\n--------------' >> %s", getpid (), backtrace_file);
+	status   = system (command);
+	msg ("Running: %s, exit status: %d", command, status);
+	axl_free (command);
+	
+	/* get backtrace */
+	command  = axl_strdup_printf ("gdb -x %s >> %s", temp_name, backtrace_file);
+	status   = system (command);
+	msg ("Running: %s, exit status: %d", command, status);
+
+	/* remove gdb commands */
+	unlink (temp_name);
+	axl_free (temp_name);
+	axl_free (command);
+
+	/* return backtrace file created */
+	return backtrace_file;
+
+#elif defined(AXL_OS_WIN32)
+	error ("Backtrace for Windows not implemented..");
+	return NULL;
+#endif			
 }

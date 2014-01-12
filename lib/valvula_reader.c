@@ -357,15 +357,15 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 	int     bytes_read;
 	char ** items;
 
+	/* limit buffer */
+	memset (buffer, 0, 2048);
 	bytes_read = valvula_readline (connection, buffer, 2048);
 	if (bytes_read == -1) 
 		return;
 	if (bytes_read == -2) 
 		return; /* not ready yet */
 
-	if (bytes_read) {
-		valvula_log (VALVULA_LEVEL_DEBUG, "Found content line: %s (%d bytes)", buffer, bytes_read);
-	}
+	valvula_log (VALVULA_LEVEL_DEBUG, "Found content line: %s (%d bytes)", buffer, bytes_read);
 
 	/* prepare request type to hold all info */
 	if (! connection->request)
@@ -405,62 +405,62 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 	} /* end if */
 
 	if (axl_cmp (items[0], "request"))
-		connection->request->request = items[1];
+		connection->request->request = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "protocol_state"))
-		connection->request->protocol_state = items[1];
+		connection->request->protocol_state = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "protocol_name"))
-		connection->request->protocol_name = items[1];
+		connection->request->protocol_name = axl_strdup (items[1]);
 
 	else if (axl_cmp (items[0], "queue_id"))
-		connection->request->queue_id = items[1];
+		connection->request->queue_id = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "size"))
 		connection->request->size = (int) valvula_support_strtod (items[1], NULL);
 
 	else if (axl_cmp (items[0], "sender"))
-		connection->request->sender = items[1];
+		connection->request->sender = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "recipient"))
-		connection->request->recipient = items[1];
+		connection->request->recipient = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "recipient_count"))
 		connection->request->recipient_count = valvula_support_strtod (items[1], NULL);
 
 	else if (axl_cmp (items[0], "helo_name"))
-		connection->request->helo_name = items[1];
+		connection->request->helo_name = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "client_address"))
-		connection->request->client_address = items[1];
+		connection->request->client_address = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "client_name"))
-		connection->request->client_name = items[1];
+		connection->request->client_name = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "reverse_client"))
-		connection->request->reverse_client = items[1];
+		connection->request->reverse_client = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "instance"))
-		connection->request->instance = items[1];
+		connection->request->instance = axl_strdup (items[1]);
 
 	else if (axl_cmp (items[0], "sasl_method"))
-		connection->request->sasl_method = items[1];
+		connection->request->sasl_method = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "sasl_username"))
-		connection->request->sasl_username = items[1];
+		connection->request->sasl_username = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "sasl_sender"))
-		connection->request->sasl_sender = items[1];
+		connection->request->sasl_sender = axl_strdup (items[1]);
 
 	else if (axl_cmp (items[0], "ccert_subject"))
-		connection->request->ccert_subject = items[1];
+		connection->request->ccert_subject = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "ccert_issuer"))
-		connection->request->ccert_issuer = items[1];
+		connection->request->ccert_issuer = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "ccert_fingerprint"))
-		connection->request->ccert_fingerprint = items[1];
+		connection->request->ccert_fingerprint = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "ccert_pubkey_fingerprint"))
-		connection->request->ccert_pubkey_fingerprint = items[1];
+		connection->request->ccert_pubkey_fingerprint = axl_strdup (items[1]);
 
 	else if (axl_cmp (items[0], "encryption_protocol"))
-		connection->request->encryption_protocol = items[1];
+		connection->request->encryption_protocol = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "encryption_cipher"))
-		connection->request->encryption_cipher = items[1];
+		connection->request->encryption_cipher = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "encryption_keysize"))
-		connection->request->encryption_keysize = items[1];
+		connection->request->encryption_keysize = axl_strdup (items[1]);
 
 	else if (axl_cmp (items[0], "etrn_domain"))
-		connection->request->etrn_domain = items[1];
+		connection->request->etrn_domain = axl_strdup (items[1]);
 	else if (axl_cmp (items[0], "stress"))
-		connection->request->stress = items[1];
+		connection->request->stress = axl_strdup (items[1]);
 
 	/* release memory not needed */
 	axl_freev (items);
