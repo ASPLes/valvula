@@ -566,6 +566,41 @@ void                valvula_connection_free (ValvulaConnection * conn)
 	axl_free (conn->local_addr);
 	axl_free (conn->local_port);
 
+	if (conn->request) {
+		axl_free (conn->request->request);
+		axl_free (conn->request->protocol_state);
+		axl_free (conn->request->protocol_name);
+		axl_free (conn->request->queue_id);
+		
+		axl_free (conn->request->sender);
+		axl_free (conn->request->recipient);
+		axl_free (conn->request->helo_name);
+		
+		axl_free (conn->request->client_address);
+		axl_free (conn->request->client_name);
+		axl_free (conn->request->reverse_client);
+		axl_free (conn->request->instance);
+		
+		
+		axl_free (conn->request->sasl_method);
+		axl_free (conn->request->sasl_username);
+		axl_free (conn->request->sasl_sender);
+		
+		axl_free (conn->request->ccert_subject);
+		axl_free (conn->request->ccert_issuer);
+		axl_free (conn->request->ccert_fingerprint);
+		axl_free (conn->request->ccert_pubkey_fingerprint);
+		
+		axl_free (conn->request->encryption_protocol);
+		axl_free (conn->request->encryption_cipher);
+		axl_free (conn->request->encryption_keysize);
+		
+		axl_free (conn->request->etrn_domain);
+		axl_free (conn->request->stress);
+		
+		axl_free (conn->request);
+	} /* end if */
+
 	axl_free (conn);
 	return;
 }
