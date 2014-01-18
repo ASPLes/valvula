@@ -29,7 +29,7 @@ valvulad_SOURCES = main.c exarg.c exarg.h
 
 valvulad_LDFLAGS = -Wl,-export-dynamic -ldl
 
-valvulad_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) libvalvulad.la
+valvulad_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) libvalvulad.la ../lib/libvalvula.la
 
 lib_LTLIBRARIES  = libvalvulad.la
 
@@ -40,7 +40,7 @@ libvalvulad_la_SOURCES   = \
 	valvulad_run.c valvulad_run.h \
 	valvulad_module.c valvulad_module.h valvulad_moddef.h
 
-libvalvulad_la_LIBADD  = $(LIBS) $(top_builddir)/lib/libvalvula.la  -ldl
+libvalvulad_la_LIBADD  = $(LIBS) ../lib/libvalvula.la  -ldl
 libvalvulad_la_LDFLAGS = -no-undefined -export-symbols-regex '^(valvulad|__valvulad|_valvulad).*'
 
 
