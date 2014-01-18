@@ -35,6 +35,121 @@
  */
 #include <valvulad_run.h>
 
+#include <dirent.h>
+
+void valvulad_run_load_modules_from_path (ValvuladCtx * ctx, const char * path, DIR * dirHandle)
+{
+	struct dirent    * entry;
+	char             * fullpath = NULL;
+	const char       * location;
+	axlDoc           * doc;
+	axlError         * error;
+				      
+	/* get the first entry */
+	entry = readdir (dirHandle);
+	while (entry != NULL) {
+		/* nullify full path and doc */
+		fullpath = NULL;
+		doc      = NULL;
+		error    = NULL;
+
+		/* check for non valid directories */
+		if (axl_cmp (entry->d_name, ".") ||
+		    axl_cmp (entry->d_name, "..")) {
+			goto next;
+		} /* end if */
+		
+		fullpath = valvula_support_build_filename (path, entry->d_name, NULL);
+		if (! valvula_support_file_test (fullpath, FILE_IS_REGULAR))
+			goto next;
+
+		/* check if the fullpath is ended with .xml */
+		if (strlen (fullpath) < 5 || ! axl_cmp (fullpath + (strlen (fullpath) - 4), ".xml")) {
+			wrn ("skiping file %s which do not end with .xml", fullpath);
+			goto next;
+		} /* end if */
+
+		/* notify file found */
+		msg ("possible module pointer found: %s", fullpath);		
+		
+		/* check its xml format */
+		doc = axl_doc_parse_from_file (fullpath, &error);
+		if (doc == NULL) {
+			wrn ("file %s does not appear to be a valid xml file (%s), skipping..", fullpath, axl_error_get (error));
+			goto next;
+		}
+		
+		msg ("loading mod valvulad pointer: %s", fullpath);
+
+		/* check module basename to be not loaded */
+		location = ATTR_VALUE (axl_doc_get_root (doc), "location");
+
+		/* load the module man!!! */
+		valvulad_module_open_and_register (ctx, location);
+
+	next:
+		/* free the document */
+		axl_doc_free (doc);
+		
+		/* free the error */
+		axl_error_free (error);
+
+		/* free full path */
+		axl_free (fullpath);
+
+		/* get the next entry */
+		entry = readdir (dirHandle);
+	} /* end while */
+
+	return;
+}
+
+
+void valvulad_run_load_modules (ValvuladCtx * ctx, axlDoc * doc)
+{
+	axlNode     * directory;
+	const char  * path;
+	DIR         * dirHandle;
+
+	directory = axl_doc_get (doc, "/valvula/modules/directory");
+	if (directory == NULL) {
+		msg ("no module directories were configured, nothing loaded");
+		return;
+	} /* end if */
+
+	/* check every module */
+	while (directory != NULL) {
+		/* get the directory */
+		path = ATTR_VALUE (directory, "src");
+		
+		/* try to open the directory */
+		if (valvula_support_file_test (path, FILE_IS_DIR | FILE_EXISTS)) {
+			dirHandle = opendir (path);
+			if (dirHandle == NULL) {
+				wrn ("unable to open mod directory '%s' (%s), skiping to the next", strerror (errno), path);
+				goto next;
+			} /* end if */
+		} else {
+			wrn ("skiping mod directory: %s (not a directory or do not exists)", path);
+			goto next;
+		}
+
+		/* directory found, now search for modules activated */
+		msg ("found mod directory: %s", path);
+		valvulad_run_load_modules_from_path (ctx, path, dirHandle);
+		
+		/* close the directory handle */
+		closedir (dirHandle);
+	next:
+		/* get the next directory */
+		directory = axl_node_get_next_called (directory, "directory");
+		
+	} /* end while */
+
+	return;
+}
+
+
 /** 
  * @brief Starts valvulad engine using the current configuration.
  */
@@ -70,6 +185,9 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 		/* get listen node */
 		node = axl_node_get_next_called (node, "listen");
 	} /* end while */
+
+	/* load modules */
+	valvulad_run_load_modules (ctx, ctx->config);
 
 	return axl_true; 
 }

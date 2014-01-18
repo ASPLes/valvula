@@ -1,4 +1,4 @@
-SUBDIRS = lib server
+SUBDIRS = lib server plugins
 EXTRA_DIST = VERSION 
 
 all-local: update-defs
