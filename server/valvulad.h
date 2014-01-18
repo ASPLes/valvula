@@ -41,26 +41,31 @@
 #include <exarg.h>
 
 typedef struct _ValvuladCtx {
-	axlDoc     * config;
+	axlDoc         * config;
 
-	axl_bool     console_debug;
-	axl_bool     console_enabled;
-	axl_bool     console_debug2;
-	axl_bool     console_debug3;
-	axl_bool     console_color_debug;
-	axl_bool     use_syslog;
+	axl_bool         console_debug;
+	axl_bool         console_enabled;
+	axl_bool         console_debug2;
+	axl_bool         console_debug3;
+	axl_bool         console_color_debug;
+	axl_bool         use_syslog;
 
-	int          pid;
+	int              pid;
 
-	char       * config_path;
+	char           * config_path;
 
-	ValvulaCtx * ctx;
+	ValvulaCtx     * ctx;
+
+	axlList        * registered_modules;
+	ValvulaMutex     registered_modules_mutex;
 } ValvuladCtx;
 
 /* common includes */
 #include <valvulad_config.h>
 #include <valvulad_log.h>
 #include <valvulad_run.h>
+#include <valvulad_moddef.h>
+#include <valvulad_module.h>
 
 axl_bool  valvulad_log_enabled      (ValvuladCtx * ctx);
 
@@ -199,5 +204,9 @@ void  valvulad_access   (ValvuladCtx * ctx, const char * file, int line, const c
 #endif
 
 char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid);
+
+axl_bool valvulad_init (ValvuladCtx ** result);
+
+void valvulad_exit (ValvuladCtx * ctx);
 
 #endif

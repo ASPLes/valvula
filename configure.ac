@@ -245,6 +245,8 @@ AC_OUTPUT([
 Makefile
 lib/Makefile
 server/Makefile
+plugins/Makefile
+plugins/mod-test/Makefile
 ])
 
 echo "-----------------------------------------------"
