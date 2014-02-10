@@ -1,0 +1,61 @@
+
+======================================================================
+== FLOW OF RESTRICTIONS ==
+======================================================================
+
+== RCPT Before Auth ==
+(Whitelist)
+(Blacklists)
+(Limit FROM in received email)
+
+== RCPT UnAuth Sender ==
+(Greylisting)
+(SPF)
+
+== END-OF-MESSAGE ==
+(Limit FROM in sent emails)
+(Limit TO in sent emails)
+(Tickets)
+(Quotas)
+(Limit attachments)
+(Antivirus)
+
+======================================================================
+== WORKING RESTRICTIONS ==
+======================================================================
+
+
+
+
+======================================================================
+== TODO ==
+======================================================================
+
+== General ==
+- Base rules for a server
+- Per domain rules
+- Per user ...
+
+== Blacklists, Greylisting, SPF ... Restrictions ==
+- Blacklists (use them or not)
+- Whitelists (IP, FROM email or domain)
+- Greylisting (use it or not)
+- Greylisting (not for a group of emails, domains or ips)
+- SPF (use it or not)
+- DKIM (use it or not)
+
+== FROM/TO Restrictions ==
+- Limit FROM in received emails (list of allowed or denied)
+- Limit FROM in sent emails (list of allowed or denied)
+- Limit TO in sent emails (list of allowed or denied)
+
+== Quotas Restrictions ==
+- Tickets (send X number of emails in Y hours)
+- Quotas (send X number emails in an hour and Y in a day)
+
+== Other ==
+- Allow to send attachments (list of limited emails)
+- Allow to receive attachments (list of limited emails)
+- Antivirus (list of used or not FROM email or domain)
+
+
