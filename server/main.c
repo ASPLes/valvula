@@ -125,6 +125,15 @@ int main (int argc, char ** argv)
 		exit (-1);
 	} /* end if */
 
+	if (exarg_is_defined ("verbose")) {
+		ctx->console_enabled = axl_true;
+		ctx->console_color_debug = axl_true;
+	}
+	if (exarg_is_defined ("debug")) {
+		valvula_log_enable (ctx->ctx, axl_true);
+		valvula_color_log_enable (ctx->ctx, axl_true);
+	}
+
 	/* parse configuration file */
 	if (exarg_is_defined ("config"))
 		result = valvulad_config_load (ctx, exarg_get_string ("config"));

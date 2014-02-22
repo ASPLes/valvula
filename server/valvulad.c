@@ -416,15 +416,6 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 	if (! valvula_init_ctx (ctx->ctx))
 		return axl_false;
 
-	if (exarg_is_defined ("verbose")) {
-		ctx->console_enabled = axl_true;
-		ctx->console_color_debug = axl_true;
-	}
-	if (exarg_is_defined ("debug")) {
-		valvula_log_enable (ctx->ctx, axl_true);
-		valvula_color_log_enable (ctx->ctx, axl_true);
-	}
-
 	msg ("Valvulad context initialized");
 
 	/* init modules */

@@ -247,6 +247,7 @@ lib/Makefile
 server/Makefile
 plugins/Makefile
 plugins/mod-test/Makefile
+test/Makefile
 ])
 
 echo "-----------------------------------------------"
