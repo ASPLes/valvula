@@ -41,6 +41,42 @@
 
 axl_bool test_common_enable_debug = axl_false;
 
+ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, axl_bool run_config)
+{
+	ValvuladCtx * result;
+
+	/* show a message */
+	printf ("%s: loading configuration file at: %s\n", label, path);
+
+	if (! valvulad_init (&result)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return NULL;
+	}
+
+	/* load config provided */
+	if (! valvulad_config_load (result, path)) {
+		printf ("ERROR: failed to load configuration at: %s\n", path);
+		return NULL;
+	} /* end if */
+
+	/* try run configuration */
+	if (run_config && ! valvulad_run_config (result)) {
+		printf ("ERROR: failed to run configuration found at: %s\n", path);
+		return NULL;
+	} /* end if */
+
+	return result;
+}
+
+void common_finish (ValvuladCtx * ctx)
+{
+	valvula_exit_ctx (ctx->ctx, axl_true);
+	valvulad_exit (ctx);
+
+	return;
+}
+
+
 /** 
  * @brief Check the turbulence db list implementation.
  * 
@@ -50,6 +86,25 @@ axl_bool test_common_enable_debug = axl_false;
  */
 axl_bool  test_01 (void)
 {
+	ValvuladCtx * ctx;
+	const char  * path;
+
+	/* load basic configuration */
+	path = "../server/valvula.example.conf";
+	ctx  = test_valvula_load_config ("Test 01: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR: unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	/* wait a bit to let the system to startup */
+	printf ("Test 01: waiting a bit..\n");
+	sleep (2);
+
+	/* free valvula server context */
+	printf ("tst 01: finishing configuration..\n");
+	common_finish (ctx);
+	
 	return axl_true;
 }
 
@@ -112,7 +167,7 @@ int main (int argc, char ** argv)
 
 	/* run tests */
 	CHECK_TEST("test_01")
-	run_test (test_01, "Test 01: basic server connection");
+	run_test (test_01, "Test 01: basic server startup (using default configuration)");
 
 	printf ("All tests passed OK!\n");
 
