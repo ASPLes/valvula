@@ -1,6 +1,6 @@
 /*
  *  Valvula: a high performance policy daemon
- *  Copyright (C) 2013 Advanced Software Production Line, S.L.
+ *  Copyright (C) 2014 Advanced Software Production Line, S.L.
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public License
@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
 	char * run_test_name = NULL;
 
 	printf ("** test_01: Valvula: a high performance policy daemon\n");
-	printf ("** Copyright (C) 2013 Advanced Software Production Line, S.L.\n**\n");
+	printf ("** Copyright (C) 2014 Advanced Software Production Line, S.L.\n**\n");
 	printf ("** Regression tests: valvula: %s \n",
 		VERSION);
 	printf ("** To gather information about time performance you can use:\n**\n");
