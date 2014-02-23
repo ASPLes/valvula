@@ -485,7 +485,12 @@ typedef enum {
 	/** 
 	 * @brief Allows to log a message as defined by "message variable".
 	 */
-	VALVULA_STATE_LOG = 11
+	VALVULA_STATE_LOG = 11,
+	/** 
+	 * @brief An error happened during processing but it doesn't
+	 * match any known error.
+	 */
+	VALVULA_STATE_GENERIC_ERROR = 12
 } ValvulaState;
 
 /** 

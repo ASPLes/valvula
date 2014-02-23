@@ -42,7 +42,10 @@
 
 #if defined(AXL_OS_UNIX)
 # include <netinet/tcp.h>
+# include <netinet/in.h>
+# include <netdb.h>
 #endif
+
 
 #define LOG_DOMAIN "valvula-connection"
 #define VALVULA_CONNECTION_BUFFER_SIZE 32768
@@ -154,6 +157,71 @@ axl_bool      valvula_connection_set_nonblocking_socket (ValvulaConnection * con
 #endif
 	valvula_log (VALVULA_LEVEL_DEBUG, "setting connection as non-blocking");
 	return axl_true;
+}
+
+
+/** 
+ * @brief Allows to create a socket connection with the remote server.
+ *
+ * @param ctx The context where the operation takes place.
+ *
+ * @param host The host to connect to.
+ *
+ * @param port The port to connect to.
+ *
+ * @return A socket created or -1 if it fails.
+ */
+VALVULA_SOCKET valvula_connection_sock_connect (ValvulaCtx   * ctx,
+						const char   * host,
+						const char   * port,
+						int         * timeout,
+						axlError   ** error)
+{
+	struct hostent     * hostent;
+	struct sockaddr_in   saddr;
+	VALVULA_SOCKET        session;
+
+	/* resolve hosting name */
+	hostent = gethostbyname (host);
+	if (hostent == NULL) {
+		valvula_log (VALVULA_LEVEL_DEBUG, "unable to resolve host name %s", host);
+		return -1;
+	} /* end if */
+
+	/* create the socket and check if it */
+	session      = socket (AF_INET, SOCK_STREAM, 0);
+	if (session == VALVULA_INVALID_SOCKET) {
+		valvula_log (VALVULA_LEVEL_CRITICAL, "unable to create socket");
+		return -1;
+	} /* end if */
+
+	/* disable nagle */
+	valvula_connection_set_sock_tcp_nodelay (session, axl_true);
+
+	/* prepare socket configuration to operate using TCP/IP
+	 * socket */
+        memset(&saddr, 0, sizeof(saddr));
+	saddr.sin_addr.s_addr = ((struct in_addr *)(hostent->h_addr))->s_addr;
+        saddr.sin_family    = AF_INET;
+        saddr.sin_port      = htons((uint16_t) strtod (port, NULL));
+
+	/* set non blocking status */
+	valvula_connection_set_sock_block (session, axl_false);
+	
+	/* do a tcp connect */
+        if (connect (session, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
+		if(errno != VALVULA_EINPROGRESS && errno != VALVULA_EWOULDBLOCK) { 
+		        shutdown (session, SHUT_RDWR);
+                        valvula_close_socket (session);
+
+			valvula_log (VALVULA_LEVEL_WARNING, "unable to connect to remote host %s:%s errno=%d",
+				     host, port, errno);
+			return -1;
+		} /* end if */
+	} /* end if */
+
+	/* return socket created */
+	return session;
 }
 
 /** 
