@@ -36,10 +36,60 @@
  *         info@aspl.es - http://www.aspl.es/valvula
  */
 
-/* include local turbulence header */
 #include <valvulad.h>
 
 axl_bool test_common_enable_debug = axl_false;
+
+int          test_readline (ValvulaCtx * ctx, VALVULA_SOCKET session, char  * buffer, int  maxlen)
+{
+	int         n, rc;
+	int         desp;
+	char        c, *ptr;
+
+	/* avoid calling to read when no good socket is defined */
+	if (session == -1)
+		return -1;
+
+	/* clear the buffer received */
+	/* memset (buffer, 0, maxlen * sizeof (char ));  */
+
+	/* check for pending line read */
+	desp         = 0;
+
+	/* read current next line */
+	ptr = (buffer + desp);
+	for (n = 1; n < (maxlen - desp); n++) {
+	__valvula_frame_readline_again:
+		if (( rc = recv (session, &c, 1, 0)) == 1) {
+			*ptr++ = c;
+			if (c == '\x0A')
+				break;
+		}else if (rc == 0) {
+			if (n == 1)
+				return 0;
+			else
+				break;
+		} else {
+			if (errno == VALVULA_EINTR) 
+				goto __valvula_frame_readline_again;
+			if ((errno == VALVULA_EWOULDBLOCK) || (errno == VALVULA_EAGAIN) || (rc == -2)) {
+				if (n > 0) {
+					/* store content read until now */
+					if ((n + desp - 1) > 0) {
+						buffer[n+desp - 1] = 0;
+					} /* end if */
+				} /* end if */
+				return (-2);
+			}
+			
+			return (-1);
+		} /* end if */
+	} /* end for */
+
+	*ptr = 0;
+	return (n + desp);
+
+}
 
 ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, axl_bool run_config)
 {
@@ -77,13 +127,6 @@ void common_finish (ValvuladCtx * ctx)
 }
 
 
-/** 
- * @brief Check the turbulence db list implementation.
- * 
- * 
- * @return axl_true if the dblist implementation is ok, otherwise false is
- * returned.
- */
 axl_bool  test_01 (void)
 {
 	ValvuladCtx * ctx;
@@ -99,10 +142,167 @@ axl_bool  test_01 (void)
 
 	/* wait a bit to let the system to startup */
 	printf ("Test 01: waiting a bit..\n");
-	sleep (2);
+	sleep (1);
 
 	/* free valvula server context */
-	printf ("tst 01: finishing configuration..\n");
+	printf ("Test 01: finishing configuration..\n");
+	common_finish (ctx);
+	
+	return axl_true;
+}
+
+void send_content (VALVULA_SOCKET socket, const char * header, const char * content)
+{
+	int    bytes_written;
+	int    content_length;
+	char * payload;
+
+	if (header == NULL || content == NULL)
+		return;
+
+	/* build header */
+	payload        = axl_strdup_printf ("%s=%s\n", header, content);
+	content_length = strlen (payload);
+
+	/* send content */
+	bytes_written = send (socket, payload, content_length, 0);
+	if (bytes_written != content_length) {
+		printf ("ERROR: content sent %d differs from expected %d\n", bytes_written, content_length);
+		exit (-1);
+	} /* end if */
+
+	axl_free (payload);
+	return;
+}
+
+ValvulaState test_translate_action (const char * buffer, int buffer_len)
+{
+	int iterator = 0;
+
+	while (buffer[iterator] != '=' && buffer[iterator] != 0)
+		iterator++;
+	if (axl_memcmp (buffer + iterator + 1, "dunno", 5))
+		return VALVULA_STATE_DUNNO;
+	if (axl_memcmp (buffer + iterator + 1, "reject", 6))
+		return VALVULA_STATE_REJECT;
+	if (axl_memcmp (buffer + iterator + 1, "ok", 2))
+		return VALVULA_STATE_OK;
+	if (axl_memcmp (buffer + iterator + 1, "discard", 7))
+		return VALVULA_STATE_DISCARD;
+
+	
+	printf ("ERROR: unable to translate (%s) into an state, reporting generic error..\n", buffer);
+	return VALVULA_STATE_GENERIC_ERROR;
+}
+
+ValvulaState test_valvula_request (const char * policy_server, const char * port,
+				   const char * request, const char * protocol_state, const char * protocol_name,
+				   const char * sender, const char * recipient, const char * recipient_count,
+				   const char * queue_id, const char * message_size,
+				   const char * sasl_method, const char * sasl_username, const char * sasl_sender)
+{
+	axlError        * error = NULL;
+	ValvulaCtx      * ctx   = valvula_ctx_new ();
+	VALVULA_SOCKET    session;
+	char              buffer[1024];
+	int               bytes;
+	
+	/* create sock connection */
+	session = valvula_connection_sock_connect (ctx, policy_server, port, NULL, &error);
+	if (session < 1) {
+		printf ("ERROR: failed to connect to %s:%s, error was: %s, errno=%d\n", 
+			policy_server, port, axl_error_get (error), errno);
+		axl_error_free (error);
+		return VALVULA_STATE_GENERIC_ERROR;
+	} /* end if */
+
+	/* ok, now send policy request */
+	send_content (session, "request", request);
+	send_content (session, "protocol_state", protocol_state);
+	send_content (session, "protocol_name", protocol_name);
+
+	/* sender */
+	send_content (session, "sender", sender);
+	send_content (session, "recipient", recipient);
+	send_content (session, "recipient_count", recipient_count);
+
+	/* message description */
+	send_content (session, "queue_id", queue_id);
+	send_content (session, "message_size", message_size);
+
+	/* sasl options */
+	send_content (session, "sasl_method", sasl_method);
+	send_content (session, "sasl_username", sasl_username);
+	send_content (session, "sasl_sender", sasl_sender);
+
+	/* send finalization */
+	send (session, "\n", 1, 0);
+
+	/* receive content */
+	memset (buffer, 0, 1024);
+	while (axl_true) {
+		bytes = test_readline (ctx, session, buffer, 1024);
+		if (bytes == -1) {
+			printf ("ERROR: received error code = %d from test_readline\n", bytes);
+			return VALVULA_STATE_GENERIC_ERROR;
+		}
+		if (bytes == -2) {
+			sleep (1);
+			continue;
+		} /* end if */
+
+		printf ("Test --: content received as reply (bytes=%d): %s", bytes, buffer); 
+		break;
+	}
+
+	if (strstr (buffer, "action=") == NULL) {
+		printf ("ERROR: no action found in reply..\n");
+		return VALVULA_STATE_GENERIC_ERROR;
+	} /* end if */
+
+	valvula_close_socket (session);
+	valvula_ctx_unref (&ctx);
+	
+	return test_translate_action (buffer, 1024);
+}
+
+
+axl_bool  test_01a (void)
+{
+	ValvuladCtx   * ctx;
+	const char    * path;
+	ValvulaState    state;
+
+	/* load basic configuration */
+	path = "../server/valvula.example.conf";
+	ctx  = test_valvula_load_config ("Test 01: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR: unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	/* do a request */
+	state = test_valvula_request (/* policy server location */
+				      "127.0.0.1", "3579", 
+				      /* state */
+				      "smtpd_access_policy", "RCPT", "SMTP",
+				      /* sender, recipient, recipient count */
+				      "francis@aspl.es", "francis@aspl.es", "1",
+				      /* queue-id, size */
+				      "935jfe534", "235",
+				      /* sasl method, sasl username, sasl sender */
+				      "plain", "francis@aspl.es", NULL);
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		return axl_false;
+	}
+
+
+				      
+				      
+
+	/* free valvula server context */
+	printf ("Test 01: finishing configuration..\n");
 	common_finish (ctx);
 	
 	return axl_true;
@@ -168,6 +368,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_01")
 	run_test (test_01, "Test 01: basic server startup (using default configuration)");
+
+	/* run tests */
+	CHECK_TEST("test_01a")
+	run_test (test_01a, "Test 01-a: basic mail policy request");
 
 	printf ("All tests passed OK!\n");
 

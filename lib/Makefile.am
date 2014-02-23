@@ -20,7 +20,7 @@ if DEFAULT_POLL
 INCLUDE_DEFAULT_POLL=-DDEFAULT_POLL 
 endif
 
-INCLUDES = $(compiler_options) -I$(top_srcdir) -D__COMPILING_VALVULA__ -D__axl_disable_broken_bool_def__  \
+INCLUDES = $(compiler_options) -I$(top_srcdir) -D__COMPILING_VALVULA__ -D__axl_disable_broken_bool_def__  -D_GNU_SOURCE \
 	$(AXL_CFLAGS) $(INCLUDE_VALVULA_LOG) $(PTHREAD_CFLAGS) \
 	-DVERSION=\""$(VALVULA_VERSION)"\" \
 	-DPACKAGE_DTD_DIR=\""$(datadir)"\" \
