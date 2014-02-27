@@ -42,6 +42,11 @@ axl_bool        valvulad_db_init (ValvuladCtx * ctx);
 
 void            valvulad_db_cleanup (ValvuladCtx * ctx);
 
+axl_bool        valvulad_db_check_conn (ValvuladCtx * ctx);
+
+axl_bool        valvulad_db_table_exists (ValvuladCtx * ctx, 
+					  const char * table_name);
+
 axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx, 
 					  const char * table_name,
 					  const char * attr_name, const char * attr_type, 
