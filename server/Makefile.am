@@ -17,7 +17,7 @@ endif
 
 noinst_PROGRAMS = valvulad
 
-INCLUDES = -I$(top_srcdir)/lib  $(AXL_CFLAGS)  $(PTHREAD_CFLAGS) \
+INCLUDES = -I$(top_srcdir)/lib  $(AXL_CFLAGS)  $(PTHREAD_CFLAGS) $(MYSQL_CFLAGS) \
 	-I$(READLINE_PATH)/include $(compiler_options) -D__axl_disable_broken_bool_def__   \
         -DVERSION=\""$(VALVULA_VERSION)"\" -I$(top_srcdir)/src $(INCLUDE_VALVULA_POLL) $(INCLUDE_VALVULA_EPOLL) $(INCLUDE_VALVULA_LOG) $(EXARG_FLAGS)
 
@@ -29,7 +29,7 @@ valvulad_SOURCES = main.c exarg.c exarg.h
 
 valvulad_LDFLAGS = -Wl,-export-dynamic -ldl
 
-valvulad_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) libvalvulad.la ../lib/libvalvula.la
+valvulad_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) $(MYSQL_LIBS) libvalvulad.la ../lib/libvalvula.la
 
 lib_LTLIBRARIES  = libvalvulad.la
 
@@ -38,9 +38,10 @@ libvalvulad_la_SOURCES   = \
 	valvulad_config.c valvulad_config.h \
 	valvulad_log.c valvulad_log.h \
 	valvulad_run.c valvulad_run.h \
+	valvulad_db.c valvulad_db.h \
 	valvulad_module.c valvulad_module.h valvulad_moddef.h
 
-libvalvulad_la_LIBADD  = $(LIBS) ../lib/libvalvula.la  -ldl
+libvalvulad_la_LIBADD  = $(LIBS) $(MYSQL_LIBS) ../lib/libvalvula.la  -ldl 
 libvalvulad_la_LDFLAGS = -no-undefined -export-symbols-regex '^(valvulad|__valvulad|_valvulad).*'
 
 
