@@ -100,7 +100,16 @@ ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, 
 
 	if (! valvulad_init (&result)) {
 		printf ("ERROR: failed to initialize Valvulad context..\n");
+		printf ("   Maybe mysql database is failing? Please create user valvula, password valvula\n");
 		return NULL;
+	}
+
+	/* enable debug */
+	if (test_common_enable_debug) {
+		valvulad_log_enable (result, axl_true);
+		valvulad_log2_enable (result, axl_true);
+		valvulad_log3_enable (result, axl_true);
+		valvulad_color_log_enable (result, axl_true);
 	}
 
 	/* load config provided */

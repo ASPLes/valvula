@@ -431,6 +431,8 @@ void valvulad_exit (ValvuladCtx * ctx)
 	/* stop modules */
 	msg ("Releasing modules (loaded: %d)..", axl_list_length (ctx->registered_modules));
 	valvulad_module_cleanup (ctx);
+
+	valvulad_db_cleanup (ctx);
 	
 	/* release all context resources */
 	axl_doc_free (ctx->config);

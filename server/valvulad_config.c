@@ -213,6 +213,12 @@ axl_bool        valvulad_config_load     (ValvuladCtx * ctx,
 	valvulad_config_load_expand_nodes (ctx);
 
 	msg ("server configuration is valid..");
+
+	/* init MySQL module */
+	if (! valvulad_db_init (ctx)) {
+		error ("Unable initialize valvula db module");
+		return axl_false;
+	}
 	
 	return axl_true;
 }

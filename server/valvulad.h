@@ -66,6 +66,7 @@ typedef struct _ValvuladCtx {
 #include <valvulad_run.h>
 #include <valvulad_moddef.h>
 #include <valvulad_module.h>
+#include <valvulad_db.h>
 
 axl_bool  valvulad_log_enabled      (ValvuladCtx * ctx);
 

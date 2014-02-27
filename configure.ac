@@ -241,12 +241,29 @@ case $host in
 esac
 AC_SUBST(EXARG_FLAGS)	
 
+dnl mod-sasl-mysql flags
+MYSQL_CFLAGS=`mysql_config --cflags 2>/dev/null`
+MYSQL_LIBS=`mysql_config --libs 2>/dev/null`
+AC_SUBST(MYSQL_CFLAGS)
+AC_SUBST(MYSQL_LIBS)
+AC_TRY_COMPILE([#include <mysql/mysql.h>
+#include <stdlib.h>],
+  [mysql_init(NULL);],
+  mysql_devel_found=yes,
+  mysql_devel_found=no)
+AC_MSG_RESULT([MySQL development headers status: $mysql_devel_found])
+if test "x$mysql_devel_found" = "xno"; then
+   AC_MSG_WARN([Cannot find mysql.h header or current MySQL development environment do not compile symbols required. On debian try to install libmysqlclient15-dev package.])
+fi
+AM_CONDITIONAL(ENABLE_MYSQL_SUPPORT, test "x$mysql_devel_found" = "xyes")
+
 AC_OUTPUT([
 Makefile
 lib/Makefile
 server/Makefile
 plugins/Makefile
 plugins/mod-test/Makefile
+plugins/mod-ticket/Makefile
 test/Makefile
 ])
 
@@ -266,6 +283,17 @@ echo "      NOTE: To disable log reporting use: "
 echo "            --disable-valvula-log"               
 fi
 echo
+mysql_msg=""
+if test "x$mysql_devel_found" = "xno"; then
+     mysql_msg=" (Applications using MySQL, like mod-sasl-mysql, won't work)"
+fi
+
+echo "   Build with MySQL support:       [$mysql_devel_found]$mysql_msg"
+if test "x$mysql_devel_found" = "xyes"; then
+echo "     flags: $MYSQL_CFLAGS"
+echo "     libs: $MYSQL_LIBS"
+fi
+echo ""
 echo "   Axl installation: "
 echo "      cflags: $AXL_CFLAGS"
 echo "      libs:   $AXL_LIBS"
