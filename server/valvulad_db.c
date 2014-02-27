@@ -39,7 +39,7 @@
 /* mysql flags */
 #include <mysql.h>
 
-MYSQL   * valvulad_get_connection  (ValvuladCtx * ctx)
+MYSQL   * valvulad_db_get_connection  (ValvuladCtx * ctx)
 {
 	axlNode * node;
 	MYSQL   * dbconn;
@@ -110,7 +110,7 @@ axl_bool        valvulad_db_init (ValvuladCtx * ctx)
 	MYSQL   * conn;
 
 	/* get configuration node and check everything is working */
-	conn = valvulad_get_connection (ctx);
+	conn = valvulad_db_get_connection (ctx);
 	if (conn == NULL) {
 		error ("Failed to initialize db module. Database connection is failing. Check settings and/or MySQL server status");
 		return axl_false;
@@ -132,6 +132,153 @@ void            valvulad_db_cleanup (ValvuladCtx * ctx)
 	mysql_library_end ();
 
 	return;
+}
+
+/** 
+ * @brief Allows to check if the database connection is working.
+ *
+ * @param ctx The context where the operation will take place.
+ * 
+ * @return axl_true in the case it is working, otherwise axl_false is
+ * returned.
+ */
+axl_bool valvulad_db_check_conn (ValvuladCtx * ctx)
+{
+	MYSQL   * conn;
+
+	/* get configuration node and check everything is working */
+	conn = valvulad_db_get_connection (ctx);
+	if (conn == NULL) {
+		error ("Database connection is failing. Check settings and/or MySQL server status");
+		return axl_false;
+	} /* end if */
+
+	/* release connection */
+	valvulad_db_release_connection (ctx, conn);
+	
+	return axl_true;
+}
+
+/** 
+ * @brief Allows to run the provided query reporting the result.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param query The query to be run.
+ *
+ * @param ... Additional parameter for the query to be created.
+ *
+ * @return A reference to MYSQL_RES or NULL if it fails. The function
+ * returns axl_true in the case of a NON query (UPDATE, DELETE, INSERT
+ * ...) and there is no error.
+ */
+MYSQL_RES * valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
+{
+	MYSQL_RES * result;
+	MYSQL     * dbconn;
+	char      * query_complete;
+	va_list     args;
+	axl_bool    non_query;
+	
+	/* check context or query */
+	if (ctx == NULL || query == NULL)
+		return NULL;
+
+	/* open std args */
+	va_start (args, query);
+
+	/* create complete query */
+	query_complete = axl_stream_strdup_printfv (query, args);
+
+	/* close std args */
+	va_end (args);
+
+	/* clear query */
+	axl_stream_trim (query_complete);
+	
+	/* get if we have a non query request */
+	non_query = ! axl_memcmp ("SELECT", query_complete, 6);
+
+	/* get connection */
+	dbconn = valvulad_db_get_connection (ctx);
+
+	/* now run query */
+	if (mysql_query (dbconn, query_complete)) {
+		axl_free (query_complete);
+		error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
+		return NULL;
+	} /* end if */
+
+	/* release the query string */
+	axl_free (query_complete);
+	
+	if (non_query)
+		return INT_TO_PTR (axl_true);
+
+	/* return result */
+	result = mysql_store_result (dbconn);
+
+	/* release the connection */
+	valvulad_db_release_connection (ctx, dbconn);
+
+	return result;
+}
+
+
+/** 
+ * @brief Allows to check if the table exists using context configuration.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param table_name The database table that will be checked.
+ */
+axl_bool valvulad_db_table_exists (ValvuladCtx * ctx, const char * table_name)
+{
+	MYSQL_RES * result;
+
+	if (! valvulad_db_check_conn (ctx)) {
+		error ("Unable to check if table exists, database connection is not working");
+		return axl_false;
+	}
+
+	/* run query */
+	result = valvulad_db_run_query (ctx, "SELECT * FROM %s LIMIT 1", table_name);
+	if (result == NULL) {
+		/* don't report error, table doesn't exists */
+		return axl_false;
+	} /* end if */
+
+	/* release the result */
+	mysql_free_result (result);
+	return axl_true;
+}
+
+/** 
+ * @brief Allows to check if the table has the provided attribute
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param table_name The database table that will be checked.
+ */
+axl_bool valvulad_db_attr_exists (ValvuladCtx * ctx, const char * table_name, const char * attr_name)
+{
+	MYSQL_RES * result;
+
+	if (! valvulad_db_check_conn (ctx)) {
+		error ("Unable to check if table exists, database connection is not working");
+		return axl_false;
+	}
+
+	/* run query */
+	result = valvulad_db_run_query (ctx, "SELECT %s FROM %s LIMIT 1", attr_name, table_name);
+	if (result == NULL) {
+		/* don't report error, table doesn't exists */
+		return axl_false;
+	} /* end if */
+
+	/* release the result */
+	mysql_free_result (result);
+	return axl_true;
 }
 
 /** 
@@ -159,9 +306,44 @@ axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx,
 					  ...)
 {
 	va_list   args;
+
+	/* check if the mysql table exists */
+	if (! valvulad_db_table_exists (ctx, table_name)) {
+		/* create the table with the first column */
+		if (! valvulad_db_run_query (ctx, "CREATE TABLE %s (%s %s)", table_name, attr_name, attr_type)) {
+			error ("Unable to create table %s, failed to ensure table exists");
+			return axl_false;
+		} /* end if */
+	} /* end if */
+
+	if (! valvulad_db_attr_exists (ctx, table_name, attr_name)) {
+		/* create the table with the first column */
+		if (! valvulad_db_run_query (ctx, "ALTER TABLE %s ADD COLUMN %s %s", table_name, attr_name, attr_type)) {
+			error ("Unable to update table %s to add attribute %s : %s, failed to ensure table exists",
+			       table_name, attr_name, attr_type);
+			return axl_false;
+		} /* end if */
+	} /* end if */
+
 	va_start (args, attr_type);
-	
-	
+
+	while (axl_true) {
+		/* get attr name to create and stop if NULL is defined */
+		attr_name  = va_arg (args, const char *);
+		if (attr_name == NULL)
+			break;
+		/* get attr type */
+		attr_type  = va_arg (args, const char *);
+
+		if (! valvulad_db_attr_exists (ctx, table_name, attr_name)) {
+			/* create the table with the first column */
+			if (! valvulad_db_run_query (ctx, "ALTER TABLE %s ADD COLUMN %s %s", table_name, attr_name, attr_type)) {
+				error ("Unable to update table %s to add attribute %s : %s, failed to ensure table exists",
+				       table_name, attr_name, attr_type);
+				return axl_false;
+			} /* end if */
+		} /* end if */
+	} /* end while */
 
 	return axl_true;
 }
