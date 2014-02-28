@@ -317,6 +317,60 @@ axl_bool  test_01a (void)
 	return axl_true;
 }
 
+axl_bool  test_02 (void)
+{
+	ValvuladCtx   * ctx;
+	const char    * path;
+
+	/* load basic configuration */
+	path = "../server/valvula.example.conf";
+	ctx  = test_valvula_load_config ("Test 01: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR: unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	/* do a database creation */
+	printf ("Test 02: check if test_02_table exists..\n");
+	if (valvulad_db_table_exists (ctx, "test_02_table")) {
+		printf ("ERROR: expected table test_02_table to be not present but it is..\n");
+		return axl_false;
+	} /* end if */
+
+	/* create the table */
+	printf ("Test 02: ensure test_02_table exists..\n");
+	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "int", NULL)) {
+		printf ("ERROR: failed to create table test_02_table, valvulad_db_ensure_table failed..\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check the table exists */
+	if (! valvulad_db_table_exists (ctx, "test_02_table")) {
+		printf ("ERROR: expected table test_02_table to be present but it is NOT..\n");
+		return axl_false;
+	} /* end if */
+
+	/* now remove the table */
+	printf ("Test 02: remove test_02_table..\n");
+	if (! valvulad_db_table_remove (ctx, "test_02_table")) {
+		printf ("ERROR: expected table test_02_table to be removed by valvulad_db_table_remove () failed\n");
+		return axl_false;
+	}
+
+	/* now check the table exists */
+	if (valvulad_db_table_exists (ctx, "test_02_table")) {
+		printf ("ERROR: expected table test_02_table to be NOT present but it is after removal..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 02: finishing..\n");
+
+	/* free valvula server context */
+	common_finish (ctx);
+	
+	return axl_true;
+}
+
 #define CHECK_TEST(name) if (run_test_name == NULL || axl_cmp (run_test_name, name))
 
 typedef axl_bool (* ValvulaTestHandler) (void);
@@ -381,6 +435,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_01a")
 	run_test (test_01a, "Test 01-a: basic mail policy request");
+
+	/* run tests */
+	CHECK_TEST("test_02")
+	run_test (test_02, "Test 02: database functions");
 
 	printf ("All tests passed OK!\n");
 

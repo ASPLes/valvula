@@ -206,20 +206,28 @@ MYSQL_RES * valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	if (mysql_query (dbconn, query_complete)) {
 		axl_free (query_complete);
 		error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
+
+		/* release the connection */
+		valvulad_db_release_connection (ctx, dbconn); 
 		return NULL;
 	} /* end if */
 
 	/* release the query string */
 	axl_free (query_complete);
 	
-	if (non_query)
+	if (non_query) {
+		/* release the connection */
+		valvulad_db_release_connection (ctx, dbconn); 
+
+		/* report ok */
 		return INT_TO_PTR (axl_true);
+	} /* end if */
 
 	/* return result */
 	result = mysql_store_result (dbconn);
 
 	/* release the connection */
-	valvulad_db_release_connection (ctx, dbconn);
+	valvulad_db_release_connection (ctx, dbconn); 
 
 	return result;
 }
@@ -250,6 +258,39 @@ axl_bool valvulad_db_table_exists (ValvuladCtx * ctx, const char * table_name)
 
 	/* release the result */
 	mysql_free_result (result);
+	return axl_true;
+}
+
+/** 
+ * @brief Remove the provided table name on the valvula server
+ * database.
+ *
+ * @param ctx The context where the operation takes place.
+ *
+ * @param table_name The table name that is going to be removed.
+ *
+ * @return axl_true in the case the table is removed, otherwise
+ * axl_false is reported.
+ *
+ */
+axl_bool        valvulad_db_table_remove (ValvuladCtx * ctx, 
+					  const char * table_name)
+{
+	MYSQL_RES * result;
+
+	if (! valvulad_db_check_conn (ctx)) {
+		error ("Unable to check if table exists, database connection is not working");
+		return axl_false;
+	}
+
+	/* run query */
+	result = valvulad_db_run_query (ctx, "DROP TABLE %s", table_name);
+	if (result == NULL) {
+		/* don't report error, table doesn't exists */
+		return axl_false;
+	} /* end if */
+
+	/* release the result */
 	return axl_true;
 }
 
