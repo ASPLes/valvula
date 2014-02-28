@@ -363,6 +363,51 @@ axl_bool  test_02 (void)
 		return axl_false;
 	} /* end if */
 
+	/* create the table */
+	printf ("Test 02: ensure test_02_table exists..\n");
+	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "int", NULL)) {
+		printf ("ERROR: failed to create table test_02_table, valvulad_db_ensure_table failed..\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check attributes exists */
+	if (valvulad_db_attr_exists (ctx, "test_02_table", "new")) {
+		printf ("ERROR: attribute new SHOULDN'T exist but it does (valvulad_db_attr_exists() failed..)\n");
+		return axl_false;
+	}
+
+	/* now check attributes exists */
+	if (valvulad_db_attr_exists (ctx, "test_02_table", "value2")) {
+		printf ("ERROR: attribute 'value2' SHOULDN'T exist but it does (valvulad_db_attr_exists() failed..)\n");
+		return axl_false;
+	}
+
+	/* create the table */
+	printf ("Test 02: ensure test_02_table exists..\n");
+	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "int", "new", "text", "value2", "text", NULL)) {
+		printf ("ERROR: failed to create table test_02_table, valvulad_db_ensure_table failed (2)..\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check attributes exists */
+	if (! valvulad_db_attr_exists (ctx, "test_02_table", "new")) {
+		printf ("ERROR: attribute new should exist but it doesn't (valvulad_db_attr_exists() failed..)\n");
+		return axl_false;
+	}
+
+	/* now check attributes exists */
+	if (! valvulad_db_attr_exists (ctx, "test_02_table", "value2")) {
+		printf ("ERROR: attribute 'value2' should exist but it doesn't (valvulad_db_attr_exists() failed..)\n");
+		return axl_false;
+	}
+
+	/* now remove the table */
+	printf ("Test 02: remove test_02_table..\n");
+	if (! valvulad_db_table_remove (ctx, "test_02_table")) {
+		printf ("ERROR: expected table test_02_table to be removed by valvulad_db_table_remove () failed\n");
+		return axl_false;
+	}
+
 	printf ("Test 02: finishing..\n");
 
 	/* free valvula server context */
