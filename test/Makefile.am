@@ -1,5 +1,6 @@
 EXTRA_DIST = \
-	test_01.conf
+	test_01.conf \
+	test_03.conf
 
 if ENABLE_POLL_SUPPORT
 INCLUDE_VALVULA_POLL=-DVALVULA_HAVE_POLL=1

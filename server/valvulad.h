@@ -56,6 +56,9 @@ typedef struct _ValvuladCtx {
 
 	ValvulaCtx     * ctx;
 
+	/** 
+	 * @brief List of registered modules currently loaded.
+	 */
 	axlList        * registered_modules;
 	ValvulaMutex     registered_modules_mutex;
 } ValvuladCtx;

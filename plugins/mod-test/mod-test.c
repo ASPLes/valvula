@@ -92,6 +92,8 @@ ValvuladModDef module_def = {
 	test_init,
 	test_close,
 	test_reconf,
+	/* process */
+	NULL,
 	NULL
 };
 

@@ -41,7 +41,20 @@
 /** 
  * @brief Type definition for a single module loaded into valvulad.
  */ 
-typedef struct _ValvuladModule ValvuladModule;
+typedef struct _ValvuladModule {
+	/* module attributes */
+	char             * path;
+	void             * handle;
+	ValvuladModDef   * def;
+	axl_bool           skip_unmap;
+
+	/* context that loaded the module */
+	ValvuladCtx      * ctx;
+
+	/* list of profiles provided by this module */
+	axlList          * provided_profiles;
+
+} ValvuladModule;
 
 /** 
  * @brief Set of handlers that are supported by modules. This handler
@@ -60,13 +73,20 @@ typedef enum {
 	/** 
 	 * @brief Module init handler 
 	 */
-	VLD_INIT_HANDLER   = 3
+	VLD_INIT_HANDLER   = 3,
+	/** 
+	 * @brief Module process handler
+	 */
+	VLD_PROCESS_HANDLER   = 4
 } ValvuladModHandler;
 
-void               valvulad_module_init        (ValvuladCtx * ctx);
+void               valvulad_module_init         (ValvuladCtx * ctx);
 
-ValvuladModule   * valvulad_module_open        (ValvuladCtx   * ctx, 
-						const char    * module);
+ValvuladModule   * valvulad_module_open         (ValvuladCtx   * ctx, 
+						 const char    * module);
+
+ValvuladModule   * valvulad_module_find_by_name (ValvuladCtx * ctx,
+						 const char  * mod_name);
 
 void               valvulad_module_unload      (ValvuladCtx   * ctx,
 						const char    * module);

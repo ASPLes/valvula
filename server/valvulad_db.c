@@ -332,7 +332,8 @@ axl_bool valvulad_db_attr_exists (ValvuladCtx * ctx, const char * table_name, co
  * 
  * @param  attr_name The attribute name to be created.
  *
- * @param attr_type The attribute type to associate.
+ * @param attr_type The attribute type to associate. If you want to
+ * support typical autoincrement index. use as type: "autoincrement int".
  *
  * The function allows to check and create an SQL table with the name
  * provided and the set of attributes provided. The list must be ended
@@ -340,6 +341,8 @@ axl_bool valvulad_db_attr_exists (ValvuladCtx * ctx, const char * table_name, co
  *
  * @return The function returns axl_true in the case everything
  * finished without any issue otherwise axl_false is returned.
+ *
+ * 
  */ 
 axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx, 
 					  const char * table_name,
@@ -350,14 +353,22 @@ axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx,
 
 	/* check if the mysql table exists */
 	if (! valvulad_db_table_exists (ctx, table_name)) {
+		/* support for auto increments */
+		if (axl_cmp (attr_type, "autoincrement int"))
+			attr_type = "INT AUTO_INCREMENT PRIMARY KEY";
+
 		/* create the table with the first column */
 		if (! valvulad_db_run_query (ctx, "CREATE TABLE %s (%s %s)", table_name, attr_name, attr_type)) {
-			error ("Unable to create table %s, failed to ensure table exists");
+			error ("Unable to create table %s, failed to ensure table exists", table_name);
 			return axl_false;
 		} /* end if */
 	} /* end if */
 
 	if (! valvulad_db_attr_exists (ctx, table_name, attr_name)) {
+		/* support for auto increments */
+		if (axl_cmp (attr_type, "autoincrement int"))
+			attr_type = "INT AUTO_INCREMENT PRIMARY KEY";
+
 		/* create the table with the first column */
 		if (! valvulad_db_run_query (ctx, "ALTER TABLE %s ADD COLUMN %s %s", table_name, attr_name, attr_type)) {
 			error ("Unable to update table %s to add attribute %s : %s, failed to ensure table exists",
@@ -375,6 +386,14 @@ axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx,
 			break;
 		/* get attr type */
 		attr_type  = va_arg (args, const char *);
+
+		/* though not supported, check for NULL values here */
+		if (attr_type == NULL)
+			break;
+
+		/* support for auto increments */
+		if (axl_cmp (attr_type, "autoincrement int"))
+			attr_type = "INT AUTO_INCREMENT PRIMARY KEY";
 
 		if (! valvulad_db_attr_exists (ctx, table_name, attr_name)) {
 			/* create the table with the first column */

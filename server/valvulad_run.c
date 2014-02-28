@@ -149,6 +149,47 @@ void valvulad_run_load_modules (ValvuladCtx * ctx, axlDoc * doc)
 	return;
 }
 
+void valvulad_run_register_handlers (ValvuladCtx * ctx)
+{
+	axlNode        * node;
+	axlNode        * node2;
+	ValvuladModule * module;
+	int              port;
+	int              prio;
+
+	/* get first node */
+	node = axl_doc_get (ctx->config, "/valvula/general/listen");
+	while (node) {
+		msg ("  - processing node: %p", node);
+		/* get default port to be used on this listener */
+		prio     = 1;
+		port     = -1;
+		if (HAS_ATTR (node, "port")) 
+			port = atoi (ATTR_VALUE (node, "port"));
+
+		/* get first module */
+		node2 = axl_node_get_child_called (node, "run");
+		while (node2) {
+			/* module */
+			module = valvulad_module_find_by_name (ctx, ATTR_VALUE (node2, "module"));
+			if (module && module->def->process_request) {
+				/* call to register the function on the provided port */
+				msg ("Registering module: %s, on port %d (prio: %d)", ATTR_VALUE (node2, "module"), port, prio);
+				valvula_ctx_register_request_handler (ctx->ctx, module->def->process_request, prio, port, NULL);
+			} /* end if */
+
+			/* next node */
+			prio ++;
+			node2 = axl_node_get_next_called (node2, "run");
+		} /* end while */
+
+		/* next node */
+		node = axl_node_get_next_called (node, "listen");
+	} /* end while */
+
+	return;
+}
+
 
 /** 
  * @brief Starts valvulad engine using the current configuration.
@@ -188,6 +229,10 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 
 	/* load modules */
 	valvulad_run_load_modules (ctx, ctx->config);
+
+	/* now configure priorities, etc */
+	msg ("Calling to install/register module handler..");
+	valvulad_run_register_handlers (ctx);
 
 	return axl_true; 
 }

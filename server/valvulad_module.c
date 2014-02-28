@@ -43,20 +43,6 @@
 
 axl_bool __valvulad_module_no_unmap = axl_false;
 
-struct _ValvuladModule {
-	/* module attributes */
-	char             * path;
-	void             * handle;
-	ValvuladModDef * def;
-	axl_bool           skip_unmap;
-
-	/* context that loaded the module */
-	ValvuladCtx    * ctx;
-
-	/* list of profiles provided by this module */
-	axlList          * provided_profiles;
-};
-
 /** 
  * @internal Starts the valvulad module initializing all internal
  * variables.
@@ -149,6 +135,54 @@ ValvuladModule * valvulad_module_open (ValvuladCtx * ctx, const char * module)
 	msg ("module found: [%s]", result->def->mod_name);
 	
 	return result;
+}
+
+/** 
+ * @brief Allows to find a the module by the provided name.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param mod_name The module name to find by name.
+ *
+ * @return The module reference or NULL if it fails.
+ */
+ValvuladModule   * valvulad_module_find_by_name (ValvuladCtx * ctx,
+						 const char  * mod_name)
+{
+	int              iterator;
+	ValvuladModule * module;
+
+	/* check values received */
+	if (ctx == NULL || mod_name == NULL)
+		return NULL;
+
+	/* register the module */
+	valvula_mutex_lock (&ctx->registered_modules_mutex);
+
+	/* check first that the module is not already added */
+	iterator = 0;
+	while (iterator < axl_list_length (ctx->registered_modules)) {
+
+		/* get module in position */
+		module = axl_list_get_nth (ctx->registered_modules, iterator);
+	
+		/* check mod name */
+		if (axl_cmp (module->def->mod_name, mod_name)) {
+			/* terminate it */
+			valvula_mutex_unlock (&ctx->registered_modules_mutex);
+
+			return module;
+		} /* end if */
+
+		/* next position */
+		iterator++;
+	} /* end while */
+
+	/* release lock */
+	valvula_mutex_unlock (&ctx->registered_modules_mutex);
+
+	/* module not found */
+	return NULL;
 }
 
 /** 
@@ -327,6 +361,7 @@ axl_bool             valvulad_module_register  (ValvuladModule * module)
 
 	axl_list_add (ctx->registered_modules, module);
 	msg ("Registered modules (%d, %p)", axl_list_length (ctx->registered_modules), ctx->registered_modules);
+
 	valvula_mutex_unlock (&ctx->registered_modules_mutex);
 
 	return axl_true;
@@ -506,10 +541,10 @@ void               valvulad_module_free (ValvuladModule * module)
  * function to always return axl_true. 
  */
 axl_bool           valvulad_module_notify      (ValvuladCtx         * ctx, 
-						  ValvuladModHandler    handler,
-						  axlPointer              data,
-						  axlPointer              data2,
-						  axlPointer              data3)
+						ValvuladModHandler    handler,
+						axlPointer              data,
+						axlPointer              data2,
+						axlPointer              data3)
 {
 	/* get valvulad context */
 	ValvuladModule   * module;
@@ -560,6 +595,9 @@ axl_bool           valvulad_module_notify      (ValvuladCtx         * ctx,
 				valvula_mutex_lock (&ctx->registered_modules_mutex);
 					
 			}
+			break;
+		case VLD_PROCESS_HANDLER:
+			/* not defined */
 			break;
 		}
 
