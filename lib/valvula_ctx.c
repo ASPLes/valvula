@@ -142,7 +142,7 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
 	valvula_hash_replace_full (ctx->process_handler_registry, registry, axl_free, registry, NULL);
 
 	/* now update first handler to run */
-	if (ctx->first_handler->priority > registry->priority)
+	if (ctx->first_handler == NULL || ctx->first_handler->priority > registry->priority)
 		ctx->first_handler = registry;
 	
 	valvula_mutex_unlock (&ctx->ref_mutex);
@@ -411,6 +411,10 @@ void        valvula_ctx_free2 (ValvulaCtx * ctx, const char * who)
 	/* clear the hash */
 	valvula_hash_destroy (ctx->data);
 	ctx->data = NULL;
+
+	/* free hash */
+	valvula_hash_destroy (ctx->process_handler_registry);
+	ctx->process_handler_registry = NULL;
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "finishing ValvulaCtx %p", ctx);
 

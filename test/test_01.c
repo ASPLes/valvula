@@ -416,6 +416,32 @@ axl_bool  test_02 (void)
 	return axl_true;
 }
 
+/* test mod ticket */
+axl_bool test_03 (void) {
+	ValvuladCtx   * ctx;
+	const char    * path;
+
+	/* load basic configuration */
+	path = "test_03.conf";
+	ctx  = test_valvula_load_config ("Test 03: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR: unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	/* check if the module was loaded */
+	if (axl_list_length (ctx->registered_modules) == 0) {
+		printf ("ERROR: expected to find 1 module loaded but found only %d..\n", axl_list_length (ctx->registered_modules));
+		return axl_false;
+	} /* end if */
+
+	/* finish test */
+	common_finish (ctx);
+	
+
+	return axl_true;
+}
+
 #define CHECK_TEST(name) if (run_test_name == NULL || axl_cmp (run_test_name, name))
 
 typedef axl_bool (* ValvulaTestHandler) (void);
@@ -484,6 +510,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_02")
 	run_test (test_02, "Test 02: database functions");
+
+	/* run tests */
+	CHECK_TEST("test_03")
+	run_test (test_03, "Test 03: checking mod-ticket");
 
 	printf ("All tests passed OK!\n");
 

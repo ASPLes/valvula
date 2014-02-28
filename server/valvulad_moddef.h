@@ -128,6 +128,12 @@ typedef struct _ValvuladModDef {
 	 * module.
 	 */
 	ModCloseFunc   close;
+
+	/** 
+	 * @brief A reference to the process request handler (if
+	 * defined).
+	 */
+	ValvulaProcessRequest process_request;
 	
 	/** 
 	 * @brief A reference to the reconf function associated to the

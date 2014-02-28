@@ -54,9 +54,58 @@ static int  ticket_init (ValvuladCtx * _ctx)
 
 	msg ("Valvulad ticket module: init");
 
-	/* do some initialization code here */
+	/* create databases to be used by the module */
+	msg ("Calling valvulad_db_ensure_table() ..");
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "ticket_plan", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  "name", "varchar(250)",
+				  "description", "varchar(500)",
+				  NULL);
+
+	/* global domain plan */
+	msg ("Calling valvulad_db_ensure_table() ..2..");
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "domain_ticket", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  "domain", "varchar(512)",
+				  /* how many tickets does the domain have */
+				  "total_limit", "int",
+				  /* how many tickets were used by this module */
+				  "total_used", "int",
+				  /* day limit that can be consumed */
+				  "day_limit", "int",
+				  /* month limit that can be consumed */
+				  "month_limit", "int",
+				  /* current day usage */
+				  "current_day_usage", "int", 
+				  /* current month usage */
+				  "current_month_usage", "int",
+				  /* valid until (if -1 no valid until limit, if defined, epoch until it is valid) */
+				  "valid_until", "int",
+				  NULL);
+
 
 	return axl_true;
+}
+
+/** 
+ * @brief Process request for the module.
+ */
+ValvulaState ticket_process_request (ValvulaCtx        * _ctx, 
+				     ValvulaConnection * connection, 
+				     ValvulaRequest    * request,
+				     axlPointer          request_data,
+				     char             ** message)
+{
+	msg ("calling to process at mod ticket");
+
+	/* by default report return dunno */
+	return VALVULA_STATE_DUNNO;
 }
 
 /** 
@@ -81,7 +130,6 @@ void ticket_reconf (ValvuladCtx * ctx) {
 	return;
 }
 
-
 /** 
  * @brief Public entry point for the module to be loaded. This is the
  * symbol the valvulad will lookup to load the rest of items.
@@ -91,7 +139,8 @@ ValvuladModDef module_def = {
 	"Valvulad ticket module",
 	ticket_init,
 	ticket_close,
-	ticket_reconf,
+	ticket_process_request,
+	NULL,
 	NULL
 };
 
