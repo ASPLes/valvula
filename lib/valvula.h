@@ -380,6 +380,11 @@ void _valvula_log2 (ValvulaCtx        * ctx,
 		   const char       * message,
 		    ...);
 
+
+const char * valvula_get_sender_domain (ValvulaRequest * request);
+
+const char * valvula_get_sasl_user (ValvulaRequest * request);
+
 END_C_DECLS
 
 /* @} */

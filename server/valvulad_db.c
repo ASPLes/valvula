@@ -176,7 +176,7 @@ MYSQL_RES * valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 {
 	MYSQL_RES * result;
 	MYSQL     * dbconn;
-	char      * query_complete;
+	char      * complete_query;
 	va_list     args;
 	axl_bool    non_query;
 	
@@ -188,23 +188,23 @@ MYSQL_RES * valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	va_start (args, query);
 
 	/* create complete query */
-	query_complete = axl_stream_strdup_printfv (query, args);
+	complete_query = axl_stream_strdup_printfv (query, args);
 
 	/* close std args */
 	va_end (args);
 
 	/* clear query */
-	axl_stream_trim (query_complete);
+	axl_stream_trim (complete_query);
 	
 	/* get if we have a non query request */
-	non_query = ! axl_memcmp ("SELECT", query_complete, 6);
+	non_query = ! axl_memcmp ("SELECT", complete_query, 6);
 
 	/* get connection */
 	dbconn = valvulad_db_get_connection (ctx);
 
 	/* now run query */
-	if (mysql_query (dbconn, query_complete)) {
-		axl_free (query_complete);
+	if (mysql_query (dbconn, complete_query)) {
+		axl_free (complete_query);
 		error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
 
 		/* release the connection */
@@ -213,7 +213,7 @@ MYSQL_RES * valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	} /* end if */
 
 	/* release the query string */
-	axl_free (query_complete);
+	axl_free (complete_query);
 	
 	if (non_query) {
 		/* release the connection */
@@ -408,4 +408,96 @@ axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx,
 	return axl_true;
 }
 
+/** 
+ * @brief Allows to run the the provided query and reporting boolean
+ * state according to the result.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param query The query string to execute.
+ *
+ * @param ... additional parameters to execute.
+ *
+ * @return the function returns axl_true in the case the query reports
+ * content otherwise, axl_false is returned.
+ */
+axl_bool        valvulad_db_boolean_query (ValvuladCtx * ctx, 
+					   const char * query, 
+					   ...)
+{
+	MYSQL_RES * result;
+	MYSQL_ROW   row;
+	char      * complete_query;
+	va_list     args;
 
+	/* open std args */
+	va_start (args, query);
+
+	/* create complete query */
+	complete_query = axl_stream_strdup_printfv (query, args);
+
+	/* close std args */
+	va_end (args);
+
+	/* clear query */
+	axl_stream_trim (complete_query);
+
+	/* run query */
+	result = valvulad_db_run_query (ctx, complete_query);
+	axl_free (complete_query);
+
+	if (result == NULL)
+		return axl_false;
+
+	row = mysql_fetch_row (result);
+
+	/* release the result */
+	mysql_free_result (result);
+
+	return row != NULL;
+}
+
+/** 
+ * @brief Allows to run a non query with the provided data.
+ *
+ * @param ctx The context where the operation takes place.
+ *
+ * @param query The query to run
+ *
+ * @param ... Additional parameters to complete the query.
+ *
+ * @return axl_true in the case the query reported ok, otherwise
+ * axl_false is returned.
+ */
+axl_bool        valvulad_db_run_non_query (ValvuladCtx * ctx, 
+					   const char * query, 
+					   ...)
+{
+	MYSQL_RES * result;
+	char      * complete_query;
+	va_list     args;
+
+	/* open std args */
+	va_start (args, query);
+
+	/* create complete query */
+	complete_query = axl_stream_strdup_printfv (query, args);
+
+	/* close std args */
+	va_end (args);
+
+	/* clear query */
+	axl_stream_trim (complete_query);
+
+	/* run query */
+	result = valvulad_db_run_query (ctx, complete_query);
+	axl_free (complete_query);
+	if (result == NULL)
+		return axl_false;
+
+	/* release the result */
+	if (PTR_TO_INT (result) != axl_true)
+		mysql_free_result (result);
+
+	return axl_true;
+}
