@@ -66,6 +66,7 @@ valvula_ctx_set_default_reply_state
 valvula_ctx_unref
 valvula_ctx_unref2
 valvula_exit_ctx
+valvula_get_sender_domain
 valvula_gethostbyname
 valvula_hash_clear
 valvula_hash_clear_allways_true

@@ -63,6 +63,16 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "id", "autoincrement int", 
 				  "name", "varchar(250)",
 				  "description", "varchar(500)",
+				  /* how many tickets does the domain have */
+				  "total_limit", "int",
+				  /* day limit that can be consumed */
+				  "day_limit", "int",
+				  /* month limit that can be consumed */
+				  "month_limit", "int",
+				  /* applies to sasl authenticated sends too */
+				  "applies_sasl", "int",
+				  /* applies to sasl authenticated sends too */
+				  "applies_without_sasl", "int",
 				  NULL);
 
 	/* global domain plan */
@@ -72,15 +82,12 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "domain_ticket", 
 				  /* attributes */
 				  "id", "autoincrement int", 
+				  /* sending domain these tickets applies to */
 				  "domain", "varchar(512)",
-				  /* how many tickets does the domain have */
-				  "total_limit", "int",
+				  /* sending sasl user these tickets applies to */
+				  "sasl_user", "varchar(512)",
 				  /* how many tickets were used by this module */
 				  "total_used", "int",
-				  /* day limit that can be consumed */
-				  "day_limit", "int",
-				  /* month limit that can be consumed */
-				  "month_limit", "int",
 				  /* current day usage */
 				  "current_day_usage", "int", 
 				  /* current month usage */
@@ -88,7 +95,6 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  /* valid until (if -1 no valid until limit, if defined, epoch until it is valid) */
 				  "valid_until", "int",
 				  NULL);
-
 
 	return axl_true;
 }
@@ -102,8 +108,23 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 				     axlPointer          request_data,
 				     char             ** message)
 {
-	msg ("calling to process at mod ticket");
+	axl_bool domain_in_tickets    = axl_false;
+	axl_bool sasl_user_in_tickets = axl_false;
 
+	msg ("calling to process at mod ticket");
+	
+	/* check if the domain is limited by ticket */
+	if (valvula_get_sender_domain (request))
+		domain_in_tickets   = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE domain = '%s'", valvula_get_sender_domain (request));
+	if (valvula_get_sasl_user (request))
+		sasl_user_in_tickets = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE sasl_user = '%s'", valvula_get_sasl_user (request));
+
+	/* skip if the domain or the sasl user in the request is not
+	 * limited by the domain request */
+	if (! domain_in_tickets && ! sasl_user_in_tickets)
+		return VALVULA_STATE_DUNNO;
+
+	
 	/* by default report return dunno */
 	return VALVULA_STATE_DUNNO;
 }

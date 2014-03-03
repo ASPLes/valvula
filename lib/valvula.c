@@ -644,6 +644,50 @@ axl_bool valvula_is_exiting           (ValvulaCtx * ctx)
 	return result;
 }
 
+/** 
+ * @brief Support function that allows getting sender domain for the
+ * provided request.
+ *
+ * @param request The request that is being queried for its sender domain.
+ *
+ * @return A reference to the sender domain or NULL if it fails or it
+ * is not defined.
+ */
+const char * valvula_get_sender_domain (ValvulaRequest * request)
+{
+	int iterator;
+
+	if (request == NULL || request->sender == NULL)
+		return NULL;
+	
+	/* next iterator */
+	iterator = 0;
+	while (request->sender[iterator] && request->sender[iterator] != '@')
+		iterator++;
+
+	/* report the sender */
+	if (request->sender[iterator] == '@')
+		return &(request->sender[iterator+1]);
+	return request->sender;
+}
+
+/** 
+ * @brief Allows to get sasl_user associated to the request.
+ *
+ * @param request that is being queried.
+ *
+ * @return A reference to the sasl user or NULL if the request
+ * received is not autenticated.
+ */ 
+const char * valvula_get_sasl_user (ValvulaRequest * request)
+{
+	if (request == NULL || request->sasl_method == NULL || request->sasl_username)
+		return NULL;
+
+	/* return current sasl username */
+	return request->sasl_username;
+}
+
 /* @} */
 
 

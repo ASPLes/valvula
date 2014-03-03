@@ -401,6 +401,24 @@ axl_bool  test_02 (void)
 		return axl_false;
 	}
 
+	/* check boolean check queries */
+	if (valvulad_db_boolean_query (ctx, "SELECT * FROM test_02_table")) {
+		printf ("ERROR: expected to find valvulad_db_boolean_query to report false but it is reporting ok status..\n");
+		return axl_false;
+	}
+
+	/* insert content */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO test_02_table (new) VALUES ('%s')", "test")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check boolean check queries */
+	if (! valvulad_db_boolean_query (ctx, "SELECT * FROM test_02_table")) {
+		printf ("ERROR: expected to find valvulad_db_boolean_query to report true but it is reporting false status..\n");
+		return axl_false;
+	}
+
 	/* now remove the table */
 	printf ("Test 02: remove test_02_table..\n");
 	if (! valvulad_db_table_remove (ctx, "test_02_table")) {
@@ -413,6 +431,29 @@ axl_bool  test_02 (void)
 	/* free valvula server context */
 	common_finish (ctx);
 	
+	return axl_true;
+}
+
+axl_bool  test_02a (void)
+{
+	ValvulaRequest * request = axl_new (ValvulaRequest, 1);
+
+	/* check requests */
+	request->sender = "francis@aspl.es";
+	if (! axl_cmp ("aspl.es", valvula_get_sender_domain (request))) {
+		printf ("ERROR: expected to find sender domain aspl.es domain but it failed..\n");
+		return axl_false;
+	} /* end if */
+
+	request->sender = "MAILER-DAEMON";
+	if (! axl_cmp ("MAILER-DAEMON", valvula_get_sender_domain (request))) {
+		printf ("ERROR: expected to find sender domain MAILER-DAEMON domain but it failed..\n");
+		return axl_false;
+	} /* end if */
+
+	/* release request */
+	axl_free (request);
+
 	return axl_true;
 }
 
@@ -434,6 +475,12 @@ axl_bool test_03 (void) {
 		printf ("ERROR: expected to find 1 module loaded but found only %d..\n", axl_list_length (ctx->registered_modules));
 		return axl_false;
 	} /* end if */
+
+	/* prepare all information at the mod ticket module */
+	
+
+	/* now try to run some requests */
+
 
 	/* finish test */
 	common_finish (ctx);
@@ -480,7 +527,7 @@ int main (int argc, char ** argv)
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
-	printf ("** Available tests: test_01\n");
+	printf ("** Available tests: test_01, test_02, test_02a, test_03\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
 	printf ("**     <valvula@lists.aspl.es> Valvula Mailing list\n**\n");
@@ -510,6 +557,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_02")
 	run_test (test_02, "Test 02: database functions");
+
+	/* various api functions to get information from requests */
+	CHECK_TEST("test_02a")
+	run_test (test_02a, "Test 02a: API functions to get data from requests");
 
 	/* run tests */
 	CHECK_TEST("test_03")

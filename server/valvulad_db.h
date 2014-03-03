@@ -59,4 +59,12 @@ axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx,
 					  const char * attr_name, const char * attr_type, 
 					  ...);
 
+axl_bool        valvulad_db_boolean_query (ValvuladCtx * ctx, 
+					   const char * query, 
+					   ...);
+
+axl_bool        valvulad_db_run_non_query (ValvuladCtx * ctx, 
+					   const char * query, 
+					   ...);
+
 #endif 
