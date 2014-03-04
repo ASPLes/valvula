@@ -400,6 +400,34 @@ void valvulad_error (ValvuladCtx * ctx, axl_bool ignore_debug, const char * file
 	return;
 }
 
+/** 
+ * @brief Allows to report in a consistent maner when an operation is
+ * rejected.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param request The request operation that was rejected.
+ *
+ * @param format A printf-like message to report along with the reject message.
+ *
+ * @parm ... Additional parameters to complete the request.
+ */
+void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char * format, ...)
+{
+	va_list     args;
+	char      * message;
+
+	va_start (args, format);
+	/* create the message */
+	message = axl_stream_strdup_printfv (format, args);
+	va_end (args);
+
+	msg ("REJECT: %s -> %s : %s", request->sender, request->recipient, message);
+	axl_free (message);
+
+	return;
+}
+
 axl_bool valvulad_init (ValvuladCtx ** result) {
 	ValvuladCtx * ctx;
 	
@@ -433,6 +461,10 @@ void valvulad_exit (ValvuladCtx * ctx)
 	valvulad_module_cleanup (ctx);
 
 	valvulad_db_cleanup (ctx);
+
+	/* release on day change handlers */
+	axl_list_free (ctx->on_day_change_handlers);
+	ctx->on_day_change_handlers = NULL;
 	
 	/* release all context resources */
 	axl_doc_free (ctx->config);
@@ -571,4 +603,85 @@ char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid)
 	error ("Backtrace for Windows not implemented..");
 	return NULL;
 #endif			
+
+}
+
+/** 
+ * @brief Allows to add a handler to will be called every time a day
+ * change is detected.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param on_day_change The change handler that will be called when
+ * the event is detected.
+ *
+ * @param ptr Pointer to user defined data.
+ */
+void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDayChange on_day_change, axlPointer ptr)
+{
+	ValvuladHandlerPtr * data;
+
+	if (ctx == NULL || on_day_change == NULL)
+		return;
+
+	/* create the list to store handlers */
+	if (! ctx->on_day_change_handlers) {
+		ctx->on_day_change_handlers = axl_list_new (axl_list_equal_ptr, axl_free);
+
+		/* check memory allocation */
+		if (! ctx->on_day_change_handlers) {
+			error ("Memory allocation for on day change handlers failed..");
+			return;
+		} /* end if */
+	} /* end if */
+
+	/* get holder */
+	data = axl_new (ValvuladHandlerPtr, 1);
+	if (! data) {
+		error ("Memory allocation for on day change handlers failed (2)..");
+		return;
+	}
+
+	/* store into list */
+	data->handler = on_day_change;
+	data->ptr     = ptr;
+	axl_list_append (ctx->on_day_change_handlers, data);
+
+	return;
+}
+
+/** 
+ * @brief Allows to notify day change on currently registered
+ * handlers.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param new_day The new day to notify.
+ *
+ */
+void valvulad_notify_day_change (ValvuladCtx * ctx, long new_day)
+{
+	ValvuladHandlerPtr * ptr;
+	int                  iterator;
+	ValvuladOnDayChange  on_day_change;
+
+	if (ctx == NULL)
+		return;
+
+	/* iterate over all handlers */
+	iterator = 0;
+	while (iterator < axl_list_length (ctx->on_day_change_handlers)) {
+		/* get valvulad handler */
+		ptr = axl_list_get_nth (ctx->on_day_change_handlers, iterator);
+		if (ptr && ptr->handler) {
+			/* get the handler */
+			on_day_change = ptr->handler;
+			on_day_change (ctx, new_day, ptr->ptr);
+		} /* end if */
+
+		/* next iterator */
+		iterator++;
+	}
+
+	return;
 }

@@ -385,6 +385,12 @@ const char * valvula_get_sender_domain (ValvulaRequest * request);
 
 const char * valvula_get_sasl_user (ValvulaRequest * request);
 
+long         valvula_now (void);
+
+long         valvula_get_day (void);
+
+long         valvula_get_month (void);
+
 END_C_DECLS
 
 /* @} */

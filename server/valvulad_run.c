@@ -190,6 +190,88 @@ void valvulad_run_register_handlers (ValvuladCtx * ctx)
 	return;
 }
 
+void __valvulad_run_ensure_day_month_in_place (ValvuladCtx * ctx)
+{
+	/* run query to check if time tracking values are in place */
+	if (! valvulad_db_boolean_query (ctx, "SELECT * FROM time_tracking")) {
+		/* store time tracking */
+		if (! valvulad_db_run_non_query (ctx, "INSERT INTO time_tracking (day, month) VALUES ('%d', '%d')", valvula_get_day (), valvula_get_month ())) {
+			error ("Unable to install current day and month into the database");
+		} /* end if */
+	} /* end if */
+
+	return;
+}
+
+/** 
+ * @internal Install internal valvula server databases.
+ */
+void __valvulad_run_install_internal_dbs (ValvuladCtx * ctx)
+{
+
+	/* create databases to be used by the module */
+	msg ("Calling valvulad_db_ensure_table() ..");
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "time_tracking", 
+				  /* how many tickets does the domain have */
+				  "day", "int",
+				  /* day limit that can be consumed */
+				  "month", "int",
+				  NULL);
+
+	/* check if there is something stored and if not, store content */
+	__valvulad_run_ensure_day_month_in_place (ctx);
+
+	return;
+}
+
+/** 
+ * @internal Handler that tracks and triggers that day or month have
+ * changed.
+ *
+ */
+axl_bool __valvulad_run_time_tracking        (ValvulaCtx  * _ctx, 
+					      axlPointer    user_data,
+					      axlPointer    user_data2)
+{
+	ValvuladCtx        * ctx = user_data;
+	ValvuladRes          res;
+	long                 stored_day;
+	long                 stored_month;
+
+	/* check if there is something stored and if not, store content */
+	__valvulad_run_ensure_day_month_in_place (ctx);
+	
+	/* get current day and month values */
+	res = valvulad_db_run_query (ctx, "SELECT day, month FROM time_tracking");
+	if (res == NULL) {
+		error ("Failed to get time tracking content");
+		return axl_false;
+	} /* end if */
+	
+	/* get stored values */
+	stored_day   = GET_CELL_AS_LONG (res, 0);
+	stored_month = GET_CELL_AS_LONG (res, 1);
+
+	if (stored_month != valvula_get_month ()) {
+		/* ok month changed */
+		msg ("Valvula month change detected");
+	}
+
+	if (stored_day != valvula_get_day ()) {
+		/* ok, day changed */
+		msg ("Valvula engine day change detected, notifying..");
+		valvulad_notify_day_change (ctx, valvula_get_day ());
+
+		/* save new day */
+		
+	} /* end if */
+
+	return axl_false; /* do not remove the event, please fire it
+			   * again in the future */
+}
+
 
 /** 
  * @brief Starts valvulad engine using the current configuration.
@@ -234,6 +316,11 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	msg ("Calling to install/register module handler..");
 	valvulad_run_register_handlers (ctx);
 
+	/* install some internal databases */
+	__valvulad_run_install_internal_dbs (ctx);
+
+	/* install event to track day and month change */
+	valvula_thread_pool_new_event (ctx->ctx, 2000, __valvulad_run_time_tracking, ctx, NULL);
 	return axl_true; 
 }
 

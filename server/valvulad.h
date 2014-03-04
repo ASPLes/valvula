@@ -40,6 +40,9 @@
 #include <valvula.h>
 #include <exarg.h>
 
+/** 
+ * @brief ValvuladCtx server context. Do no confuse with \ref ValvulaCtx.
+ */
 typedef struct _ValvuladCtx {
 	axlDoc         * config;
 
@@ -61,7 +64,17 @@ typedef struct _ValvuladCtx {
 	 */
 	axlList        * registered_modules;
 	ValvulaMutex     registered_modules_mutex;
+
+	/** 
+	 * @brief List of on day change registered handlers 
+	 */
+	axlList        * on_day_change_handlers;
 } ValvuladCtx;
+
+typedef struct _ValvuladHandlePtr {
+	axlPointer handler;
+	axlPointer ptr;
+} ValvuladHandlerPtr;
 
 /* common includes */
 #include <valvulad_config.h>
@@ -185,6 +198,8 @@ void  valvulad_wrn_sl   (ValvuladCtx * ctx, const char * file, int line, const c
 #define tbc_access(m,...)   do{valvulad_access (ctx, __AXL_FILE__, __AXL_LINE__, m, ##__VA_ARGS__);}while(0)
 void  valvulad_access   (ValvuladCtx * ctx, const char * file, int line, const char * format, ...);
 
+void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char * format, ...);
+
 /** 
  * @internal The following definition allows to find printf like wrong
  * argument passing to nopoll_log function. To activate the depuration
@@ -212,5 +227,21 @@ char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid);
 axl_bool valvulad_init (ValvuladCtx ** result);
 
 void valvulad_exit (ValvuladCtx * ctx);
+
+/** 
+ * @brief Handler that represents those functions that are called to
+ * notify day change.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param new_day The new day being notified.
+ *
+ * @param user_data User defined pointer to be defined at \ref valvulad_add_on_day_change
+ */
+typedef void (*ValvuladOnDayChange) (ValvuladCtx * ctx, long new_day, axlPointer user_data);
+
+void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDayChange on_day_change, axlPointer ptr);
+
+void valvulad_notify_day_change (ValvuladCtx * ctx, long new_day);
 
 #endif

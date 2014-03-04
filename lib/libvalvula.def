@@ -66,6 +66,9 @@ valvula_ctx_set_default_reply_state
 valvula_ctx_unref
 valvula_ctx_unref2
 valvula_exit_ctx
+valvula_get_day
+valvula_get_month
+valvula_get_sasl_user
 valvula_get_sender_domain
 valvula_gethostbyname
 valvula_hash_clear
@@ -129,6 +132,7 @@ valvula_mutex_create
 valvula_mutex_destroy
 valvula_mutex_lock
 valvula_mutex_unlock
+valvula_now
 valvula_reader_accept_connections
 valvula_reader_connections_watched
 valvula_reader_notify_change_done_io_api

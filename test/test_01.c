@@ -321,6 +321,7 @@ axl_bool  test_02 (void)
 {
 	ValvuladCtx   * ctx;
 	const char    * path;
+	long            result;
 
 	/* load basic configuration */
 	path = "../server/valvula.example.conf";
@@ -339,7 +340,7 @@ axl_bool  test_02 (void)
 
 	/* create the table */
 	printf ("Test 02: ensure test_02_table exists..\n");
-	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "int", NULL)) {
+	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "autoincrement int", NULL)) {
 		printf ("ERROR: failed to create table test_02_table, valvulad_db_ensure_table failed..\n");
 		return axl_false;
 	} /* end if */
@@ -365,7 +366,7 @@ axl_bool  test_02 (void)
 
 	/* create the table */
 	printf ("Test 02: ensure test_02_table exists..\n");
-	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "int", NULL)) {
+	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "autoincrement int", NULL)) {
 		printf ("ERROR: failed to create table test_02_table, valvulad_db_ensure_table failed..\n");
 		return axl_false;
 	} /* end if */
@@ -384,7 +385,7 @@ axl_bool  test_02 (void)
 
 	/* create the table */
 	printf ("Test 02: ensure test_02_table exists..\n");
-	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "int", "new", "text", "value2", "text", NULL)) {
+	if (! valvulad_db_ensure_table (ctx, "test_02_table", "id", "autoincrement int", "new", "text", "value2", "text", NULL)) {
 		printf ("ERROR: failed to create table test_02_table, valvulad_db_ensure_table failed (2)..\n");
 		return axl_false;
 	} /* end if */
@@ -410,6 +411,14 @@ axl_bool  test_02 (void)
 	/* insert content */
 	if (! valvulad_db_run_non_query (ctx, "INSERT INTO test_02_table (new) VALUES ('%s')", "test")) {
 		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+
+	/* get the id installed */
+	result = valvulad_db_run_query_as_long (ctx, "SELECT id FROM test_02_table");
+	printf ("Test 02: id from test_02_table: %ld\n", result);
+	if (result < 1) {
+		printf ("ERROR: expected to receive a proper value defined from valvulad_db_run_query_as_long but received %ld\n", result);
 		return axl_false;
 	} /* end if */
 
@@ -461,6 +470,7 @@ axl_bool  test_02a (void)
 axl_bool test_03 (void) {
 	ValvuladCtx   * ctx;
 	const char    * path;
+	const char    * query;
 
 	/* load basic configuration */
 	path = "test_03.conf";
@@ -477,6 +487,29 @@ axl_bool test_03 (void) {
 	} /* end if */
 
 	/* prepare all information at the mod ticket module */
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM ticket_plan")) {
+		printf ("ERROR: failed to remove old plans..\n");
+		return axl_false;
+	} /* end if */
+
+	/* delete domain tickets */
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM domain_ticket")) {
+		printf ("ERROR: failed to remove old plans..\n");
+		return axl_false;
+	} /* end if */
+
+	/* now add some ticke plans */
+	query = "INSERT INTO ticket_plan (name, description, total_limit, day_limit, month_limit) VALUES ('test 03', 'description', 20, 4, 10)";
+	if (! valvulad_db_run_non_query (ctx, query)) {
+		printf ("ERROR: failed to remove old plans..\n");
+		return axl_false;
+	} /* end if */
+
+	
+	
+
+
+	
 	
 
 	/* now try to run some requests */

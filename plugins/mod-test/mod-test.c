@@ -91,9 +91,9 @@ ValvuladModDef module_def = {
 	"Valvulad test module",
 	test_init,
 	test_close,
-	test_reconf,
 	/* process */
 	NULL,
+	test_reconf,
 	NULL
 };
 
