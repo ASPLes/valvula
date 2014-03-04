@@ -443,7 +443,7 @@ typedef enum {
 	 */
 	VALVULA_STATE_DUNNO = 1,
 	/** 
-	 * @brief Rejects the operation requested.
+	 * @brief Rejects the operation requested. This is also Deny.
 	 */
 	VALVULA_STATE_REJECT = 2,
 	/** 

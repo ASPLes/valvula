@@ -69,10 +69,6 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "day_limit", "int",
 				  /* month limit that can be consumed */
 				  "month_limit", "int",
-				  /* applies to sasl authenticated sends too */
-				  "applies_sasl", "int",
-				  /* applies to sasl authenticated sends too */
-				  "applies_without_sasl", "int",
 				  NULL);
 
 	/* global domain plan */
@@ -94,6 +90,8 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "current_month_usage", "int",
 				  /* valid until (if -1 no valid until limit, if defined, epoch until it is valid) */
 				  "valid_until", "int",
+				  /* ticket plan id */
+				  "ticket_plan_id", "int",
 				  NULL);
 
 	return axl_true;
@@ -111,6 +109,21 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	axl_bool domain_in_tickets    = axl_false;
 	axl_bool sasl_user_in_tickets = axl_false;
 
+	/* get result and row */
+	ValvuladRes    result  = NULL;
+	ValvuladRow    row;
+
+	long           current_day_usage;
+	long           current_month_usage;
+	long           valid_until;
+	long           total_used;
+	long           record_id;
+
+	long           ticket_plan_id;
+	long           total_limit;
+	long           day_limit;
+	long           month_limit;
+
 	msg ("calling to process at mod ticket");
 	
 	/* check if the domain is limited by ticket */
@@ -124,6 +137,88 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	if (! domain_in_tickets && ! sasl_user_in_tickets)
 		return VALVULA_STATE_DUNNO;
 
+	/* get current tickets for this domain */
+	if (sasl_user_in_tickets) 
+		result = valvulad_db_run_query (ctx, "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE sasl_user = '%s'",
+						valvula_get_sasl_user (request));
+	else if (domain_in_tickets)
+		result = valvulad_db_run_query (ctx, "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE domain = '%s'",
+						valvula_get_sender_domain (request));
+
+	if (! result) {
+		/* maybe the database configurat was removed before checking previous request, no problem */
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* get the values we are interesting in */
+	row = valvulad_db_get_row (ctx, result);
+	if (row == NULL) {
+		/* maybe the database configurat was removed before checking previous request, no problem */
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* get if the limit is expired */
+	valid_until = GET_CELL_AS_LONG (row, 3);
+	if (valvula_now () > valid_until) {
+		/* not accepted */
+		valvulad_reject (ctx, request, "Rejecting operation because tickets are expired (valid_until %d < %d)",
+				 valid_until, valvula_now ());
+		return VALVULA_STATE_REJECT;
+	} /* end if */
+
+	/* get daily use, monthly use and total usage */
+	total_used          = GET_CELL_AS_LONG (row, 0);
+	current_day_usage   = GET_CELL_AS_LONG (row, 1);
+	current_month_usage = GET_CELL_AS_LONG (row, 2);
+	ticket_plan_id      = GET_CELL_AS_LONG (row, 4);
+	record_id           = GET_CELL_AS_LONG (row, 5);
+
+	/* release result */
+	valvulad_db_release_result (result);
+
+	/* now get limits from plan */
+	result = valvulad_db_run_query (ctx, "SELECT total_limit, day_limit, month_limit FROM ticket_plan WHERE id = '%d'",
+					ticket_plan_id);
+	if (result == NULL) {
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* get values */
+	total_limit = GET_CELL_AS_LONG (row, 0);
+	day_limit   = GET_CELL_AS_LONG (row, 1);
+	month_limit = GET_CELL_AS_LONG (row, 2);
+
+	/* release result */
+	valvulad_db_release_result (result);
+
+	/* apply operations */
+	total_used ++;
+	current_day_usage ++;
+	current_month_usage ++;
+
+	/* check total used limit */
+	if (total_used > total_limit) {
+		valvulad_reject (ctx, request, "Rejecting operation because total limit reached (%d)", total_used);
+		return VALVULA_STATE_REJECT;
+	} /* end if */
+
+	/* check day limit */
+	if (current_day_usage > day_limit) {
+		valvulad_reject (ctx, request, "Rejecting operation because day limit reached (%d)", day_limit);
+		return VALVULA_STATE_REJECT;
+	} /* end if */
+
+	/* check month limit */
+	if (current_month_usage > month_limit) {
+		valvulad_reject (ctx, request, "Rejecting operation because month limit reached (%d)", month_limit);
+		return VALVULA_STATE_REJECT;
+	} /* end if */
+
+	/* operation accepted, update database */
+	if (! valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET current_day_usage = %d, current_month_usage = %d, total_used = %d WHERE id = %d",
+					 current_day_usage, current_month_usage, total_used, record_id)) {
+		error ("Failed to update record on mod-ticket");
+	} /* end if */
 	
 	/* by default report return dunno */
 	return VALVULA_STATE_DUNNO;

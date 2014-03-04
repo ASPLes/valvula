@@ -38,6 +38,16 @@
 
 #include <valvulad.h>
 
+/** 
+ * @brief Type that represents a single row inside a query result \ref ValvuladRes.
+ */
+typedef axlPointer ValvuladRow;
+
+/** 
+ * @brief Type that represents a complete query as reported by \ref valvulad_db_run_query.
+ */
+typedef axlPointer ValvuladRes;
+
 axl_bool        valvulad_db_init (ValvuladCtx * ctx);
 
 void            valvulad_db_cleanup (ValvuladCtx * ctx);
@@ -59,6 +69,35 @@ axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx,
 					  const char * attr_name, const char * attr_type, 
 					  ...);
 
+ValvuladRes     valvulad_db_run_query     (ValvuladCtx * ctx, 
+					   const char * query, 
+					   ...);
+
+
+/** 
+ * @brief Get the next row from a result object.
+ *
+ * @param result The value reported by valvulad_db_run_query.
+ *
+ * @return The row reference or NULL if it fails.
+ */
+#define GET_ROW(result) valvulad_db_get_row(ctx, result)
+
+ValvuladRow      valvulad_db_get_row       (ValvuladCtx * ctx, ValvuladRes result);
+
+/** 
+ * @brief Get the cell inside a particular a particular row at the given position.
+ *
+ * @param row The row where the content is being retreived.
+ *
+ * @param pos The position that is being requested.
+ *
+ * @return Long value found or -1 if it fails.
+ */
+#define GET_CELL_AS_LONG(row,pos) valvulad_db_get_cell_as_long(ctx,row,pos)
+
+long            valvulad_db_get_cell_as_long (ValvuladCtx * ctx, ValvuladRow row, int posisition);
+
 axl_bool        valvulad_db_boolean_query (ValvuladCtx * ctx, 
 					   const char * query, 
 					   ...);
@@ -66,5 +105,11 @@ axl_bool        valvulad_db_boolean_query (ValvuladCtx * ctx,
 axl_bool        valvulad_db_run_non_query (ValvuladCtx * ctx, 
 					   const char * query, 
 					   ...);
+
+long            valvulad_db_run_query_as_long (ValvuladCtx * ctx, 
+					       const char * query, 
+					       ...);
+
+void            valvulad_db_release_result (ValvuladRes result);
 
 #endif 

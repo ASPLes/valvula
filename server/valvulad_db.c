@@ -172,7 +172,7 @@ axl_bool valvulad_db_check_conn (ValvuladCtx * ctx)
  * returns axl_true in the case of a NON query (UPDATE, DELETE, INSERT
  * ...) and there is no error.
  */
-MYSQL_RES * valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
+ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 {
 	MYSQL_RES * result;
 	MYSQL     * dbconn;
@@ -230,6 +230,59 @@ MYSQL_RES * valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	valvulad_db_release_connection (ctx, dbconn); 
 
 	return result;
+}
+
+/** 
+ * @brief Allows to get the next row on the provided database result.
+ *
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param result The result pointer that was received from \ref valvulad_db_run_query
+ *
+ * @return A reference to the row or NULL if it fails.
+ */
+ValvuladRow      valvulad_db_get_row       (ValvuladCtx * ctx, ValvuladRes result)
+{
+	/* check references and report error */
+	if (ctx == NULL || result == NULL)
+		return NULL;
+
+	return mysql_fetch_row (result);
+}
+
+/** 
+ * @brief Allows to get the content of the cell at the provided
+ * position and translating the content into a long value.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param row The result object query. This reference is get from \ref valvulad_db_run_query.
+ *
+ * @param position The cell position inside the row from 0 to n - 1
+ *
+ * @return long value or -1 when it fails.
+ */
+long            valvulad_db_get_cell_as_long (ValvuladCtx * ctx, ValvuladRow row, int position)
+{
+	int       iterator;
+	MYSQL_ROW _row;
+
+	if (ctx == NULL || row == NULL || position < 0)
+		return -1;
+
+	/* securely access to the position requested */
+	iterator = 0;
+	_row = row;
+	while (iterator < position && _row[iterator])
+		iterator++;
+
+	/* check if we found the position */
+	if (iterator != position)
+		return -1;
+
+	/* report row value */
+	return strtol (_row[iterator], NULL, 10);
 }
 
 
@@ -366,6 +419,7 @@ axl_bool        valvulad_db_ensure_table (ValvuladCtx * ctx,
 
 	if (! valvulad_db_attr_exists (ctx, table_name, attr_name)) {
 		/* support for auto increments */
+		
 		if (axl_cmp (attr_type, "autoincrement int"))
 			attr_type = "INT AUTO_INCREMENT PRIMARY KEY";
 
@@ -500,4 +554,77 @@ axl_bool        valvulad_db_run_non_query (ValvuladCtx * ctx,
 		mysql_free_result (result);
 
 	return axl_true;
+}
+
+/** 
+ * @brief Allows to run a query and report the value found at the
+ * first row on the provided column as a integer.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param col_name The column name where to get the result.
+ *
+ * @param query The query string to run.
+ *
+ * @param ... Additional arguments to the query string.
+ *
+ * @return -1 in case of oerrors or the value reported at the first
+ * row of the query result at the column requested. Note that if the
+ * result is defined but it has NULL or empty string, 0 is returned.
+ */
+long             valvulad_db_run_query_as_long (ValvuladCtx * ctx, 
+						const char * query, 
+						...)
+{
+	MYSQL_RES * result;
+	char      * complete_query;
+	va_list     args;
+	MYSQL_ROW   row;
+	long        int_result;
+
+	/* open std args */
+	va_start (args, query);
+
+	/* create complete query */
+	complete_query = axl_stream_strdup_printfv (query, args);
+
+	/* close std args */
+	va_end (args);
+
+	/* clear query */
+	axl_stream_trim (complete_query);
+
+	/* run query */
+	result = valvulad_db_run_query (ctx, complete_query);
+	axl_free (complete_query);
+	if (result == NULL)
+		return -1;
+
+	/* get first row */
+	row = mysql_fetch_row (result);
+	if (row[0] == NULL || strlen (row[0]) == 0)
+		return 0;
+
+	/* get result */
+	int_result = strtol (row[0], NULL, 10);
+
+	/* release the result */
+	if (PTR_TO_INT (result) != axl_true)
+		mysql_free_result (result);
+
+	return int_result;
+}
+
+/** 
+ * @brief Allows to release the result received from \ref valvulad_db_run_query.
+ *
+ * @param result The result to be released.
+ */
+void            valvulad_db_release_result (ValvuladRes result)
+{
+	if (result == NULL)
+		return;
+
+	mysql_free_result (result);
+	return;
 }

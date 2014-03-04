@@ -688,6 +688,51 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
 	return request->sasl_username;
 }
 
+/** 
+ * @brief Allows to get current epoch (now).
+ *
+ * @return Number of seconds that represents epoch now.
+ */
+long     valvula_now (void)
+{
+	struct timeval       now;
+	gettimeofday (&now, NULL);
+
+	/* report now tv_sec */
+	return now.tv_sec;
+}
+
+/** 
+ * @brief Allows to get current day.
+ *
+ * @return Current day reported.
+ */
+long         valvula_get_day (void)
+{
+	 time_t      t;
+	 struct tm * tmp;
+	 
+	 t = time(NULL);
+	 tmp = localtime (&t);
+	 return tmp->tm_mday;
+}
+
+/** 
+ * @brief Allows to get current month.
+ *
+ * @return Current month reported.
+ */
+long         valvula_get_month (void)
+{
+	time_t      t;
+	struct tm * tmp;
+	
+	t = time(NULL);
+	tmp = localtime (&t);
+	
+	return tmp->tm_mon;
+}
+
 /* @} */
 
 
