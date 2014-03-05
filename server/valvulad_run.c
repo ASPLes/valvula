@@ -237,6 +237,7 @@ axl_bool __valvulad_run_time_tracking        (ValvulaCtx  * _ctx,
 {
 	ValvuladCtx        * ctx = user_data;
 	ValvuladRes          res;
+	ValvuladRow          row;
 	long                 stored_day;
 	long                 stored_month;
 
@@ -251,20 +252,27 @@ axl_bool __valvulad_run_time_tracking        (ValvulaCtx  * _ctx,
 	} /* end if */
 	
 	/* get stored values */
-	stored_day   = GET_CELL_AS_LONG (res, 0);
-	stored_month = GET_CELL_AS_LONG (res, 1);
+	row          = GET_ROW (res);
+	stored_day   = GET_CELL_AS_LONG (row, 0);
+	stored_month = GET_CELL_AS_LONG (row, 1);
 
 	if (stored_month != valvula_get_month ()) {
-		/* ok month changed */
+		/* ok, day changed, save it */
+		valvulad_db_run_non_query (ctx, "UPDATE time_tracking SET month = '%d'", valvula_get_month ());
+
+		/* notify */
 		msg ("Valvula month change detected");
-	}
+		valvulad_notify_date_change (ctx, valvula_get_month (), VALVULAD_DATE_ITEM_MONTH);
+
+	} /* end if */
 
 	if (stored_day != valvula_get_day ()) {
-		/* ok, day changed */
-		msg ("Valvula engine day change detected, notifying..");
-		valvulad_notify_day_change (ctx, valvula_get_day ());
+		/* ok, day changed, save it */
+		valvulad_db_run_non_query (ctx, "UPDATE time_tracking SET day = '%d'", valvula_get_day ());
 
-		/* save new day */
+		/* notify */
+		msg ("Valvula engine day change detected, notifying..");
+		valvulad_notify_date_change (ctx, valvula_get_day (), VALVULAD_DATE_ITEM_DAY);
 		
 	} /* end if */
 
