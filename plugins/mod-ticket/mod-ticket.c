@@ -41,6 +41,30 @@ BEGIN_C_DECLS
 
 ValvuladCtx * ctx = NULL;
 
+ValvulaMutex  work_mutex;
+
+/** 
+ * @brief Handler called when day changes.
+ */
+void ticket_change_day (ValvuladCtx * ctx, long new_value, axlPointer user_data)
+{
+	/* reset day usage for all mail plans */
+	valvulad_db_run_query (ctx, "UPDATE domain_ticket SET current_day_usage = '0'");
+
+	return;
+}
+
+/** 
+ * @brief Handler called when month changes.
+ */
+void ticket_change_month (ValvuladCtx * ctx, long new_value, axlPointer user_data)
+{
+	/* reset day usage for all mail plans */
+	valvulad_db_run_query (ctx, "UPDATE domain_ticket SET current_month_usage = '0'");
+
+	return;
+}
+
 /** 
  * @brief Init function, perform all the necessary code to register
  * profiles, configure Vortex, and any other init task. The function
@@ -94,6 +118,13 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "ticket_plan_id", "int",
 				  NULL);
 
+	/* add on day and on month change */
+	valvulad_add_on_day_change (ctx, ticket_change_day, NULL);
+	valvulad_add_on_month_change (ctx, ticket_change_month, NULL);
+
+	/* init lock */
+	valvula_mutex_create (&work_mutex);
+
 	return axl_true;
 }
 
@@ -137,6 +168,9 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	if (! domain_in_tickets && ! sasl_user_in_tickets)
 		return VALVULA_STATE_DUNNO;
 
+	/* lock */
+	valvula_mutex_lock (&work_mutex);
+
 	/* get current tickets for this domain */
 	if (sasl_user_in_tickets) 
 		result = valvulad_db_run_query (ctx, "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE sasl_user = '%s'",
@@ -146,6 +180,9 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 						valvula_get_sender_domain (request));
 
 	if (! result) {
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
 		/* maybe the database configurat was removed before checking previous request, no problem */
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
@@ -153,6 +190,12 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	/* get the values we are interesting in */
 	row = valvulad_db_get_row (ctx, result);
 	if (row == NULL) {
+		/* release results */
+		valvulad_db_release_result (result);
+
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
 		/* maybe the database configurat was removed before checking previous request, no problem */
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
@@ -160,6 +203,12 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	/* get if the limit is expired */
 	valid_until = GET_CELL_AS_LONG (row, 3);
 	if (valvula_now () > valid_until) {
+		/* release results */
+		valvulad_db_release_result (result);
+
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
 		/* not accepted */
 		valvulad_reject (ctx, request, "Rejecting operation because tickets are expired (valid_until %d < %d)",
 				 valid_until, valvula_now ());
@@ -180,6 +229,13 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	result = valvulad_db_run_query (ctx, "SELECT total_limit, day_limit, month_limit FROM ticket_plan WHERE id = '%d'",
 					ticket_plan_id);
 	if (result == NULL) {
+		/* don't record an error here because the database
+		 * record may have vanished during the execution of
+		 * this tests */
+
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
@@ -198,18 +254,27 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	/* check total used limit */
 	if (total_used > total_limit) {
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
 		valvulad_reject (ctx, request, "Rejecting operation because total limit reached (%d)", total_used);
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
 	/* check day limit */
 	if (current_day_usage > day_limit) {
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
 		valvulad_reject (ctx, request, "Rejecting operation because day limit reached (%d)", day_limit);
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
 	/* check month limit */
 	if (current_month_usage > month_limit) {
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
 		valvulad_reject (ctx, request, "Rejecting operation because month limit reached (%d)", month_limit);
 		return VALVULA_STATE_REJECT;
 	} /* end if */
@@ -219,6 +284,9 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 					 current_day_usage, current_month_usage, total_used, record_id)) {
 		error ("Failed to update record on mod-ticket");
 	} /* end if */
+
+	/* unlock */
+	valvula_mutex_unlock (&work_mutex);
 	
 	/* by default report return dunno */
 	return VALVULA_STATE_DUNNO;

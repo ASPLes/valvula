@@ -69,6 +69,11 @@ typedef struct _ValvuladCtx {
 	 * @brief List of on day change registered handlers 
 	 */
 	axlList        * on_day_change_handlers;
+
+	/** 
+	 * @brief List of on day change registered handlers 
+	 */
+	axlList        * on_month_change_handlers;
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {
@@ -234,14 +239,33 @@ void valvulad_exit (ValvuladCtx * ctx);
  *
  * @param ctx The context where the operation will take place.
  *
- * @param new_day The new day being notified.
+ * @param new_value The new value being notified: may it be day or month value.
  *
  * @param user_data User defined pointer to be defined at \ref valvulad_add_on_day_change
  */
-typedef void (*ValvuladOnDayChange) (ValvuladCtx * ctx, long new_day, axlPointer user_data);
+typedef void (*ValvuladOnDateChange) (ValvuladCtx * ctx, long new_value, axlPointer user_data);
 
-void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDayChange on_day_change, axlPointer ptr);
+/** 
+ * @brief Valvula date item that allows selecting which item must be
+ * configured or notified.
+ */
+typedef enum {
+	/** 
+	 * @brief Changes and configurations that refers to day.
+	 */
+	VALVULAD_DATE_ITEM_DAY = 1,
+	/** 
+	 * @brief Chnages and configurations that refers to month.
+	 */
+	VALVULAD_DATE_ITEM_MONTH = 2,
+} ValvuladDateItem;
 
-void valvulad_notify_day_change (ValvuladCtx * ctx, long new_day);
+void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDateChange on_day_change, axlPointer ptr);
+
+void valvulad_add_on_month_change (ValvuladCtx * ctx, ValvuladOnDateChange on_day_change, axlPointer ptr);
+
+void valvulad_notify_date_change (ValvuladCtx * ctx, long new_value, ValvuladDateItem item_type);
+
+
 
 #endif

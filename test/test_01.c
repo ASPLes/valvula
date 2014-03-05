@@ -306,10 +306,6 @@ axl_bool  test_01a (void)
 		return axl_false;
 	}
 
-
-				      
-				      
-
 	/* free valvula server context */
 	printf ("Test 01: finishing configuration..\n");
 	common_finish (ctx);
@@ -471,6 +467,8 @@ axl_bool test_03 (void) {
 	ValvuladCtx   * ctx;
 	const char    * path;
 	const char    * query;
+	ValvulaState    state;
+	int             iterator;
 
 	/* load basic configuration */
 	path = "test_03.conf";
@@ -505,16 +503,79 @@ axl_bool test_03 (void) {
 		return axl_false;
 	} /* end if */
 
+	printf ("Test 03: test limited sasl user ..\n");
+	/* add the user that is going to be limited */
+	query = "INSERT INTO domain_ticket (sasl_user, valid_until, ticket_plan_id) VALUES ('test@limited.com', %d, (SELECT max(id) FROM ticket_plan))";
+	if (! valvulad_db_run_non_query (ctx, query, valvula_now () + 1000)) {
+		printf ("ERROR: failed to remove old plans..\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		return axl_false;
+	} /* end if */
+
+
+	printf ("Test 03: testing allowed tickets (4)..\n");
+	/* testing day limited */
+	iterator = 0;
+	while (iterator < 4) {
+		/* SHOULD WORK: now try to run some requests. The
+		 * following should work  */
+		state = test_valvula_request (/* policy server location */
+			"127.0.0.1", "3579", 
+			/* state */
+			"smtpd_access_policy", "RCPT", "SMTP",
+			/* sender, recipient, recipient count */
+			"francis@aspl.es", "francis@aspl.es", "1",
+			/* queue-id, size */
+			"935jfe534", "235",
+			/* sasl method, sasl username, sasl sender */
+			"plain", "test@limited.com", NULL);
+
+		if (state != VALVULA_STATE_DUNNO) {
+			printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+			return axl_false;
+		} /* end if */
+
+		/* next iterator */
+		iterator++;
+	}
+
+	printf ("Test 03: now test that day limited has been reached a no more messages are allowed..\n");
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work  */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
 	
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
 	
-
-
-	
-	
-
-	/* now try to run some requests */
-
-
 	/* finish test */
 	common_finish (ctx);
 	

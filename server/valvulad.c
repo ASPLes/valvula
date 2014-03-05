@@ -465,6 +465,10 @@ void valvulad_exit (ValvuladCtx * ctx)
 	/* release on day change handlers */
 	axl_list_free (ctx->on_day_change_handlers);
 	ctx->on_day_change_handlers = NULL;
+
+	/* release on month change handlers */
+	axl_list_free (ctx->on_month_change_handlers);
+	ctx->on_month_change_handlers = NULL;
 	
 	/* release all context resources */
 	axl_doc_free (ctx->config);
@@ -606,6 +610,63 @@ char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid)
 
 }
 
+void __valvulad_common_add_on_date_change (ValvuladCtx * ctx, ValvuladOnDateChange on_change, axlPointer ptr, ValvuladDateItem item_type)
+{
+	ValvuladHandlerPtr * data;
+
+	if (ctx == NULL || on_change == NULL)
+		return;
+
+	/* create the list to store handlers */
+	switch (item_type) {
+	case VALVULAD_DATE_ITEM_DAY:
+		if (! ctx->on_day_change_handlers) {
+			ctx->on_day_change_handlers = axl_list_new (axl_list_equal_ptr, axl_free);
+
+			/* check memory allocation */
+			if (! ctx->on_day_change_handlers) {
+				error ("Memory allocation for on day change handlers failed..");
+				return;
+			} /* end if */
+		} /* end if */
+		break;
+	case VALVULAD_DATE_ITEM_MONTH:
+		if (! ctx->on_month_change_handlers) {
+			ctx->on_month_change_handlers = axl_list_new (axl_list_equal_ptr, axl_free);
+
+			/* check memory allocation */
+			if (! ctx->on_month_change_handlers) {
+				error ("Memory allocation for on month change handlers failed..");
+				return;
+			} /* end if */
+		} /* end if */
+
+		break;
+	}
+
+	/* get holder */
+	data = axl_new (ValvuladHandlerPtr, 1);
+	if (! data) {
+		error ("Memory allocation for on day/month change handlers failed (2)..");
+		return;
+	}
+
+	/* store into list */
+	data->handler = on_change;
+	data->ptr     = ptr;
+
+	switch (item_type) {
+	case VALVULAD_DATE_ITEM_DAY:
+		axl_list_append (ctx->on_day_change_handlers, data);
+		break;
+	case VALVULAD_DATE_ITEM_MONTH:
+		axl_list_append (ctx->on_month_change_handlers, data);
+		break;
+	} /* end switch */
+
+	return;
+}
+
 /** 
  * @brief Allows to add a handler to will be called every time a day
  * change is detected.
@@ -617,36 +678,28 @@ char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid)
  *
  * @param ptr Pointer to user defined data.
  */
-void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDayChange on_day_change, axlPointer ptr)
+void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDateChange on_day_change, axlPointer ptr)
 {
-	ValvuladHandlerPtr * data;
+	/* add handler as day change notifier */
+	__valvulad_common_add_on_date_change (ctx, on_day_change, ptr, VALVULAD_DATE_ITEM_DAY);
+	return;
+}
 
-	if (ctx == NULL || on_day_change == NULL)
-		return;
-
-	/* create the list to store handlers */
-	if (! ctx->on_day_change_handlers) {
-		ctx->on_day_change_handlers = axl_list_new (axl_list_equal_ptr, axl_free);
-
-		/* check memory allocation */
-		if (! ctx->on_day_change_handlers) {
-			error ("Memory allocation for on day change handlers failed..");
-			return;
-		} /* end if */
-	} /* end if */
-
-	/* get holder */
-	data = axl_new (ValvuladHandlerPtr, 1);
-	if (! data) {
-		error ("Memory allocation for on day change handlers failed (2)..");
-		return;
-	}
-
-	/* store into list */
-	data->handler = on_day_change;
-	data->ptr     = ptr;
-	axl_list_append (ctx->on_day_change_handlers, data);
-
+/** 
+ * @brief Allows to add a handler to will be called every time a month
+ * change is detected.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param on_month_change The change handler that will be called when
+ * the event is detected.
+ *
+ * @param ptr Pointer to user defined data.
+ */
+void valvulad_add_on_month_change (ValvuladCtx * ctx, ValvuladOnDateChange on_month_change, axlPointer ptr)
+{
+	/* add handler as month change notifier */
+	__valvulad_common_add_on_date_change (ctx, on_month_change, ptr, VALVULAD_DATE_ITEM_MONTH);
 	return;
 }
 
@@ -658,25 +711,40 @@ void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDayChange on_day_c
  *
  * @param new_day The new day to notify.
  *
+ * @param item_type that is being notified.
  */
-void valvulad_notify_day_change (ValvuladCtx * ctx, long new_day)
+void valvulad_notify_date_change (ValvuladCtx * ctx, long new_value, ValvuladDateItem item_type)
 {
-	ValvuladHandlerPtr * ptr;
-	int                  iterator;
-	ValvuladOnDayChange  on_day_change;
+	ValvuladHandlerPtr   * ptr;
+	int                    iterator;
+	ValvuladOnDateChange   on_day_change;
+	axlList              * list = NULL;
 
 	if (ctx == NULL)
 		return;
 
+	switch (item_type) {
+	case VALVULAD_DATE_ITEM_DAY:
+		list = ctx->on_day_change_handlers;
+		break;
+	case VALVULAD_DATE_ITEM_MONTH:
+		list = ctx->on_month_change_handlers;
+		break;
+	}
+
+	/* check to avoid working with a null reference */
+	if (! list)
+		return;
+
 	/* iterate over all handlers */
 	iterator = 0;
-	while (iterator < axl_list_length (ctx->on_day_change_handlers)) {
+	while (iterator < axl_list_length (list)) {
 		/* get valvulad handler */
-		ptr = axl_list_get_nth (ctx->on_day_change_handlers, iterator);
+		ptr = axl_list_get_nth (list, iterator);
 		if (ptr && ptr->handler) {
 			/* get the handler */
 			on_day_change = ptr->handler;
-			on_day_change (ctx, new_day, ptr->ptr);
+			on_day_change (ctx, new_value, ptr->ptr);
 		} /* end if */
 
 		/* next iterator */
