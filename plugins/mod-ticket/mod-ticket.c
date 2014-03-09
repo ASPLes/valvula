@@ -258,11 +258,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	day_limit   = GET_CELL_AS_LONG (row, 1);
 	month_limit = GET_CELL_AS_LONG (row, 2);
 
-	msg ("mod-ticket: %s total limit: %d (used: %d), day limit: %d (used: %d), month limit: %d (used: %d)",
-	     /* who is sending */
-	     valvula_get_sasl_user (request) ? valvula_get_sasl_user (request) : valvula_get_sender_domain (request),
-	     total_limit, total_used, day_limit, current_day_usage, month_limit, current_month_usage);
-
 	/* release result */
 	valvulad_db_release_result (result);
 
@@ -271,12 +266,16 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	current_day_usage ++;
 	current_month_usage ++;
 
+	/* msg ("mod-ticket: %s total limit: %d (used: %d), day limit: %d (used: %d), month limit: %d (used: %d)",
+	     valvula_get_sasl_user (request) ? valvula_get_sasl_user (request) : valvula_get_sender_domain (request),
+	     total_limit, total_used, day_limit, current_day_usage, month_limit, current_month_usage);*/
+
 	/* check total used limit */
 	if (total_used > total_limit) {
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		valvulad_reject (ctx, request, "Rejecting operation because total limit reached (%d)", total_used);
+		valvulad_reject (ctx, request, "Rejecting operation because total plan limit's reached (%d)", total_used);
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
