@@ -191,9 +191,10 @@ ValvulaState test_translate_action (const char * buffer, int buffer_len)
 
 	while (buffer[iterator] != '=' && buffer[iterator] != 0)
 		iterator++;
+
 	if (axl_memcmp (buffer + iterator + 1, "dunno", 5))
 		return VALVULA_STATE_DUNNO;
-	if (axl_memcmp (buffer + iterator + 1, "reject", 6))
+	if (axl_memcmp (buffer + iterator + 1, "reject", 6)) 
 		return VALVULA_STATE_REJECT;
 	if (axl_memcmp (buffer + iterator + 1, "ok", 2))
 		return VALVULA_STATE_OK;
@@ -272,7 +273,7 @@ ValvulaState test_valvula_request (const char * policy_server, const char * port
 
 	valvula_close_socket (session);
 	valvula_ctx_unref (&ctx);
-	
+
 	return test_translate_action (buffer, 1024);
 }
 
@@ -463,13 +464,13 @@ axl_bool  test_02a (void)
 	return axl_true;
 }
 
-axl_bool test_03_test_sending_day_limit_and_final_reject (void) {
+axl_bool test_03_test_sending_day_limit_and_final_reject (int allowed_sending_item) {
 	int            iterator;
 	ValvulaState   state;
 
 	/* testing day limited */
 	iterator = 0;
-	while (iterator < 4) {
+	while (iterator < allowed_sending_item) {
 		/* SHOULD WORK: now try to run some requests. The
 		 * following should work  */
 		state = test_valvula_request (/* policy server location */
@@ -492,7 +493,7 @@ axl_bool test_03_test_sending_day_limit_and_final_reject (void) {
 		iterator++;
 	}
 
-	printf ("Test 03: now test that day limited has been reached a no more messages are allowed..\n");
+	printf ("Test 03: now test that day limited has been reached a no more messages are allowed than %d..\n", allowed_sending_item);
 	/* SHOULD WORK: now try to run some requests. The following
 	 * should work  */
 	state = test_valvula_request (/* policy server location */
@@ -578,21 +579,72 @@ axl_bool test_03 (void) {
 		"plain", "francis@aspl.es", NULL);
 
 	if (state != VALVULA_STATE_DUNNO) {
-		printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		printf ("ERROR (1): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
 		return axl_false;
 	} /* end if */
 
 
 	printf ("Test 03: testing allowed tickets (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ())
+	if (! test_03_test_sending_day_limit_and_final_reject (4))
 		return axl_false;
 
-	printf ("Test 03: perfect, now notify day change and see we can keep on sending...\n");
+	printf ("Test 03: perfect, now notify day change and see we can keep on sending (1)...\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: testing again allowed tickets (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ())
+	if (! test_03_test_sending_day_limit_and_final_reject (4))
 		return axl_false;
+
+	printf ("Test 03: perfect, now notify day change to test last 2 rounds for month limit (2)...\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+
+	printf ("Test 03: now try to reach month limit (3)...");
+	if (! test_03_test_sending_day_limit_and_final_reject (2))
+		return axl_false;
+
+	/* now check database here */
+	printf ("Test 03: perfect, now notify month change to test rest of rounds (3)...\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_MONTH);
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+
+	printf ("Test 03: test again (4)..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject (4))
+		return axl_false;
+
+	/* try to reach total limit */
+	printf ("Test 03: sending 4 more messages (change day)..\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+	if (! test_03_test_sending_day_limit_and_final_reject (4))
+		return axl_false;
+
+	printf ("Test 03: sending 2 more messages (change day)..\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+	if (! test_03_test_sending_day_limit_and_final_reject (2))
+		return axl_false;
+
+	printf ("Test 03: now testing if total limits are honoured even after updating days or months (4)\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_MONTH);
+
+	/* SHOULD NOT WORK:  */
+	printf ("Test --: Sending last test request..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (2): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 03: nice, valvula seems doing as expected..\n");
 	
 	/* finish test */
 	common_finish (ctx);
