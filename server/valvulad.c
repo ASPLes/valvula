@@ -664,6 +664,9 @@ void __valvulad_common_add_on_date_change (ValvuladCtx * ctx, ValvuladOnDateChan
 		break;
 	} /* end switch */
 
+	msg ("On date change added (month handlers: %d, day handlers: %d)", 
+	     axl_list_length (ctx->on_day_change_handlers), axl_list_length (ctx->on_month_change_handlers));
+
 	return;
 }
 
@@ -733,7 +736,7 @@ void valvulad_notify_date_change (ValvuladCtx * ctx, long new_value, ValvuladDat
 	}
 
 	/* check to avoid working with a null reference */
-	if (! list)
+	if (! list) 
 		return;
 
 	/* iterate over all handlers */
