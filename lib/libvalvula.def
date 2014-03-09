@@ -79,6 +79,7 @@ valvula_hash_exists
 valvula_hash_foreach
 valvula_hash_foreach2
 valvula_hash_foreach3
+valvula_hash_get_cursor
 valvula_hash_insert
 valvula_hash_lock_until_changed
 valvula_hash_lookup

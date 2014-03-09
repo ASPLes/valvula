@@ -195,6 +195,9 @@ ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 
 	/* clear query */
 	axl_stream_trim (complete_query);
+
+	if (ctx->debug_queries)
+		msg ("%s: running query: %s", __AXL_PRETTY_FUNCTION__, complete_query);
 	
 	/* get if we have a non query request */
 	non_query = ! axl_memcmp ("SELECT", complete_query, 6);
@@ -265,24 +268,17 @@ ValvuladRow      valvulad_db_get_row       (ValvuladCtx * ctx, ValvuladRes resul
  */
 long            valvulad_db_get_cell_as_long (ValvuladCtx * ctx, ValvuladRow row, int position)
 {
-	int       iterator;
 	MYSQL_ROW _row;
 
-	if (ctx == NULL || row == NULL || position < 0)
-		return -1;
-
-	/* securely access to the position requested */
-	iterator = 0;
-	_row = row;
-	while (iterator < position && _row[iterator])
-		iterator++;
-
-	/* check if we found the position */
-	if (iterator != position)
+	if (ctx == NULL || row == NULL || position < 0) 
 		return -1;
 
 	/* report row value */
-	return strtol (_row[iterator], NULL, 10);
+	_row = row;
+	if (_row[position] == NULL)
+		return 0;
+
+	return strtol (_row[position], NULL, 10);
 }
 
 

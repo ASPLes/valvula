@@ -682,4 +682,21 @@ void         valvula_hash_clear    (ValvulaHash *hash_table)
 	return;
 }
 
+
+/** 
+ * @brief Allows to create a hash cursor from the provided hash.
+ *
+ * @param hash_table The hash table for which the cursor will be
+ * created.
+ *
+ * @return A reference to the hash cursor or NULL if it fails.
+ */
+axlHashCursor * valvula_hash_get_cursor (ValvulaHash * hash_table)
+{
+	if (hash_table == NULL)
+		return NULL;
+
+	/* create cursor */
+	return axl_hash_cursor_new (hash_table->table);
+}
 /* @} */

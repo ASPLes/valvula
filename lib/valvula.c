@@ -681,7 +681,7 @@ const char * valvula_get_sender_domain (ValvulaRequest * request)
  */ 
 const char * valvula_get_sasl_user (ValvulaRequest * request)
 {
-	if (request == NULL || request->sasl_method == NULL || request->sasl_username)
+	if (request == NULL || request->sasl_method == NULL || request->sasl_username == NULL)
 		return NULL;
 
 	/* return current sasl username */

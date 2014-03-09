@@ -97,6 +97,10 @@ void install_arguments (int argc, char ** argv)
 	exarg_install_arg ("config", "c", EXARG_STRING, 
 			   "Server configuration location.");
 
+	/* install exarg options */
+	exarg_install_arg ("debug-queries", "q", EXARG_NONE, 
+			   "Makes valvulad server to show all database queries executed into the log (WARNING: user privacy may be violated with this option).");
+
 	/* call to parse arguments */
 	exarg_parse (argc, argv);
 
@@ -133,6 +137,8 @@ int main (int argc, char ** argv)
 		valvula_log_enable (ctx->ctx, axl_true);
 		valvula_color_log_enable (ctx->ctx, axl_true);
 	}
+	if (exarg_is_defined ("debug-queries"))
+		ctx->debug_queries = axl_true;
 
 	/* parse configuration file */
 	if (exarg_is_defined ("config"))

@@ -52,6 +52,7 @@ typedef struct _ValvuladCtx {
 	axl_bool         console_debug3;
 	axl_bool         console_color_debug;
 	axl_bool         use_syslog;
+	axl_bool         debug_queries;
 
 	int              pid;
 

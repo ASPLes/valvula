@@ -61,7 +61,6 @@ struct _ValvulaCtx {
 	ValvulaMutex inet_ntoa_mutex;
 
 	ValvulaHash            * process_handler_registry;
-	ValvulaRequestRegistry * first_handler;
 
 	ValvulaMutex         listener_unlock;
 	ValvulaAsyncQueue  * listener_wait_lock;

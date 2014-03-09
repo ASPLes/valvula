@@ -104,4 +104,6 @@ void         valvula_hash_foreach3  (ValvulaHash         * hash_table,
 
 void         valvula_hash_clear    (ValvulaHash *hash_table);
 
+axlHashCursor * valvula_hash_get_cursor (ValvulaHash * hash_table);
+
 #endif

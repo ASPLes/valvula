@@ -141,10 +141,6 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
 	/* register */
 	valvula_hash_replace_full (ctx->process_handler_registry, registry, axl_free, registry, NULL);
 
-	/* now update first handler to run */
-	if (ctx->first_handler == NULL || ctx->first_handler->priority > registry->priority)
-		ctx->first_handler = registry;
-	
 	valvula_mutex_unlock (&ctx->ref_mutex);
 
 	return registry;

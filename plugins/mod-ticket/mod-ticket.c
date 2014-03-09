@@ -79,7 +79,6 @@ static int  ticket_init (ValvuladCtx * _ctx)
 	msg ("Valvulad ticket module: init");
 
 	/* create databases to be used by the module */
-	msg ("Calling valvulad_db_ensure_table() ..");
 	valvulad_db_ensure_table (ctx, 
 				  /* table name */
 				  "ticket_plan", 
@@ -128,6 +127,26 @@ static int  ticket_init (ValvuladCtx * _ctx)
 	return axl_true;
 }
 
+axlPointer __ticket_get_row_or_fail (ValvuladCtx * ctx, axlPointer result) {
+	axlPointer row;
+
+	/* get row */
+	row = valvulad_db_get_row (ctx, result);
+	if (row == NULL) {
+		/* release results */
+		valvulad_db_release_result (result);
+
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
+		/* maybe the database configurat was removed before checking previous request, no problem */
+		return NULL;
+	} /* end if */
+
+	/* report pointer found */
+	return row;
+}
+
 /** 
  * @brief Process request for the module.
  */
@@ -155,8 +174,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	long           day_limit;
 	long           month_limit;
 
-	msg ("calling to process at mod ticket");
-	
 	/* check if the domain is limited by ticket */
 	if (valvula_get_sender_domain (request))
 		domain_in_tickets   = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE domain = '%s'", valvula_get_sender_domain (request));
@@ -165,7 +182,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	/* skip if the domain or the sasl user in the request is not
 	 * limited by the domain request */
-	if (! domain_in_tickets && ! sasl_user_in_tickets)
+	if (! domain_in_tickets && ! sasl_user_in_tickets) 
 		return VALVULA_STATE_DUNNO;
 
 	/* lock */
@@ -188,17 +205,9 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	} /* end if */
 
 	/* get the values we are interesting in */
-	row = valvulad_db_get_row (ctx, result);
-	if (row == NULL) {
-		/* release results */
-		valvulad_db_release_result (result);
-
-		/* unlock */
-		valvula_mutex_unlock (&work_mutex);
-
-		/* maybe the database configurat was removed before checking previous request, no problem */
+	row = __ticket_get_row_or_fail (ctx, result);
+	if (row == NULL) 
 		return VALVULA_STATE_DUNNO;
-	} /* end if */
 
 	/* get if the limit is expired */
 	valid_until = GET_CELL_AS_LONG (row, 3);
@@ -239,10 +248,20 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
+	/* get row from result */
+	row = __ticket_get_row_or_fail (ctx, result);
+	if (row == NULL) 
+		return VALVULA_STATE_DUNNO;
+
 	/* get values */
 	total_limit = GET_CELL_AS_LONG (row, 0);
 	day_limit   = GET_CELL_AS_LONG (row, 1);
 	month_limit = GET_CELL_AS_LONG (row, 2);
+
+	msg ("mod-ticket: %s total limit: %d (used: %d), day limit: %d (used: %d), month limit: %d (used: %d)",
+	     /* who is sending */
+	     valvula_get_sasl_user (request) ? valvula_get_sasl_user (request) : valvula_get_sender_domain (request),
+	     total_limit, total_used, day_limit, current_day_usage, month_limit, current_month_usage);
 
 	/* release result */
 	valvulad_db_release_result (result);
