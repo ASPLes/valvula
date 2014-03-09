@@ -463,13 +463,64 @@ axl_bool  test_02a (void)
 	return axl_true;
 }
 
+axl_bool test_03_test_sending_day_limit_and_final_reject (void) {
+	int            iterator;
+	ValvulaState   state;
+
+	/* testing day limited */
+	iterator = 0;
+	while (iterator < 4) {
+		/* SHOULD WORK: now try to run some requests. The
+		 * following should work  */
+		state = test_valvula_request (/* policy server location */
+			"127.0.0.1", "3579", 
+			/* state */
+			"smtpd_access_policy", "RCPT", "SMTP",
+			/* sender, recipient, recipient count */
+			"francis@aspl.es", "francis@aspl.es", "1",
+			/* queue-id, size */
+			"935jfe534", "235",
+			/* sasl method, sasl username, sasl sender */
+			"plain", "test@limited.com", NULL);
+
+		if (state != VALVULA_STATE_DUNNO) {
+			printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+			return axl_false;
+		} /* end if */
+
+		/* next iterator */
+		iterator++;
+	}
+
+	printf ("Test 03: now test that day limited has been reached a no more messages are allowed..\n");
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work  */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
+	
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	return axl_true;
+}
+
+
 /* test mod ticket */
 axl_bool test_03 (void) {
 	ValvuladCtx   * ctx;
 	const char    * path;
 	const char    * query;
 	ValvulaState    state;
-	int             iterator;
 
 	/* load basic configuration */
 	path = "test_03.conf";
@@ -533,49 +584,15 @@ axl_bool test_03 (void) {
 
 
 	printf ("Test 03: testing allowed tickets (4)..\n");
-	/* testing day limited */
-	iterator = 0;
-	while (iterator < 4) {
-		/* SHOULD WORK: now try to run some requests. The
-		 * following should work  */
-		state = test_valvula_request (/* policy server location */
-			"127.0.0.1", "3579", 
-			/* state */
-			"smtpd_access_policy", "RCPT", "SMTP",
-			/* sender, recipient, recipient count */
-			"francis@aspl.es", "francis@aspl.es", "1",
-			/* queue-id, size */
-			"935jfe534", "235",
-			/* sasl method, sasl username, sasl sender */
-			"plain", "test@limited.com", NULL);
-
-		if (state != VALVULA_STATE_DUNNO) {
-			printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
-			return axl_false;
-		} /* end if */
-
-		/* next iterator */
-		iterator++;
-	}
-
-	printf ("Test 03: now test that day limited has been reached a no more messages are allowed..\n");
-	/* SHOULD WORK: now try to run some requests. The following
-	 * should work  */
-	state = test_valvula_request (/* policy server location */
-		"127.0.0.1", "3579", 
-		/* state */
-		"smtpd_access_policy", "RCPT", "SMTP",
-		/* sender, recipient, recipient count */
-		"francis@aspl.es", "francis@aspl.es", "1",
-		/* queue-id, size */
-		"935jfe534", "235",
-		/* sasl method, sasl username, sasl sender */
-		"plain", "test@limited.com", NULL);
-	
-	if (state != VALVULA_STATE_REJECT) {
-		printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+	if (! test_03_test_sending_day_limit_and_final_reject ())
 		return axl_false;
-	} /* end if */
+
+	printf ("Test 03: perfect, now notify day change and see we can keep on sending...\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+
+	printf ("Test 03: testing again allowed tickets (4)..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ())
+		return axl_false;
 	
 	/* finish test */
 	common_finish (ctx);
