@@ -110,6 +110,7 @@ ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, 
 		valvulad_log2_enable (result, axl_true);
 		valvulad_log3_enable (result, axl_true);
 		valvulad_color_log_enable (result, axl_true);
+		result->debug_queries = axl_true;
 	}
 
 	/* load config provided */

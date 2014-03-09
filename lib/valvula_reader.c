@@ -170,20 +170,17 @@ int          valvula_readline (ValvulaConnection * connection, char  * buffer, i
 
 }
 
-axl_bool __valvula_reader_find_next_registry (axlPointer key, axlPointer data, axlPointer user_data, axlPointer user_data2)
+axl_bool __valvula_reader_find_next_registry (axlPointer key, axlPointer data, axlPointer user_data, axlPointer user_data2, axlPointer user_data3)
 {
-	ValvulaRequestRegistry ** next     = user_data;
-	ValvulaRequestRegistry  * current  = key;
-	int                       port     = PTR_TO_INT (user_data2);
+	ValvulaRequestRegistry  * current  = user_data;
+	ValvulaRequestRegistry ** next     = user_data2;
+	int                       port     = PTR_TO_INT (user_data3);
 
 	if (port > 0 && current->port != port)
 		return axl_false; /* port doesn't match so we cannot use this for this policy */
 
-	/* if no handler is still selected, just pick current */
-	if ((*next) == NULL) {
-		(*next) = current;
-		return axl_false; /* don't stop iterating */
-	} /* end if */
+	if (current == (*next)) 
+		return axl_false; /* skip same value */
 
 	/* check if the current handler has a lower priority than
 	   current selected (next). NOTE: (*next) always must point to the latest policy selected */
@@ -262,6 +259,32 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 	return;
 }
 
+ValvulaRequestRegistry * __valvula_reader_find_next_handler (axlHashCursor * cursor, int listener_port )
+{
+
+	ValvulaRequestRegistry * next;
+	ValvulaRequestRegistry * registry = NULL;
+
+	while (axl_hash_cursor_has_item (cursor)) {
+		/* get value */
+		next = axl_hash_cursor_get_value (cursor);
+		if (next == NULL)
+			break;
+		
+		/* check port to match current request */
+		if (next->port == listener_port) {
+			if (registry == NULL || next->priority < registry->priority)
+				registry = next;
+		} /* end if */
+		
+		/* go to the next position */
+		axl_hash_cursor_next (cursor);
+	} /* end while */
+
+	return registry;
+}
+
+
 axlPointer valvula_reader_process_request (axlPointer _connection)
 {
 	/* get variables */
@@ -275,14 +298,29 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	/* handler reference */
 	ValvulaProcessRequest     handler;
 	axlPointer                user_data;
-	ValvulaRequestRegistry  * registry;
-	ValvulaRequestRegistry  * next;
+	ValvulaRequestRegistry  * registry = NULL;
+	axlHashCursor           * cursor;
 
-	if (ctx->process_handler_registry && ctx->first_handler) {
-		/* get first registry (the lowest) */
-		registry = ctx->first_handler;
-		
+	if (ctx->process_handler_registry && valvula_hash_size (ctx->process_handler_registry) > 0) {
+		/* get first element from the registry */
+		cursor = valvula_hash_get_cursor (ctx->process_handler_registry);
+
+		/* iterate over all items to find the lowest on this port */
+		axl_hash_cursor_first (cursor);
+		registry = __valvula_reader_find_next_handler (cursor, listener_port);
+
+		if (registry == NULL) {
+			/* free cursor */
+			axl_hash_cursor_free (cursor);
+
+			/* no handlers defined so no policy can be delegated, replying default */
+			__valvula_reader_send_reply (ctx, connection, connection->request, ctx->default_state, NULL);
+			return NULL;
+		} /* end if */
+
 		do {
+			valvula_log (VALVULA_LEVEL_DEBUG, "Checking registry handler: %p", registry);
+
 			/* get handler and user data */
 			handler   = registry->process_handler;
 			user_data = registry->user_data;
@@ -291,31 +329,38 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			message = NULL;
 			state   = handler (ctx, connection, connection->request, user_data, &message);
 
-			valvula_log (VALVULA_LEVEL_DEBUG, "Reply to request %p was state=%d, message=%s",
-				     registry, state, message ? message : "");
-
-			/* send reply */
-			__valvula_reader_send_reply (ctx, connection, connection->request, state, message);
+			/* check if the error code is disntict from DUNNO */
+			if (state != VALVULA_STATE_DUNNO)
+				break;
 			axl_free (message);
 
 			/* get next registry */
-			next = NULL;
-			valvula_hash_foreach2 (ctx->process_handler_registry, __valvula_reader_find_next_registry, &next, INT_TO_PTR (listener_port));
-
-			/* update reference to the next registry */
-			registry = next;
+			registry = __valvula_reader_find_next_handler (cursor, listener_port);
 			
 		} while (registry);
-	} else {
-		/* no handlers defined so no policy can be delegated,
-		   replying default */
-		__valvula_reader_send_reply (ctx, connection, connection->request, ctx->default_state, NULL);
+
+		valvula_log (VALVULA_LEVEL_DEBUG, "Reply to request %p was state=%d, message=%s",
+			     registry, state, message ? message : "");
+		
+		/* send reply */
+		__valvula_reader_send_reply (ctx, connection, connection->request, state, message);
+		axl_free (message);
+
+		/* free cursor */
+		axl_hash_cursor_free (cursor);
+
+		return NULL;
 	} /* end if */
+
+	/* no handlers defined so no policy can be delegated, replying
+	   default */
+	__valvula_reader_send_reply (ctx, connection, connection->request, 
+				     ctx->default_state, NULL);
 
 	return NULL;
 }
 
-#define vortex_reader_set_value(var,value_to_configure) do { \
+#define valvula_reader_set_value(var,value_to_configure) do { \
 	if (var)                                             \
 		axl_free (var);                              \
 	var = axl_strdup(value_to_configure);		     \
@@ -410,62 +455,62 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 	} /* end if */
 
 	if (axl_cmp (items[0], "request"))
-		vortex_reader_set_value (connection->request->request, items[1]);
+		valvula_reader_set_value (connection->request->request, items[1]);
 	else if (axl_cmp (items[0], "protocol_state"))
-		vortex_reader_set_value (connection->request->protocol_state, items[1]);
+		valvula_reader_set_value (connection->request->protocol_state, items[1]);
 	else if (axl_cmp (items[0], "protocol_name"))
-		vortex_reader_set_value (connection->request->protocol_name, items[1]);
+		valvula_reader_set_value (connection->request->protocol_name, items[1]);
 
 	else if (axl_cmp (items[0], "queue_id"))
-		vortex_reader_set_value (connection->request->queue_id, items[1]);
+		valvula_reader_set_value (connection->request->queue_id, items[1]);
 	else if (axl_cmp (items[0], "size"))
 		connection->request->size = (int) valvula_support_strtod (items[1], NULL);
 
 	else if (axl_cmp (items[0], "sender"))
-		vortex_reader_set_value (connection->request->sender, items[1]);
+		valvula_reader_set_value (connection->request->sender, items[1]);
 	else if (axl_cmp (items[0], "recipient"))
-		vortex_reader_set_value (connection->request->recipient, items[1]);
+		valvula_reader_set_value (connection->request->recipient, items[1]);
 	else if (axl_cmp (items[0], "recipient_count"))
 		connection->request->recipient_count = valvula_support_strtod (items[1], NULL);
 
 	else if (axl_cmp (items[0], "helo_name"))
-		vortex_reader_set_value (connection->request->helo_name, items[1]);
+		valvula_reader_set_value (connection->request->helo_name, items[1]);
 	else if (axl_cmp (items[0], "client_address"))
-		vortex_reader_set_value (connection->request->client_address, items[1]);
+		valvula_reader_set_value (connection->request->client_address, items[1]);
 	else if (axl_cmp (items[0], "client_name"))
-		vortex_reader_set_value (connection->request->client_name, items[1]);
+		valvula_reader_set_value (connection->request->client_name, items[1]);
 	else if (axl_cmp (items[0], "reverse_client"))
-		vortex_reader_set_value (connection->request->reverse_client, items[1]);
+		valvula_reader_set_value (connection->request->reverse_client, items[1]);
 	else if (axl_cmp (items[0], "instance"))
-		vortex_reader_set_value (connection->request->instance, items[1]);
+		valvula_reader_set_value (connection->request->instance, items[1]);
 
 	else if (axl_cmp (items[0], "sasl_method"))
-		vortex_reader_set_value (connection->request->sasl_method, items[1]);
+		valvula_reader_set_value (connection->request->sasl_method, items[1]);
 	else if (axl_cmp (items[0], "sasl_username"))
-		vortex_reader_set_value (connection->request->sasl_username, items[1]);
+		valvula_reader_set_value (connection->request->sasl_username, items[1]);
 	else if (axl_cmp (items[0], "sasl_sender"))
-		vortex_reader_set_value (connection->request->sasl_sender, items[1]);
+		valvula_reader_set_value (connection->request->sasl_sender, items[1]);
 
 	else if (axl_cmp (items[0], "ccert_subject"))
-		vortex_reader_set_value (connection->request->ccert_subject, items[1]);
+		valvula_reader_set_value (connection->request->ccert_subject, items[1]);
 	else if (axl_cmp (items[0], "ccert_issuer"))
-		vortex_reader_set_value (connection->request->ccert_issuer, items[1]);
+		valvula_reader_set_value (connection->request->ccert_issuer, items[1]);
 	else if (axl_cmp (items[0], "ccert_fingerprint"))
-		vortex_reader_set_value (connection->request->ccert_fingerprint, items[1]);
+		valvula_reader_set_value (connection->request->ccert_fingerprint, items[1]);
 	else if (axl_cmp (items[0], "ccert_pubkey_fingerprint"))
-		vortex_reader_set_value (connection->request->ccert_pubkey_fingerprint, items[1]);
+		valvula_reader_set_value (connection->request->ccert_pubkey_fingerprint, items[1]);
 
 	else if (axl_cmp (items[0], "encryption_protocol"))
-		vortex_reader_set_value (connection->request->encryption_protocol, items[1]);
+		valvula_reader_set_value (connection->request->encryption_protocol, items[1]);
 	else if (axl_cmp (items[0], "encryption_cipher"))
-		vortex_reader_set_value (connection->request->encryption_cipher, items[1]);
+		valvula_reader_set_value (connection->request->encryption_cipher, items[1]);
 	else if (axl_cmp (items[0], "encryption_keysize"))
-		vortex_reader_set_value (connection->request->encryption_keysize, items[1]);
+		valvula_reader_set_value (connection->request->encryption_keysize, items[1]);
 
 	else if (axl_cmp (items[0], "etrn_domain"))
-		vortex_reader_set_value (connection->request->etrn_domain, items[1]);
+		valvula_reader_set_value (connection->request->etrn_domain, items[1]);
 	else if (axl_cmp (items[0], "stress"))
-		vortex_reader_set_value (connection->request->stress, items[1]);
+		valvula_reader_set_value (connection->request->stress, items[1]);
 
 	/* release memory not needed */
 	axl_freev (items);

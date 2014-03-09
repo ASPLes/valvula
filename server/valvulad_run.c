@@ -276,6 +276,9 @@ axl_bool __valvulad_run_time_tracking        (ValvulaCtx  * _ctx,
 		
 	} /* end if */
 
+	/* release result */
+	valvulad_db_release_result (res);
+
 	return axl_false; /* do not remove the event, please fire it
 			   * again in the future */
 }
@@ -328,7 +331,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	__valvulad_run_install_internal_dbs (ctx);
 
 	/* install event to track day and month change */
-	valvula_thread_pool_new_event (ctx->ctx, 2000, __valvulad_run_time_tracking, ctx, NULL);
+	valvula_thread_pool_new_event (ctx->ctx, 2000000, __valvulad_run_time_tracking, ctx, NULL);
 	return axl_true; 
 }
 
