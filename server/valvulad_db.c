@@ -293,6 +293,12 @@ axl_bool valvulad_db_table_exists (ValvuladCtx * ctx, const char * table_name)
 {
 	MYSQL_RES * result;
 
+	/* check attribute name */
+	if (axl_cmp (table_name, "usage")) {
+		error ("Used unallowed table name %s", table_name);
+		return axl_false;
+	} /* end if */
+
 	if (! valvulad_db_check_conn (ctx)) {
 		error ("Unable to check if table exists, database connection is not working");
 		return axl_false;
@@ -353,6 +359,12 @@ axl_bool        valvulad_db_table_remove (ValvuladCtx * ctx,
 axl_bool valvulad_db_attr_exists (ValvuladCtx * ctx, const char * table_name, const char * attr_name)
 {
 	MYSQL_RES * result;
+
+	/* check attribute name */
+	if (axl_cmp (attr_name, "usage")) {
+		error ("Used unallowed attribute name %s", attr_name);
+		return axl_false;
+	} /* end if */
 
 	if (! valvulad_db_check_conn (ctx)) {
 		error ("Unable to check if table exists, database connection is not working");

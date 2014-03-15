@@ -48,6 +48,31 @@ ValvulaMutex  work_mutex;
  */
 void ticket_change_day (ValvuladCtx * ctx, long new_value, axlPointer user_data)
 {
+	ValvuladRes res;
+	ValvuladRow row;
+	long        now;
+
+	/* get all usage records before setting them to 0 */
+	res = valvulad_db_run_query (ctx,  "SELECT id, current_day_usage FROM domain_ticket WHERE current_day_usage > 0");
+	
+	/* get next row */
+	row = GET_ROW (res);
+	while (row) {
+		/* handle data to record history */
+		now = valvula_now ();
+
+		if (! valvulad_db_run_query (ctx, "INSERT INTO domain_ticket_history (domain_ticket_id, stamp, day_usage) VALUES ('%d', '%d', '%d')",
+					     GET_CELL_AS_LONG (row, 0), now, GET_CELL_AS_LONG (row, 1))) {
+			error ("Failed to insert domain ticket history..");
+		} /* end if */
+
+		/* next row */
+		row = GET_ROW (res);
+	} /* end while */
+
+	/* release previous data */
+	valvulad_db_release_result (res);
+
 	/* reset day usage for all mail plans */
 	valvulad_db_run_query (ctx, "UPDATE domain_ticket SET current_day_usage = '0'");
 
@@ -59,6 +84,31 @@ void ticket_change_day (ValvuladCtx * ctx, long new_value, axlPointer user_data)
  */
 void ticket_change_month (ValvuladCtx * ctx, long new_value, axlPointer user_data)
 {
+	ValvuladRes res;
+	ValvuladRow row;
+	long        now;
+
+	/* get all usage records before setting them to 0 */
+	res = valvulad_db_run_query (ctx,  "SELECT id, current_month_usage FROM domain_ticket WHERE current_month_usage > 0");
+	
+	/* get next row */
+	row = GET_ROW (res);
+	while (row) {
+		/* handle data to record history */
+		now = valvula_now ();
+
+		if (! valvulad_db_run_query (ctx, "INSERT INTO domain_month_ticket_history (domain_ticket_id, stamp, month_usage) VALUES ('%d', '%d', '%d')",
+					     GET_CELL_AS_LONG (row, 0), now, GET_CELL_AS_LONG (row, 1))) {
+			error ("Failed to insert domain ticket history (month)..");
+		} /* end if */
+
+		/* next row */
+		row = GET_ROW (res);
+	} /* end while */
+
+	/* release previous data */
+	valvulad_db_release_result (res);
+
 	/* reset day usage for all mail plans */
 	valvulad_db_run_query (ctx, "UPDATE domain_ticket SET current_month_usage = '0'");
 
@@ -95,7 +145,6 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  NULL);
 
 	/* global domain plan */
-	msg ("Calling valvulad_db_ensure_table() ..2..");
 	valvulad_db_ensure_table (ctx, 
 				  /* table name */
 				  "domain_ticket", 
@@ -115,6 +164,34 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "valid_until", "int",
 				  /* ticket plan id */
 				  "ticket_plan_id", "int",
+				  NULL);
+
+	/* day tracking */
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "domain_ticket_history", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  /* sending domain these tickets applies to */
+				  "domain_ticket_id", "int",
+				  /* history stamp */
+				  "stamp", "int",
+				  /* total day used */
+				  "day_usage", "int",
+				  NULL);
+
+	/* month tracking */
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "domain_month_ticket_history", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  /* sending domain these tickets applies to */
+				  "domain_ticket_id", "int",
+				  /* history stamp */
+				  "stamp", "int",
+				  /* total day used */
+				  "month_usage", "int",
 				  NULL);
 
 	/* add on day and on month change */

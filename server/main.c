@@ -63,7 +63,8 @@ void valvulad_signal (int _signal)
 		bt_file = valvulad_support_get_backtrace (ctxd, getpid ());
 		if (bt_file && valvula_support_file_test (bt_file, FILE_EXISTS)) {
 			cmd = axl_strdup_printf ("cat %s", bt_file);
-			system (cmd);
+			if (system (cmd)) 
+				printf ("ERROR: command %s failed..\n", cmd);
 			axl_free (cmd);
 		} /* end if */
 		axl_free (bt_file);
