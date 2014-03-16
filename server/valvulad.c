@@ -428,6 +428,13 @@ void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char *
 	return;
 }
 
+void valvulad_cleanup_mysql (ValvulaCtx * _ctx)
+{
+	valvulad_db_cleanup_thread (NULL);
+
+	return;
+}
+
 axl_bool valvulad_init (ValvuladCtx ** result) {
 	ValvuladCtx * ctx;
 	
@@ -443,6 +450,9 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 
 	if (! valvula_init_ctx (ctx->ctx))
 		return axl_false;
+
+	/* setup clean function for threads */
+	valvula_thread_pool_set_cleanup_func (ctx->ctx, valvulad_cleanup_mysql);
 
 	msg ("Valvulad context initialized");
 

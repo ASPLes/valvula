@@ -52,6 +52,8 @@ axl_bool        valvulad_db_init (ValvuladCtx * ctx);
 
 void            valvulad_db_cleanup (ValvuladCtx * ctx);
 
+void            valvulad_db_cleanup_thread (ValvuladCtx * ctx);
+
 axl_bool        valvulad_db_check_conn (ValvuladCtx * ctx);
 
 axl_bool        valvulad_db_attr_exists (ValvuladCtx * ctx, 

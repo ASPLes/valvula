@@ -97,6 +97,9 @@ int  valvula_thread_pool_get_num             (void);
 void valvula_thread_pool_set_exclusive_pool  (ValvulaCtx        * ctx,
 					     axl_bool           value);
 
+void valvula_thread_pool_set_cleanup_func    (ValvulaCtx        * ctx,
+					      ValvulaThreadCleanup     func);
+
 /* internal API */
 void valvula_thread_pool_add_internal        (ValvulaCtx        * ctx, 
 					     int                threads);
