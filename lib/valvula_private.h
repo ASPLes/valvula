@@ -99,6 +99,7 @@ struct _ValvulaCtx {
 	axl_bool                  thread_pool_being_stopped;
 	axl_bool                  skip_thread_pool_wait;
 	axl_bool                  thread_pool_exclusive;
+	ValvulaThreadCleanup      thread_pool_cleanup;
 
 	/*** valvula hash ***/
 	ValvulaHash             * data;

@@ -373,6 +373,10 @@ axlPointer __valvula_thread_pool_dispatcher (ValvulaThreadPoolStarter * _data)
 			/* unref the queue and return */
 			valvula_async_queue_unref (queue);
 
+			/* call to cleanup thread if defined */
+			if (ctx->thread_pool_cleanup) 
+				ctx->thread_pool_cleanup (ctx);
+
 			/* unref ctx */
 			valvula_ctx_unref2 (&ctx, "end pool dispatcher");
 			return NULL;
@@ -384,8 +388,13 @@ axlPointer __valvula_thread_pool_dispatcher (ValvulaThreadPoolStarter * _data)
 
 			/* unref the queue and return */
 			valvula_async_queue_unref (queue);
+
+			/* call to cleanup thread if defined */
+			if (ctx->thread_pool_cleanup) 
+				ctx->thread_pool_cleanup (ctx);
 			
 			valvula_ctx_unref2 (&ctx, "end pool dispatcher");
+
 			return NULL;
 		} /* end if */
 
@@ -1248,6 +1257,18 @@ void valvula_thread_pool_set_exclusive_pool  (ValvulaCtx * ctx,
 	/* set the new value */
 	ctx->thread_pool_exclusive = value;
 
+	return;
+}
+
+
+/**
+ * @brief Allows to configure a cleanup function that is called just
+ * after a thread from the thread pool is finished.
+ */
+void valvula_thread_pool_set_cleanup_func    (ValvulaCtx        * ctx,
+					      ValvulaThreadCleanup     func)
+{
+	ctx->thread_pool_cleanup = func;
 	return;
 }
        

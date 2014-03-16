@@ -122,6 +122,11 @@ axl_bool        valvulad_db_init (ValvuladCtx * ctx)
 	return axl_true;
 }
 
+void valvulad_db_cleanup_thread (ValvuladCtx * ctx) {
+	mysql_thread_end ();
+	return;
+}
+
 /** 
  * @brief Finalize database module.
  *

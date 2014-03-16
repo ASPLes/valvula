@@ -316,4 +316,13 @@ typedef ValvulaState (* ValvulaProcessRequest) (ValvulaCtx        * ctx,
 						axlPointer          request_data,
 						char             ** message);
 
+/** 
+ * @brief Set of functions defined at \ref
+ * valvula_thread_pool_set_cleanup_func that are called every time a
+ * thread from the thread pool is stopped.
+ *
+ * @param ctx The context where the operation takes place.
+ */
+typedef void         (* ValvulaThreadCleanup) (ValvulaCtx         * ctx);
+
 #endif
