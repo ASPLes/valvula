@@ -63,16 +63,16 @@ install: build
 # install documentation
 #	cd doc/; $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install-doc; cd ..
 	test -d $(CURDIR)/debian/tmp/etc || mkdir $(CURDIR)/debian/tmp/etc
-	test -d $(CURDIR)/debian/tmp/etc/ext-dns || mkdir $(CURDIR)/debian/tmp/etc/ext-dns
+	test -d $(CURDIR)/debian/tmp/etc/valvula || mkdir $(CURDIR)/debian/tmp/etc/valvula
 	test -d $(CURDIR)/debian/tmp/etc/init.d || mkdir $(CURDIR)/debian/tmp/etc/init.d
 	test -d $(CURDIR)/debian/tmp/usr/share || mkdir $(CURDIR)/debian/tmp/usr/share
 	test -d $(CURDIR)/debian/tmp/usr/share/doc || mkdir $(CURDIR)/debian/tmp/usr/share/doc
-	test -d $(CURDIR)/debian/tmp/usr/share/doc/ext-dns || mkdir $(CURDIR)/debian/tmp/usr/share/doc/ext-dns
-	rsync -avz doc/html $(CURDIR)/debian/tmp/usr/share/doc/ext-dns/manual
+	test -d $(CURDIR)/debian/tmp/usr/share/doc/valvula || mkdir $(CURDIR)/debian/tmp/usr/share/doc/valvula
+	rsync -avz doc/html $(CURDIR)/debian/tmp/usr/share/doc/valvula/manual
 # prepare default configuration
 
 # copy initial init.d
-	cp $(CURDIR)/doc/ext-dnsd-init.d $(CURDIR)/debian/tmp/etc/init.d/ext-dnsd
+	cp $(CURDIR)/doc/valvulad-init.d $(CURDIR)/debian/tmp/etc/init.d/valvulad
 
 # Build architecture-independent files here.
 binary-indep: build install

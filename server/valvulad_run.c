@@ -295,6 +295,9 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	if (ctx == NULL || ctx->ctx == NULL)
 		return axl_false;
 
+	/* init log reporting */
+	valvulad_log_init (ctx);
+
 	/* get listen nodes and startup server */
 	node = axl_doc_get (ctx->config, "/valvula/general/listen");
 	if (node == NULL) {

@@ -47,15 +47,15 @@ void valvulad_log_init (ValvuladCtx * ctx)
 	axlNode * node;
 
 	/* check log reporting */
-	node = axl_doc_get (doc, "/valvulad/global-settings/log-reporting");
+	node = axl_doc_get (doc, "/valvula/global-settings/log-reporting");
 	if (node == NULL) {
-		abort_error ("Unable to find log configuration <valvulad/global-settings/log-reporting>");
+		abort_error ("Unable to find log configuration <valvula/global-settings/log-reporting>");
 		return;
 	} /* end if */
 
 	/* check enabled attribute */
 	if (! HAS_ATTR (node, "enabled")) {
-		abort_error ("Missing attribute 'enabled' located at <valvulad/global-settings/log-reporting>. Unable to determine if log is enabled");
+		abort_error ("Missing attribute 'enabled' located at <valvula/global-settings/log-reporting>. Unable to determine if log is enabled");
 		return;
 	}
 

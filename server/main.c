@@ -69,8 +69,34 @@ void valvulad_signal (int _signal)
 		} /* end if */
 		axl_free (bt_file);
 	} /* end if */
-	
 
+	return;
+}
+
+/**
+ * @internal Implementation to detach turbulence from console.
+ */
+void valvulad_detach_process (void)
+{
+	pid_t   pid;
+	/* fork */
+	pid = fork ();
+	switch (pid) {
+	case -1:
+		syslog (LOG_ERR, "unable to detach process, failed to executing child process");
+		exit (-1);
+	case 0:
+		/* running inside the child process */
+		syslog (LOG_INFO, "running child created in detached mode");
+		return;
+	default:
+		/* child process created (parent code) */
+		break;
+	} /* end switch */
+
+	/* terminate current process */
+	syslog (LOG_INFO, "finishing parent process (created child: %d, parent: %d)..", pid, getpid ());
+	exit (0);
 	return;
 }
 
@@ -93,6 +119,9 @@ void install_arguments (int argc, char ** argv)
 	/* install default debug options. */
 	exarg_install_arg ("verbose", "o", EXARG_NONE,
 			   "Makes valvula server to produce some logs while operating.");
+
+	exarg_install_arg ("detach", NULL, EXARG_NONE,
+			   "Makes valvulad to detach from console, starting in background.");
 
 	/* install exarg options */
 	exarg_install_arg ("config", "c", EXARG_STRING, 
@@ -128,6 +157,12 @@ int main (int argc, char ** argv)
 	if (! valvulad_init (&ctx)) {
 		error ("Failed to initialize ValvulaD context, unable to start server");
 		exit (-1);
+	} /* end if */
+
+	/* check detach operation */
+	if (exarg_is_defined ("detach")) {
+		valvulad_detach_process ();
+		/* caller do not follow */
 	} /* end if */
 
 	if (exarg_is_defined ("verbose")) {
