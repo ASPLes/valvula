@@ -300,7 +300,5 @@ echo "      libs:   $AXL_LIBS"
 echo
 echo
 echo "------------------------------------------"
-echo "--            LET IT BEEP!              --"
-echo "--                                      --"
 echo "--     NOW TYPE: make; make install     --"
 echo "------------------------------------------"
