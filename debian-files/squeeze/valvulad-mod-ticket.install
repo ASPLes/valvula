@@ -1,1 +1,2 @@
 usr/lib/valvulad/modules/mod-ticket.*
+etc/valvulad/mods-available/mod-ticket.xml
