@@ -33,6 +33,8 @@ valvulad_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) $(MYSQL_LIBS) libvalvulad.la ../lib
 
 lib_LTLIBRARIES  = libvalvulad.la
 
+libvalvulad_includedir = $(includedir)/valvula
+
 libvalvulad_la_SOURCES   = \
 	valvulad.c valvulad.h \
 	valvulad_config.c valvulad_config.h \
