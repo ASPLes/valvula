@@ -1,3 +1,11 @@
+Source: valvula
+Priority: extra
+Maintainer: Francis Brosnan <francis@aspl.es>
+Build-Depends: debhelper (>= 5), autotools-dev, pkg-config, 
+  libaxl-dev (>= 0.6.4)
+Standards-Version: 3.7.2
+Section: libs
+
 Package: libvalvula
 Section: libs
 Architecture: any
