@@ -40,6 +40,9 @@
 #include <valvula.h>
 #include <exarg.h>
 
+/* support to record at syslog */
+#include <syslog.h>
+
 /** 
  * @brief ValvuladCtx server context. Do no confuse with \ref ValvulaCtx.
  */
