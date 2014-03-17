@@ -45,6 +45,15 @@ Description: high performance policy server (for postfix)
   valvulad-server is a high performance, thread based policy server
   with support for postfix.
 
+Package: valvulad-mod-ticket
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${Source-Version})
+Description: mod-ticket support for valvulad-server
+  mod-ticket is a module use to control mail sendings using
+  preconfigured plans, limitting sendings by day, month, total amount
+  or period.
+
 Package: valvula-doc
 Section: libs
 Architecture: any
