@@ -25,7 +25,7 @@ Description: Base Valvula library (development headers)
 Package: libvalvula-server
 Section: libs
 Architecture: any
-Depends: libc6, valvula (>= 0.5.6)
+Depends: libc6, libvalvula (>= 0.5.6)
 Description: Base library used by the server valvulad
   libvalvula-server is the base library providing all features that
   are needed by valvulad-server and using support from libvalvula.
