@@ -265,6 +265,8 @@ plugins/Makefile
 plugins/mod-test/Makefile
 plugins/mod-ticket/Makefile
 test/Makefile
+doc/valvula.doxygen
+doc/Makefile
 ])
 
 echo "-----------------------------------------------"
