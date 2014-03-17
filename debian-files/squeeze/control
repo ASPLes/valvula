@@ -1,0 +1,51 @@
+Source: ext-dns
+Priority: extra
+Maintainer: Francis Brosnan <francis@aspl.es>
+Build-Depends: debhelper (>= 5), autotools-dev, pkg-config, 
+  libaxl-dev (>= 0.6.4)
+Standards-Version: 3.7.2
+Section: libs
+
+Package: libext-dns
+Section: libs
+Architecture: any
+Depends: libc6, libaxl1 (>= 0.5.6)
+Description: ext-Dns base core library for DNS solutions
+  libext-dns is the core base library that will allow you to
+  build DNS servers easily.
+
+Package: libext-dns-dev
+Section: libs
+Architecture: any
+Depends: libc6, libaxl-dev (>= 0.5.6), libext-dns
+Description: ext-Dns base core library for DNS solutions (dev)
+  Development headers required to create DNS solutions based
+  on libext-dns
+
+Package: ext-dnsd
+Section: libs
+Architecture: any
+Depends: libext-dns (>= ${Source-Version}), ext-dns-query
+Conflicts: bind9, dnsmasq
+Description: ready to use forward dns server built on top libext-dns
+  ext-dnsd is a forward DNS server that can be used to control and
+  track which DNS requests are allowed.
+
+Package: ext-dns-doc
+Section: libs
+Architecture: any
+Depends: libext-dns (>= ${Source-Version})
+Description: ext-Dns core library manual and API reference
+  This package includes ext-Dns core library manual, API reference
+  and ext-dnsd manual.
+
+Package: ext-dns-query
+Section: libs
+Architecture: any
+Depends: libext-dns (>= ${Source-Version})
+Description: client DNS query tool with host like output
+  edq (ext-dns-query) tool is a command client tool that allows
+  doing DNS query operations providing a host like output and
+  a similar invocation. It includes additional options not available
+  on host tool.
+
