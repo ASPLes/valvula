@@ -12,5 +12,5 @@ mod_test_la_LDFLAGS  = -module -ldl $(top_builddir)/lib/libvalvula.la $(top_buil
 libdir = $(prefix)/lib/valvulad/modules
 
 # configure site module installation
-modconfdir   = $(sysconfdir)/valvulad/mods-available
+modconfdir   = $(sysconfdir)/valvula/mods-available
 modconf_DATA = mod-test.xml
