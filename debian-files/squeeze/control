@@ -1,51 +1,45 @@
-Source: ext-dns
-Priority: extra
-Maintainer: Francis Brosnan <francis@aspl.es>
-Build-Depends: debhelper (>= 5), autotools-dev, pkg-config, 
-  libaxl-dev (>= 0.6.4)
-Standards-Version: 3.7.2
-Section: libs
-
-Package: libext-dns
+Package: libvalvula
 Section: libs
 Architecture: any
 Depends: libc6, libaxl1 (>= 0.5.6)
-Description: ext-Dns base core library for DNS solutions
-  libext-dns is the core base library that will allow you to
-  build DNS servers easily.
+Description: Base Valvula library (process support)
+  libvalvula is the core library used by the project. It provides
+  basic functions to parse incoming requests, thread handling and
+  other support functions.
 
-Package: libext-dns-dev
+Package: libvalvula-dev
 Section: libs
 Architecture: any
-Depends: libc6, libaxl-dev (>= 0.5.6), libext-dns
-Description: ext-Dns base core library for DNS solutions (dev)
-  Development headers required to create DNS solutions based
-  on libext-dns
+Depends: libc6, libaxl-dev (>= 0.5.6), libvalvula
+Description: Base Valvula library (development headers)
+  libvalvula core library developement headers
 
-Package: ext-dnsd
+Package: libvalvula-server
 Section: libs
 Architecture: any
-Depends: libext-dns (>= ${Source-Version}), ext-dns-query
-Conflicts: bind9, dnsmasq
-Description: ready to use forward dns server built on top libext-dns
-  ext-dnsd is a forward DNS server that can be used to control and
-  track which DNS requests are allowed.
+Depends: libc6, valvula (>= 0.5.6)
+Description: Base library used by the server valvulad
+  libvalvula-server is the base library providing all features that
+  are needed by valvulad-server and using support from libvalvula.
 
-Package: ext-dns-doc
+Package: libvalvula-server-dev
 Section: libs
 Architecture: any
-Depends: libext-dns (>= ${Source-Version})
-Description: ext-Dns core library manual and API reference
-  This package includes ext-Dns core library manual, API reference
-  and ext-dnsd manual.
+Depends: libc6, libaxl-dev (>= 0.5.6), libvalvula-server
+Description: Base library used by the server valvulad (dev headers)
+  libvalvula-server development headers
 
-Package: ext-dns-query
+Package: valvulad-server
 Section: libs
 Architecture: any
-Depends: libext-dns (>= ${Source-Version})
-Description: client DNS query tool with host like output
-  edq (ext-dns-query) tool is a command client tool that allows
-  doing DNS query operations providing a host like output and
-  a similar invocation. It includes additional options not available
-  on host tool.
+Depends: libvalvula-server (>= ${Source-Version})
+Description: high performance policy server (for postfix)
+  valvulad-server is a high performance, thread based policy server
+  with support for postfix.
+
+Package: valvula-doc
+Section: libs
+Architecture: any
+Description: valvula documentation
+  This package includes all valvula project documentation
 
