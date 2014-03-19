@@ -82,6 +82,12 @@ def test_00 ():
     
     return True
 
+def test_01 ():
+
+    
+
+    return True
+
 
 def info (msg):
     print "[ INFO  ] : " + msg
@@ -112,7 +118,8 @@ def run_all_tests ():
 
 # declare list of tests available
 tests = [
-   (test_00,   "Check postfix section type detection")
+   (test_00,   "Check postfix section type detection"),
+   (test_01,   "Check postfix section updating")
 ]
 
 ### MAIN ###
