@@ -317,7 +317,6 @@ def _get_postfix_config_type (postfix_section, config_file = "/etc/postfix/main.
             items = filter (filter_empty, decl_found.split ("="))
             if len (items) > 1:
                 first_line_decl = True
-
             continue
 
         if not line:
@@ -354,7 +353,6 @@ def _get_postfix_config_type (postfix_section, config_file = "/etc/postfix/main.
         
         return "single_line_decl"
     # end if
-        
 
     return "not_found"
 
@@ -363,8 +361,8 @@ def _add_postfix_valvula_declaration_existing (postfix_section, host, port, orde
     # get a classification about the configuration:
     clasification = _get_postfix_config_type (postfix_section, config_file)
 
-    if "not_found":
-        print "ERROR: not found declaration that should exist: %s" % postfix_section
+    if clasification == "not_found":
+        print "ERROR: not found declaration that should exist: %s at %s" % (postfix_section, config_file)
         sys.exit (-1)
 
     result  = []
@@ -388,8 +386,11 @@ def _add_postfix_valvula_declaration_existing (postfix_section, host, port, orde
                     op_done = True
                     
                 elif clasification in ["single_line_decl", "multi_line_decl_2"]:
-                    content = line.split ("=")[1]
-                    line    = "%s = %s, %s" % (postfix_section, decl, content)
+                    content = line.split ("=")[1].strip ()
+                    if order == "first":
+                        line    = "%s = %s, %s" % (postfix_section, decl, content)
+                    elif order == "last":
+                        line    = "%s = %s, %s" % (postfix_section, content, decl)
                     op_done = True
                     
                 elif clasification in ["multi_line_decl"]:
@@ -401,9 +402,14 @@ def _add_postfix_valvula_declaration_existing (postfix_section, host, port, orde
                     result.append (line)
                     result.append ("  %s," % decl)
                     op_done = True
+                    continue
                 # end if
             # end if
         # end if
+
+        # add line
+        result.append (line)
+        
     # end for
 
     # save content
@@ -411,10 +417,17 @@ def _add_postfix_valvula_declaration_existing (postfix_section, host, port, orde
     
     return
 
+def get_postfix_normalized (config_file = "/etc/postfix/main.cf", section_name = None):
+    if section_name:
+        (status, output) = commands.getstatusoutput ("grep -v \# %s | grep -v ^$ | grep %s" % (config_file, section_name))
+    else:
+        (status, output) = commands.getstatusoutput ("grep -v \# %s | grep -v ^$" % config_file)
+    return output.replace ("\n\t", " ").replace ("\n "," ").replace ("\n  ", " ")
+
 def _add_postfix_valvula_declaration (postfix_section, host, port, order, config_file = "/etc/postfix/main.cf"):
 
     # check if the section already have this declaration
-    (status, output) = commands.getstatusoutput ("postconf -n | grep %s" % postfix_section)
+    output = get_postfix_normalized (config_file, postfix_section)
 
     # strip output
     output = output.strip ()
@@ -424,6 +437,7 @@ def _add_postfix_valvula_declaration (postfix_section, host, port, order, config
 
     if output:
         if decl in output:
+            print "found %s inside %s" % (decl, output)
             print "INFO: declaration already added into %s. Doing nothing" % postfix_section
             sys.exit (0)
 
@@ -471,7 +485,7 @@ def do_connect_valvula_to_postfix (options, args):
         sys.exit (-1)
 
     # add declaration
-    _add_postfix_valvula_declaration (postfix_section, host, port, order)
+    _add_postfix_valvula_declaration (postfix_section, host, port, order, "/etc/postfix/main.cf")
 
     print "INFO: connected valvulad at %s:%s to %s" % (host, port, postfix_section)
     print "INFO: now you must restart postfix"
@@ -492,6 +506,8 @@ parser.add_option("-c", "--connect-postfix", action="store_true", dest="connect_
                   help="Usage: %s -c postfix_section host:port|port first|last. Allows to connect a valvula listener to postfix at some of its restriction sections. You can list current postfix sections by running %s -s. Here is an example %s -c smtpd_recipient_restrictions 3579 first" % (sys.argv[0], sys.argv[0], sys.argv[0]), metavar="postfix_section HOST:PORT" )
 parser.add_option("-s", "--show-postfix-sections", action="store_true", dest="show_postfix_sections", default=False,
                   help="Allows to show postfix sections that can be used while connecting valvula listeners to its sections.")
+parser.add_option("-n", "--show-postfix-conf", action="store_true", dest="show_postfix_conf", default=False,
+                  help="Allows to show postfix configuration (like postconf -n) but allowing to change the file to inspect.")
 
 # parse options received
 (options, args) = parser.parse_args ()
@@ -508,6 +524,8 @@ elif options.show_postfix_sections:
     list_postfix_sections (options, args)
 elif options.connect_postfix:
     do_connect_valvula_to_postfix (options, args)
+elif options.show_postfix_conf:
+    print get_postfix_normalized ()
 else:
     print "INFO: run %s --help to get additional information" % sys.argv[0]
 
