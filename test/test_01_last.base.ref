@@ -1,0 +1,6 @@
+
+### value
+
+smtpd_data_restrictions = reject_unauth_operation, spamblock, check_policy_service inet:127.0.0.1:3579
+
+### value
