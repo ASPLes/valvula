@@ -1,0 +1,6 @@
+
+### value
+
+smtpd_data_restrictions = reject_unauth_operation, spamblock
+
+### value
