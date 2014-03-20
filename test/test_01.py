@@ -87,6 +87,13 @@ def test_00 ():
     if value != "single_line_decl":
         print "ERROR: expected single_line_decl for postfix section but found: %s" % value
         return False
+
+    # check for multi line 2 decls
+    info ("Checking for multi line decl 2 examples..")
+    value = m._get_postfix_config_type ("smtpd_data_restrictions", "test_01_multi_first_comment2.base")
+    if value != "multi_line_decl_2":
+        print "ERROR: expected multi_line_decl_2 for postfix section but found: %s" % value
+        return False
     
     return True
 
@@ -125,8 +132,12 @@ def test_01 ():
     if not test_01_do_update_and_check ("test_01_multi_first.base", "smtpd_data_restrictions", "127.0.0.1", "3579", "first"):
         return False
 
-    # test multi line first
+    # test multi line first with comments
     if not test_01_do_update_and_check ("test_01_multi_first_comment.base", "smtpd_data_restrictions", "127.0.0.1", "3579", "first"):
+        return False
+
+    # test multi line 2 first with comments
+    if not test_01_do_update_and_check ("test_01_multi_first_comment2.base", "smtpd_data_restrictions", "127.0.0.1", "3579", "first"):
         return False
     
     return True

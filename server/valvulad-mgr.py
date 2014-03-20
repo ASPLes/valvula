@@ -418,11 +418,25 @@ def _add_postfix_valvula_declaration_existing (postfix_section, host, port, orde
     return
 
 def get_postfix_normalized (config_file = "/etc/postfix/main.cf", section_name = None):
-    if section_name:
-        (status, output) = commands.getstatusoutput ("grep -v \# %s | grep -v ^$ | grep %s" % (config_file, section_name))
-    else:
-        (status, output) = commands.getstatusoutput ("grep -v \# %s | grep -v ^$" % config_file)
-    return output.replace ("\n\t", " ").replace ("\n "," ").replace ("\n  ", " ")
+    lines  = open (config_file).read ().split ("\n")
+    result = []
+    for line in lines:
+        if not line.strip ():
+            continue
+        if line.strip ()[0] == "#":
+            continue
+        if section_name:
+            if section_name in line:
+                result.append (line)
+            continue
+        # end if
+
+        # append result
+        result.append (line)
+
+    output = "\n".join (result)
+    result =  output.replace ("\n\t", " ").replace ("\n "," ").replace ("\n  ", " ")
+    return result
 
 def _add_postfix_valvula_declaration (postfix_section, host, port, order, config_file = "/etc/postfix/main.cf"):
 
@@ -446,6 +460,9 @@ def _add_postfix_valvula_declaration (postfix_section, host, port, order, config
 
         return
     # end if
+
+    print "Declaration (%s) not found in (%s), just add it..." % (postfix_section, config_file)
+    print "OUTPUT: %s" % output
 
     # postfix section is not present just added
     handler = open (config_file, "a")
