@@ -1,0 +1,9 @@
+
+### value
+
+smtpd_data_restrictions = # more comments
+  # something commented
+  reject_unauth_operation, 
+  spamblock
+
+### value
