@@ -124,6 +124,10 @@ def test_01 ():
     # test multi line first
     if not test_01_do_update_and_check ("test_01_multi_first.base", "smtpd_data_restrictions", "127.0.0.1", "3579", "first"):
         return False
+
+    # test multi line first
+    if not test_01_do_update_and_check ("test_01_multi_first_comment.base", "smtpd_data_restrictions", "127.0.0.1", "3579", "first"):
+        return False
     
     return True
 
