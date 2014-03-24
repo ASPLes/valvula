@@ -420,6 +420,14 @@ axl_bool  test_02 (void)
 		return axl_false;
 	} /* end if */
 
+	/* get the id installed */
+	result = valvulad_db_run_query_as_long (ctx, "SELECT id FROM test_02_table WHERE new like '#te#'");
+	printf ("Test 02: id from test_02_table (like version): %ld\n", result);
+	if (result < 1) {
+		printf ("ERROR: expected to receive a proper value defined from valvulad_db_run_query_as_long but received %ld\n", result);
+		return axl_false;
+	} /* end if */
+
 	/* check boolean check queries */
 	if (! valvulad_db_boolean_query (ctx, "SELECT * FROM test_02_table")) {
 		printf ("ERROR: expected to find valvulad_db_boolean_query to report true but it is reporting false status..\n");
@@ -464,7 +472,7 @@ axl_bool  test_02a (void)
 	return axl_true;
 }
 
-axl_bool test_03_test_sending_day_limit_and_final_reject (int allowed_sending_item) {
+axl_bool test_03_test_sending_day_limit_and_final_reject (const char * auth_user, int allowed_sending_item) {
 	int            iterator;
 	ValvulaState   state;
 
@@ -482,7 +490,7 @@ axl_bool test_03_test_sending_day_limit_and_final_reject (int allowed_sending_it
 			/* queue-id, size */
 			"935jfe534", "235",
 			/* sasl method, sasl username, sasl sender */
-			"plain", "test@limited.com", NULL);
+			"plain", auth_user, NULL);
 
 		if (state != VALVULA_STATE_DUNNO) {
 			printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
@@ -505,7 +513,7 @@ axl_bool test_03_test_sending_day_limit_and_final_reject (int allowed_sending_it
 		/* queue-id, size */
 		"935jfe534", "235",
 		/* sasl method, sasl username, sasl sender */
-		"plain", "test@limited.com", NULL);
+		"plain", auth_user, NULL);
 	
 	if (state != VALVULA_STATE_REJECT) {
 		printf ("ERROR: expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
@@ -522,6 +530,8 @@ axl_bool test_03 (void) {
 	const char    * path;
 	const char    * query;
 	ValvulaState    state;
+	long            record_id;
+	
 
 	/* load basic configuration */
 	path = "test_03.conf";
@@ -530,6 +540,9 @@ axl_bool test_03 (void) {
 		printf ("ERROR: unable to load configuration file at %s\n", path);
 		return axl_false;
 	} /* end if */
+
+	printf ("Test 03: phase 1\n");
+	printf ("Test --:\n");
 
 	/* check if the module was loaded */
 	if (axl_list_length (ctx->registered_modules) == 0) {
@@ -583,24 +596,30 @@ axl_bool test_03 (void) {
 		return axl_false;
 	} /* end if */
 
+	printf ("Test 03: phase 2\n");
+	printf ("Test --:\n");
+
 
 	printf ("Test 03: testing allowed tickets (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject (4))
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
 		return axl_false;
 
 	printf ("Test 03: perfect, now notify day change and see we can keep on sending (1)...\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: testing again allowed tickets (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject (4))
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
 		return axl_false;
 
 	printf ("Test 03: perfect, now notify day change to test last 2 rounds for month limit (2)...\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: now try to reach month limit (3)...");
-	if (! test_03_test_sending_day_limit_and_final_reject (2))
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 2))
 		return axl_false;
+
+	printf ("Test 03: phase 3\n");
+	printf ("Test --:\n");
 
 	/* now check database here */
 	printf ("Test 03: perfect, now notify month change to test rest of rounds (3)...\n");
@@ -608,23 +627,29 @@ axl_bool test_03 (void) {
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: test again (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject (4))
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
 		return axl_false;
+
+	printf ("Test 03: phase 4\n");
+	printf ("Test --:\n");
 
 	/* try to reach total limit */
 	printf ("Test 03: sending 4 more messages (change day)..\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
-	if (! test_03_test_sending_day_limit_and_final_reject (4))
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
 		return axl_false;
 
 	printf ("Test 03: sending 2 more messages (change day)..\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
-	if (! test_03_test_sending_day_limit_and_final_reject (2))
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 2))
 		return axl_false;
 
 	printf ("Test 03: now testing if total limits are honoured even after updating days or months (4)\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_MONTH);
+
+	printf ("Test 03: phase 5\n");
+	printf ("Test --:\n");
 
 	/* SHOULD NOT WORK:  */
 	printf ("Test --: Sending last test request..\n");
@@ -644,7 +669,99 @@ axl_bool test_03 (void) {
 		return axl_false;
 	} /* end if */
 
+	printf ("Test 03: TEST MULTI USER on tickets..\n");
+
+	printf ("Test 03: test limited sasl user (with multiple users in the same ticket) ..\n");
+	/* add the user that is going to be limited */
+	query = "INSERT INTO domain_ticket (sasl_user, valid_until, ticket_plan_id) VALUES ('test@limited2.com, test@limited3.com, test@limited4.com', %d, (SELECT max(id) FROM ticket_plan))";
+	if (! valvulad_db_run_non_query (ctx, query, valvula_now () + 1000)) {
+		printf ("ERROR: failed to remove old plans..\n");
+		return axl_false;
+	} /* end if */
+
+	/* build query string */
+	record_id = valvulad_db_run_query_as_long (ctx, "select id from domain_ticket where sasl_user like '#%s#'", "limited2.com");
+
+	printf ("Test 03: phase 6 (record %ld)\n", record_id);
+	printf ("Test --:\n");
+
+	if (record_id <= 0) {
+		printf ("ERROR: failed to get domain ticket created for multi user, expected a value > 0 but found %ld\n", record_id);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 03: now testing test@limited2.com..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited2.com", 4))
+		return axl_false;
+
+	printf ("Test 03: perfect, now notify day change and see we can keep on sending (1)...\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+
+	printf ("Test 03: now testing test@limited3.com..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited3.com", 4))
+		return axl_false;
+
+	printf ("Test 03: phase 7\n");
+	printf ("Test --:\n");
+
+	printf ("Test 03: perfect, now notify day change to test last 2 rounds for month limit (2)...\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+
+	printf ("Test 03: now testing test@limited4.com..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited4.com", 2))
+		return axl_false;
+
+	printf ("Test 03: now testing if total limits are honoured even after updating days or months (4)\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_MONTH);
+
+	printf ("Test 03: phase 8\n");
+	printf ("Test --:\n");
+
+	printf ("Test 03: now testing test@limited2.com..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited2.com", 4))
+		return axl_false;
+
+	printf ("Test 03: perfect, now notify day change and see we can keep on sending (1)...\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+
+	printf ("Test 03: now testing test@limited3.com..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited3.com", 4))
+		return axl_false;
+
+	printf ("Test 03: phase 7\n");
+	printf ("Test --:\n");
+
+	printf ("Test 03: perfect, now notify day change to test last 2 rounds for month limit (2)...\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+
+	printf ("Test 03: now testing test@limited4.com..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited4.com", 2))
+		return axl_false;
+
+	printf ("Test 03: now testing if total limits are honoured even after updating days or months (4)\n");
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
+	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_MONTH);
+
 	printf ("Test 03: nice, valvula seems doing as expected..\n");
+
+	/* SHOULD NOT WORK:  */
+	printf ("Test --: Sending last test request..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited3.com", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (2): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
 	
 	/* finish test */
 	common_finish (ctx);

@@ -39,6 +39,26 @@
 /* mysql flags */
 #include <mysql.h>
 
+char * __valvulad_db_escape_query (const char * query)
+{
+	int iterator;
+	char * complete_query = NULL;
+
+	/* copy query */
+	complete_query = axl_strdup (query);
+	if (complete_query == NULL)
+		return NULL;
+
+	iterator       = 0;
+	while (complete_query[iterator]) {
+		if (complete_query[iterator] == '%')
+			complete_query[iterator] = '#';
+		iterator++;
+	} /* end while */
+
+	return complete_query;
+}
+
 MYSQL   * valvulad_db_get_connection  (ValvuladCtx * ctx)
 {
 	axlNode * node;
@@ -184,6 +204,7 @@ ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	char      * complete_query;
 	va_list     args;
 	axl_bool    non_query;
+	int         iterator;
 	
 	/* check context or query */
 	if (ctx == NULL || query == NULL)
@@ -198,14 +219,31 @@ ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	/* close std args */
 	va_end (args);
 
+	if (complete_query == NULL)  {
+		/* escape query to be printed */
+		complete_query = __valvulad_db_escape_query (query);
+			error ("Query failed to be created at valvulad_db_run_query (axl_stream_strdup_printfv failed): %s\n", complete_query);
+		axl_free (complete_query);
+		return NULL;
+	}
+
 	/* clear query */
 	axl_stream_trim (complete_query);
 
-	if (ctx->debug_queries)
-		msg ("%s: running query: %s", __AXL_PRETTY_FUNCTION__, complete_query);
-	
 	/* get if we have a non query request */
-	non_query = ! axl_memcmp ("SELECT", complete_query, 6);
+	non_query = ! axl_stream_casecmp ("SELECT", complete_query, 6);
+
+	if (ctx->debug_queries)
+		msg ("%s: running query (non-query=%d): %s", __AXL_PRETTY_FUNCTION__, non_query, complete_query);
+
+	/* prepare query (replace # by %) */
+	iterator = 0;
+	while (complete_query && complete_query[iterator]) {
+		if (complete_query[iterator] == '#')
+			complete_query[iterator] = '%';
+		/* next position */
+		iterator++;
+	}
 
 	/* get connection */
 	dbconn = valvulad_db_get_connection (ctx);
@@ -233,7 +271,7 @@ ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 
 	/* return result */
 	result = mysql_store_result (dbconn);
-
+	
 	/* release the connection */
 	valvulad_db_release_connection (ctx, dbconn); 
 
@@ -257,6 +295,31 @@ ValvuladRow      valvulad_db_get_row       (ValvuladCtx * ctx, ValvuladRes resul
 		return NULL;
 
 	return mysql_fetch_row (result);
+}
+
+
+/** 
+ * @brief Allows to get the content of the cell at the provided
+ * position.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param row The result object query. This reference is get from \ref valvulad_db_run_query.
+ *
+ * @param position The cell position inside the row from 0 to n - 1
+ *
+ * @return string value or NULL if it fails.
+ */
+const char  *   valvulad_db_get_cell         (ValvuladCtx * ctx, ValvuladRow row, int position)
+{
+	MYSQL_ROW _row;
+
+	if (ctx == NULL || row == NULL || position < 0) 
+		return NULL;
+
+	/* report row value */
+	_row = row;
+	return _row[position];
 }
 
 /** 
@@ -600,6 +663,13 @@ long             valvulad_db_run_query_as_long (ValvuladCtx * ctx,
 
 	/* create complete query */
 	complete_query = axl_stream_strdup_printfv (query, args);
+	if (complete_query == NULL) {
+		complete_query = __valvulad_db_escape_query (query);
+		error ("Query failed, axl_stream_strdup_printfv reported error for query: %s\n", complete_query);
+		error ("Returning -1 at valvulad_db_run_query_as_long\n");
+		axl_free (complete_query);
+		return -1;
+	} /* end if */
 
 	/* close std args */
 	va_end (args);
@@ -609,13 +679,19 @@ long             valvulad_db_run_query_as_long (ValvuladCtx * ctx,
 
 	/* run query */
 	result = valvulad_db_run_query (ctx, complete_query);
-	axl_free (complete_query);
-	if (result == NULL)
+	if (result == NULL) {
+		/* get complete query */
+		axl_free (complete_query);
+		complete_query = __valvulad_db_escape_query (query);
+		error ("Query failed: %s\n", complete_query);
+		axl_free (complete_query);
 		return -1;
+	}
+	axl_free (complete_query);
 
 	/* get first row */
 	row = mysql_fetch_row (result);
-	if (row[0] == NULL || strlen (row[0]) == 0)
+	if (row == NULL || row[0] == NULL || strlen (row[0]) == 0)
 		return 0;
 
 	/* get result */
