@@ -151,9 +151,9 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  /* attributes */
 				  "id", "autoincrement int", 
 				  /* sending domain these tickets applies to */
-				  "domain", "varchar(512)",
+				  "domain", "text",
 				  /* sending sasl user these tickets applies to */
-				  "sasl_user", "varchar(512)",
+				  "sasl_user", "text",
 				  /* how many tickets were used by this module */
 				  "total_used", "int",
 				  /* current day usage */
@@ -224,6 +224,67 @@ axlPointer __ticket_get_row_or_fail (ValvuladCtx * ctx, axlPointer result) {
 	return row;
 }
 
+axl_bool mod_ticket_ensure_alternative_user (ValvuladCtx * ctx, ValvuladRes result, const char * user_or_domain)
+{
+	/* get result and row */
+	ValvuladRow      row;
+	const char     * str_value;
+	char          ** items;
+	int              iterator;
+
+	/* check result received */
+	if (result == NULL) {
+		msg ("No alternative user found for %s", user_or_domain);
+		return axl_false;
+	}
+
+	/* trim value */
+	axl_stream_trim ((char *) user_or_domain);
+
+	/* get row */
+	row = GET_ROW (result);
+	while (row) {
+		/* get cell */
+		str_value = GET_CELL(row, 0);
+		if (str_value) {
+			/* split */
+			items = axl_split (str_value, 1, ",");
+			iterator = 0;
+			while (items && items[iterator]) {
+
+				/* trim value */
+				axl_stream_trim (items[iterator]);
+				msg ("Alternative checking %s with %s", user_or_domain, items[iterator]);
+				
+				if (axl_cmp (items[iterator], user_or_domain)) {
+					/* release results */
+					valvulad_db_release_result (result);
+
+					/* found match, perfect! */
+					axl_freev (items);
+					return axl_true;
+				}
+
+				/* next position */
+				iterator++;
+			} /* end while */
+
+			/* free this items */
+			axl_freev (items);
+		} /* end if */
+
+		/* next row */
+		row = GET_ROW (result);
+	} /* end while */
+
+	/* release results */
+	valvulad_db_release_result (result);
+
+	msg ("No alternative user found for %s (2)", user_or_domain);
+	return axl_false;
+
+}
+
 /** 
  * @brief Process request for the module.
  */
@@ -235,6 +296,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 {
 	axl_bool domain_in_tickets    = axl_false;
 	axl_bool sasl_user_in_tickets = axl_false;
+	axl_bool alternative_user     = axl_false;
 
 	/* get result and row */
 	ValvuladRes    result  = NULL;
@@ -250,12 +312,30 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	long           total_limit;
 	long           day_limit;
 	long           month_limit;
+	
+	const char   * query;
 
 	/* check if the domain is limited by ticket */
 	if (valvula_get_sender_domain (request))
-		domain_in_tickets   = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE domain = '%s'", valvula_get_sender_domain (request));
+		domain_in_tickets    = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE domain = '%s'", valvula_get_sender_domain (request));
 	if (valvula_get_sasl_user (request))
 		sasl_user_in_tickets = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE sasl_user = '%s'", valvula_get_sasl_user (request));
+
+	/* check for alternative names */
+	if (! domain_in_tickets && ! sasl_user_in_tickets) {
+		/* check for alternatives */
+		if (valvula_get_sender_domain (request)) {
+			result               = valvulad_db_run_query (ctx, "SELECT domain FROM domain_ticket WHERE domain like '#%s#'", valvula_get_sender_domain (request));
+			domain_in_tickets    = mod_ticket_ensure_alternative_user (ctx, result, valvula_get_sender_domain (request));
+		} /* end if */
+		if (valvula_get_sasl_user (request)) {
+			result               = valvulad_db_run_query (ctx, "SELECT sasl_user FROM domain_ticket WHERE sasl_user like '#%s#'", valvula_get_sasl_user (request));
+			sasl_user_in_tickets = mod_ticket_ensure_alternative_user (ctx, result, valvula_get_sasl_user (request));
+		} /* end if */
+
+		/* update alternative user flag */
+		alternative_user = domain_in_tickets || sasl_user_in_tickets;
+	}
 
 	/* skip if the domain or the sasl user in the request is not
 	 * limited by the domain request */
@@ -266,12 +346,25 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	valvula_mutex_lock (&work_mutex);
 
 	/* get current tickets for this domain */
-	if (sasl_user_in_tickets) 
-		result = valvulad_db_run_query (ctx, "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE sasl_user = '%s'",
-						valvula_get_sasl_user (request));
-	else if (domain_in_tickets)
-		result = valvulad_db_run_query (ctx, "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE domain = '%s'",
-						valvula_get_sender_domain (request));
+	if (sasl_user_in_tickets) {
+		/* prepare query to get the right user */
+		if (alternative_user)
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE sasl_user LIKE '#%s#'";
+		else 
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE sasl_user = '%s'";
+
+		/* run query */
+		result = valvulad_db_run_query (ctx,  query, valvula_get_sasl_user (request));
+	} else if (domain_in_tickets) {
+		/* prepare query to get the right domain */
+		if (alternative_user) 
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE domain LIKE '#%s#'";
+		else
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE domain = '%s'";
+
+		/* run query */
+		result = valvulad_db_run_query (ctx, query, valvula_get_sender_domain (request));
+	} /* end if */
 
 	if (! result) {
 		/* unlock */
@@ -321,7 +414,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
-
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
@@ -382,6 +474,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	/* unlock */
 	valvula_mutex_unlock (&work_mutex);
+
 	
 	/* by default report return dunno */
 	return VALVULA_STATE_DUNNO;

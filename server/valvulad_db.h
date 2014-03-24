@@ -87,6 +87,20 @@ ValvuladRes     valvulad_db_run_query     (ValvuladCtx * ctx,
 
 ValvuladRow      valvulad_db_get_row       (ValvuladCtx * ctx, ValvuladRes result);
 
+
+/** 
+ * @brief Get the cell inside a particular a particular row at the given position.
+ *
+ * @param row The row where the content is being retreived.
+ *
+ * @param pos The position that is being requested.
+ *
+ * @return String value or NULL if it fails.
+ */
+#define GET_CELL(row,pos) valvulad_db_get_cell(ctx,row,pos)
+
+const char  *   valvulad_db_get_cell         (ValvuladCtx * ctx, ValvuladRow row, int posisition);
+
 /** 
  * @brief Get the cell inside a particular a particular row at the given position.
  *
