@@ -183,4 +183,7 @@ if __name__ == '__main__':
     info ("Running tests..")
 
     # call to run all tests
-    run_all_tests ()
+    if not run_all_tests ():
+        sys.exit (-1)
+
+    sys.exit (0)

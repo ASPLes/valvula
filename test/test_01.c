@@ -770,6 +770,21 @@ axl_bool test_03 (void) {
 	return axl_true;
 }
 
+/* test mod ticket */
+axl_bool test_04 (void) {
+
+	int result;
+
+	printf ("Test 04: running valvulad-mgr.py regression tests..\n");
+	result = system ("./test_01.py");
+	if (result ) {
+		printf ("ERROR: regression test failed\n");
+		return axl_false;
+	}
+
+	return axl_true;
+}
+
 #define CHECK_TEST(name) if (run_test_name == NULL || axl_cmp (run_test_name, name))
 
 typedef axl_bool (* ValvulaTestHandler) (void);
@@ -846,6 +861,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_03")
 	run_test (test_03, "Test 03: checking mod-ticket");
+
+	/* run tests */
+	CHECK_TEST("test_04")
+	run_test (test_04, "Test 04: test valvulad-mgr.py");
 
 	printf ("All tests passed OK!\n");
 
