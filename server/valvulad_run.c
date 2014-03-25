@@ -301,7 +301,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	/* get listen nodes and startup server */
 	node = axl_doc_get (ctx->config, "/valvula/general/listen");
 	if (node == NULL) {
-		error ("Failed to start Valvula, found no listen por defined");
+		error ("Failed to start Valvula, found no listen defined");
 		return axl_false;
 	} /* end if */
 
