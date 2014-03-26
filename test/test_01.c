@@ -143,7 +143,7 @@ axl_bool  test_01 (void)
 	const char  * path;
 
 	/* load basic configuration */
-	path = "../server/valvula.example.conf";
+	path = "test_01.conf";
 	ctx  = test_valvula_load_config ("Test 01: ", path, axl_true);
 	if (! ctx) {
 		printf ("ERROR: unable to load configuration file at %s\n", path);
@@ -285,7 +285,7 @@ axl_bool  test_01a (void)
 	ValvulaState    state;
 
 	/* load basic configuration */
-	path = "../server/valvula.example.conf";
+	path = "test_01.conf";
 	ctx  = test_valvula_load_config ("Test 01: ", path, axl_true);
 	if (! ctx) {
 		printf ("ERROR: unable to load configuration file at %s\n", path);
@@ -322,7 +322,7 @@ axl_bool  test_02 (void)
 	long            result;
 
 	/* load basic configuration */
-	path = "../server/valvula.example.conf";
+	path = "test_01.conf";
 	ctx  = test_valvula_load_config ("Test 01: ", path, axl_true);
 	if (! ctx) {
 		printf ("ERROR: unable to load configuration file at %s\n", path);
