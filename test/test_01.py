@@ -37,6 +37,7 @@
 
 import sys
 import os
+import shutil
 sys.path.append ("../server")
 
 # import module
@@ -98,7 +99,6 @@ def test_00 ():
     return True
 
 def test_01_do_update_and_check (base_file, postfix_section, host, port, order):
-    import shutil
     
     # copy file
     shutil.copyfile (base_file, "%s.cf" % base_file)
@@ -142,6 +142,28 @@ def test_01 ():
     
     return True
 
+def test_02 ():
+    # configure config file
+    shutil.copyfile ("test_02.conf", "test_02.conf.updated")
+    m.valvula_conf = "test_02.conf.updated"
+    
+    # add module when it exists
+    if not m.add_module_complete ("mod-ticket", "3579"):
+        return False
+
+    if open ("test_02.conf.updated").read () != open ("test_02.conf.ref").read ():
+        error ("File test_02.conf.updated differs from test_02.conf.ref..")
+        return False
+
+    # add it again without failing
+    if not m.add_module_complete ("mod-ticket", "3579"):
+        return False
+
+    if open ("test_02.conf.updated").read () != open ("test_02.conf.ref").read ():
+        error ("File test_02.conf.updated differs from test_02.conf.ref..")
+        return False
+
+    return True
 
 def info (msg):
     print "[ INFO  ] : " + msg
@@ -173,7 +195,8 @@ def run_all_tests ():
 # declare list of tests available
 tests = [
    (test_00,   "Check postfix section type detection"),
-   (test_01,   "Check postfix section updating")
+   (test_01,   "Check postfix section updating"),
+   (test_02,   "Add module to a listener that exists ")
 ]
 
 ### MAIN ###

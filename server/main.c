@@ -131,6 +131,10 @@ void install_arguments (int argc, char ** argv)
 	exarg_install_arg ("debug-queries", "q", EXARG_NONE, 
 			   "Makes valvulad server to show all database queries executed into the log (WARNING: user privacy may be violated with this option).");
 
+	/* install exarg options */
+	exarg_install_arg ("check-db", "b", EXARG_NONE, 
+			   "Ask valvulad server to check current database connection.");
+
 	/* call to parse arguments */
 	exarg_parse (argc, argv);
 
@@ -182,6 +186,18 @@ int main (int argc, char ** argv)
 	else
 		result = valvulad_config_load (ctx, "/etc/valvula/valvula.conf");
 
+	/* check here database link if requested */
+	if (exarg_is_defined ("check-db")) {
+		if (valvulad_db_init (ctx)) {
+			printf ("INFO: Database connection working OK\n");
+			exit (0);
+		}
+
+		printf ("ERROR: Database connection isn't working. Please check database server and/or credentials\n");
+		exit (-1);
+	} /* end if */
+
+	/* now check result from valvulad_config_log */
 	if (! result) {
 		error ("Failed to load configuration file");
 		exit (-1);

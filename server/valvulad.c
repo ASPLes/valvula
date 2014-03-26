@@ -448,7 +448,7 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 	if (ctx->ctx == NULL)
 		return axl_false;
 
-	if (! valvula_init_ctx (ctx->ctx))
+	if (! valvula_init_ctx (ctx->ctx)) 
 		return axl_false;
 
 	/* setup clean function for threads */
