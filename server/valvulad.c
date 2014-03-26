@@ -766,3 +766,114 @@ void valvulad_notify_date_change (ValvuladCtx * ctx, long new_value, ValvuladDat
 
 	return;
 }
+
+#if defined(AXL_OS_UNIX)
+
+#define SYSTEM_ID_CONSUME_UNTIL_ZERO(line, fstab, delimiter)                       \
+	if (fread (line + iterator, 1, 1, fstab) != 1 || line[iterator] == 0) {    \
+	      fclose (fstab);                                                      \
+	      return axl_false;                                                    \
+	}                                                                          \
+        if (line[iterator] == delimiter) {                                         \
+	      line[iterator] = 0;                                                  \
+	      break;                                                               \
+	}                                                                          
+
+axl_bool __valvulad_get_system_id_info (ValvuladCtx * ctx, const char * value, int * system_id, const char * path)
+{
+	FILE * fstab;
+	char   line[512];
+	int    iterator;
+
+	/* set invalid value */
+	if (system_id)
+		(*system_id) = -1;
+
+	fstab = fopen (path, "r");
+	if (fstab == NULL) {
+		error ("Failed to open file %s", path);
+		return axl_false;
+	}
+	
+	/* now read the file */
+keep_on_reading:
+	iterator = 0;
+	do {
+		SYSTEM_ID_CONSUME_UNTIL_ZERO (line, fstab, ':');
+
+		/* next position */
+		iterator++;
+	} while (axl_true);
+	
+	/* check user found */
+	if (! axl_cmp (line, value)) {
+		/* consume all content until \n is found */
+		iterator = 0;
+		do {
+			if (fread (line + iterator, 1, 1, fstab) != 1 || line[iterator] == 0) {
+				fclose (fstab);
+				return axl_false;
+			}
+			if (line[iterator] == '\n') {
+				goto keep_on_reading;
+				break;
+			} /* end if */
+		} while (axl_true);
+	} /* end if */
+
+	/* found user */
+	iterator = 0;
+	/* get :x: */
+	if ((fread (line, 1, 2, fstab) != 2) || !axl_memcmp (line, "x:", 2)) {
+		fclose (fstab);
+		return axl_false;
+	}
+	
+	/* now get the id */
+	iterator = 0;
+	do {
+		SYSTEM_ID_CONSUME_UNTIL_ZERO (line, fstab, ':');
+
+		/* next position */
+		iterator++;
+	} while (axl_true);
+
+	(*system_id) = atoi (line);
+
+	fclose (fstab);
+	return axl_true;
+}
+#endif
+
+/** 
+ * @brief Allows to get system user id or system group id from the
+ * provided string. 
+ *
+ * If the string already contains the user id or group id, the
+ * function returns its corresponding integet value. The function also
+ * checks if the value (that should represent a user or group in some
+ * way) is present on the current system. get_user parameter controls
+ * if the operation should perform a user lookup or a group lookup.
+ * 
+ * @param ctx The valvulad context.
+ * @param value The user or group to get system id.
+ * @param get_user axl_true to signal the value to lookup user, otherwise axl_false to lookup for groups.
+ *
+ * @return The function returns the user or group id or -1 if it fails.
+ */
+int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get_user)
+{
+#if defined (AXL_OS_UNIX)
+	int system_id = -1;
+
+	/* get user and group id associated to the value provided */
+	if (! __valvulad_get_system_id_info (ctx, value, &system_id, get_user ? "/etc/passwd" : "/etc/group"))
+		return -1;
+
+	/* return the user id or group id */
+	msg ("Resolved %s:%s to system id %d", get_user ? "user" : "group", value, system_id);
+	return system_id;
+#endif
+	/* nothing defined */
+	return -1;
+}

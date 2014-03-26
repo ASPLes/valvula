@@ -264,12 +264,12 @@ typedef enum {
 	VALVULAD_DATE_ITEM_MONTH = 2,
 } ValvuladDateItem;
 
-void valvulad_add_on_day_change (ValvuladCtx * ctx, ValvuladOnDateChange on_day_change, axlPointer ptr);
+void valvulad_add_on_day_change   (ValvuladCtx * ctx, ValvuladOnDateChange on_day_change, axlPointer ptr);
 
 void valvulad_add_on_month_change (ValvuladCtx * ctx, ValvuladOnDateChange on_day_change, axlPointer ptr);
 
-void valvulad_notify_date_change (ValvuladCtx * ctx, long new_value, ValvuladDateItem item_type);
+void valvulad_notify_date_change  (ValvuladCtx * ctx, long new_value, ValvuladDateItem item_type);
 
-
+int  valvulad_get_system_id       (ValvuladCtx * ctx, const char * value, axl_bool get_user);
 
 #endif
