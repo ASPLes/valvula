@@ -291,6 +291,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 {
 	axlNode           * node;
 	ValvulaConnection * listener;
+	int                 gid, pid;
 
 	if (ctx == NULL || ctx->ctx == NULL)
 		return axl_false;
@@ -335,6 +336,38 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 
 	/* install event to track day and month change */
 	valvula_thread_pool_new_event (ctx->ctx, 2000000, __valvulad_run_time_tracking, ctx, NULL);
+
+	/* check for running user */
+	node = axl_doc_get (ctx->config, "/valvula/global-settings/running");
+	if (node && ATTR_VALUE (node, "user") && ATTR_VALUE (node, "group") && HAS_ATTR_VALUE (node, "enabled", "yes")) {
+		/* change chroot before everything */
+
+		/* change group first */
+		gid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "group"), axl_false);
+		if (gid == -1) {
+			error ("Group defined is not present: %s", ATTR_VALUE (node, "group"));
+			return axl_false;
+		}
+		msg ("Changing process to gid %d (%s)", gid, ATTR_VALUE (node, "group"));
+		if (setgid (gid) == -1) {
+			error ("Failed to change process group. setgid() call failed with errno=%d", errno);
+			return axl_false;
+		}
+
+		/* change user last */
+		pid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "user"), axl_true);
+		if (pid == -1) {
+			error ("User defined is not present: %s", ATTR_VALUE (node, "user"));
+			return axl_false;
+		}
+		msg ("Changing process to pid %d (%s)", pid, ATTR_VALUE (node, "user"));
+		if (setuid (pid) == -1) {
+			error ("Failed to change user group. setuid() call failed with errno=%d", errno);
+			return axl_false;
+		}
+
+	} /* end if */
+
 	return axl_true; 
 }
 
