@@ -555,9 +555,12 @@ def configure_mysql_account (options, args):
     result = os.system ("valvulad -b > /dev/null")
     if result:
         print "ERROR: credencials provided aren't working (%s %s %s), code=%d. Restoring previous values" % (dbname, dbuser, dbpass, result)
-        node.attr ("name", old_dbname)
-        node.attr ("user", old_dbuser)
-        node.attr ("password", old_dbpass)
+        if old_dbname:
+            node.attr ("name", old_dbname)
+        if old_dbuser:
+            node.attr ("user", old_dbuser)
+        if old_dbpass:
+            node.attr ("password", old_dbpass)
 
         # now save content
         doc.file_dump (valvula_conf, 4)
