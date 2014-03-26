@@ -539,12 +539,12 @@ def configure_mysql_account (options, args):
         return (False, "Unable to find database configuration node for valvula. Unable to complete installer")
 
     # get old values
-    old_dbname = node.attr ("name")
+    old_dbname = node.attr ("dbname")
     old_dbuser = node.attr ("user")
     old_dbpass = node.attr ("password")
 
     # set new values
-    node.attr ("name", dbname)
+    node.attr ("dbname", dbname)
     node.attr ("user", dbuser)
     node.attr ("password", dbpass)
     
@@ -556,7 +556,7 @@ def configure_mysql_account (options, args):
     if result:
         print "ERROR: credencials provided aren't working (%s %s %s), code=%d. Restoring previous values" % (dbname, dbuser, dbpass, result)
         if old_dbname:
-            node.attr ("name", old_dbname)
+            node.attr ("dbname", old_dbname)
         if old_dbuser:
             node.attr ("user", old_dbuser)
         if old_dbpass:
