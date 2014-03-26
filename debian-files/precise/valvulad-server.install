@@ -2,6 +2,11 @@ usr/bin/valvulad
 usr/bin/valvulad-mgr.py
 etc/valvula/valvula.example.conf
 etc/init.d/valvulad
+etc/valvula/mods-available
+etc/valvula/mods-enabled
+
+
+
 
 
 
