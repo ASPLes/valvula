@@ -25,6 +25,8 @@ LIBS            = $(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS) $(NOPOLL_LIBS)
 
 bin_PROGRAMS = valvulad
 
+bin_SCRIPTS = valvulad-mgr.py
+
 valvulad_SOURCES = main.c exarg.c exarg.h 
 
 valvulad_LDFLAGS = -Wl,-export-dynamic -ldl
