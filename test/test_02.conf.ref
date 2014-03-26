@@ -1,0 +1,28 @@
+<?xml version='1.0' ?>
+<valvula>
+    <!-- -*- nxml -*- -->
+    <!-- server configuration -->
+    <global-settings>
+        <log-reporting enabled='yes' use-syslog='yes' />
+    </global-settings>
+    <!-- GENERAL: configuration -->
+    <general>
+        <listen host='127.0.0.1' port='3579'>
+            <run module='mod-test' />
+            <!-- more modules next -->
+            <run module='mod-ticket' />
+        </listen>
+        <listen host='127.0.0.1' port='3800'>
+            <run module='mod-ticket' />
+        </listen>
+    </general>
+    <database>
+        <!-- default mysql configuration -->
+        <config driver='mysql' host='localhost' port='' name='valvula' user='valvula' password='valvula' />
+    </database>
+    <!-- MODULE: configuration -->
+    <modules>
+        <!-- directory where to find modules to load -->
+        <directory src='/etc/valvulad/mods-enabled' />
+    </modules>
+</valvula>

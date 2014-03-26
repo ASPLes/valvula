@@ -197,17 +197,16 @@ def add_new_listener (options, args):
     return
 
 def module_declared_in_port (listen, module_name):
-    while listen:
-        # get first run module
-        run = listen.child_called ("run")
-        while run:
 
-            if run.attr ("module") == module_name:
-                return True
+    # get first run module
+    run = listen.child_called ("run")
+    while run:
 
-            # next run module
-            run = run.next_called ("run")
-        # end while
+        if run.attr ("module") == module_name:
+            return True
+
+        # next run module
+        run = run.next_called ("run")
     # end while
 
     # no module was declared on that listener
@@ -220,25 +219,34 @@ def add_module (options, args):
         print "ERROR: not all arguments were received. Unable to add module"
         sys.exit (-1)
 
-    module_name  = args[0]
+
+    if not add_module_complete (args[0], args[1]):
+        sys.exit (-1)
+
+    # add module finished without problem
+    sys.exit (0)
+    return 
+
+def add_module_complete (module_name, host_decl):
+    
     # get host and port declaration from user input
-    (host, port) = check_and_get_host_port (args[1])
+    (host, port) = check_and_get_host_port (host_decl)
 
     # find listener module
     listen = find_listener (host, port)
     if not listen:
-        print "ERROR: unable to add module, listener %s wasn't found. Please add it first" % args[1]
-        sys.exit (-1)
+        print "ERROR: unable to add module, listener %s wasn't found. Please add it first" % host_decl
+        return True
 
     # check module exists
     if module_name not in get_modules ():
         print "ERROR: unable to add module %s, it is not currently installed"
-        sys.exit (-1)
+        return True
 
     # check if the module was added previously
     if module_declared_in_port (listen, module_name):
-        print "INFO: module %s already declared on that listener" % module_name
-        sys.exit (-1)
+        print "INFO: module %s already declared on that listener at %s" % (module_name, valvula_conf)
+        return True
 
     # create module
     run = axl.Node ("run")
@@ -254,7 +262,7 @@ def add_module (options, args):
     # end if
 
     print "INFO: module added, now you have to restart valvula!"
-    return
+    return True
 
 postfix_sections = [
     ("smtpd_client_restrictions" , "Optional restrictions that the Postfix SMTP server applies in the context of a client connection request. "),
@@ -509,6 +517,57 @@ def do_connect_valvula_to_postfix (options, args):
 
     return
 
+def configure_mysql_account (options, args):
+
+    if len (args) != 3:
+        print "ERROR: please provide: dbname dbuser dbpass"
+        sys.exit (-1)
+
+    # get values 
+    dbname = args[0]
+    dbuser = args[1]
+    dbpass = args[2]
+
+    # load document
+    (doc, err) = axl.file_parse (valvula_conf)
+    if not doc:
+        return (False, "Unable to open %s document. Error was: %s" % (valvula_conf, err.msg))
+
+    # get node to configure it 
+    node = doc.get ("/valvula/database/config")
+    if not node:
+        return (False, "Unable to find database configuration node for valvula. Unable to complete installer")
+
+    # get old values
+    old_dbname = node.attr ("name")
+    old_dbuser = node.attr ("user")
+    old_dbpass = node.attr ("password")
+
+    # set new values
+    node.attr ("name", dbname)
+    node.attr ("user", dbuser)
+    node.attr ("password", dbpass)
+    
+    # now save content
+    doc.file_dump (valvula_conf, 4)
+
+    # now check database is working
+    result = os.system ("valvulad -b > /dev/null")
+    if result:
+        print "ERROR: credencials provided aren't working (%s %s %s), code=%d. Restoring previous values" % (dbname, dbuser, dbpass, result)
+        node.attr ("name", old_dbname)
+        node.attr ("user", old_dbuser)
+        node.attr ("password", old_dbpass)
+
+        # now save content
+        doc.file_dump (valvula_conf, 4)
+        sys.exit (-1)
+
+    print "INFO: MySQL access configured"
+    sys.exit (0)
+    
+    return
+
 #### MAIN ####
 parser = OptionParser()
 parser.add_option("-l", "--list-listeners", action="store_true", dest="list_listeners", default=False,
@@ -525,6 +584,8 @@ parser.add_option("-s", "--show-postfix-sections", action="store_true", dest="sh
                   help="Allows to show postfix sections that can be used while connecting valvula listeners to its sections.")
 parser.add_option("-n", "--show-postfix-conf", action="store_true", dest="show_postfix_conf", default=False,
                   help="Allows to show postfix configuration (like postconf -n) but allowing to change the file to inspect.")
+parser.add_option("-y", "--config-mysql", action="store_true", dest="config_mysql", default=False,
+                  help="Configure to configure valvula to use the provided MySQL credentials. Use %s -y db_name db_user db_pass" % sys.argv[0])
 
 # parse options received
 (options, args) = parser.parse_args ()
@@ -543,6 +604,8 @@ elif options.connect_postfix:
     do_connect_valvula_to_postfix (options, args)
 elif options.show_postfix_conf:
     print get_postfix_normalized ()
+elif options.config_mysql:
+    configure_mysql_account (options, args)
 else:
     print "INFO: run %s --help to get additional information" % sys.argv[0]
 
