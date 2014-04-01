@@ -97,6 +97,12 @@ def list_current_listeners ():
     return
 
 def get_modules ():
+
+    if not os.path.exists ("/etc/valvula/mods-available"):
+        print "INFO: no modules found, /etc/valvula/mods-available does not exists"
+        print "INFO: reporting default known modules.."
+        return ["mod-ticket"]
+
     # get all modules
     items  = os.listdir ("/etc/valvula/mods-available")
     result = []
@@ -240,7 +246,7 @@ def add_module_complete (module_name, host_decl):
 
     # check module exists
     if module_name not in get_modules ():
-        print "ERROR: unable to add module %s, it is not currently installed"
+        print "ERROR: unable to add module %s, it is not currently installed" % module_name
         return True
 
     # check if the module was added previously
@@ -258,7 +264,9 @@ def add_module_complete (module_name, host_decl):
 
     # add link if missing
     if not os.path.exists ("/etc/valvula/mods-enabled/%s.xml" % module_name):
-        os.symlink ("/etc/valvula/mods-available/%s.xml" % module_name, "/etc/valvula/mods-enabled/%s.xml" % module_name)
+        if os.path.exists ("/etc/valvula/mods-available/%s.xml" % module_name):
+            os.symlink ("/etc/valvula/mods-available/%s.xml" % module_name, "/etc/valvula/mods-enabled/%s.xml" % module_name)
+        # end if
     # end if
 
     print "INFO: module added, now you have to restart valvula!"
