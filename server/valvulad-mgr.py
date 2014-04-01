@@ -571,6 +571,43 @@ def configure_mysql_account (options, args):
     
     return
 
+def set_user (options, args):
+    if len (args) != 2:
+        print "ERROR: please provide: dbname dbuser dbpass"
+        sys.exit (-1)
+
+    # get values 
+    user   = args[0]
+    group  = args[1]
+
+    # load document
+    (doc, err) = axl.file_parse (valvula_conf)
+    if not doc:
+        return (False, "Unable to open %s document. Error was: %s" % (valvula_conf, err.msg))
+
+    # get node to configure it 
+    node = doc.get ("/valvula/global-settings/running")
+    if not node:
+        return (False, "Unable to find database configuration node for valvula. Unable to complete installer")
+
+    # get old values
+    old_user = node.attr ("user")
+    old_group = node.attr ("group")
+    old_enabled = node.attr ("enabled")
+
+    # set new values
+    node.attr ("user", user)
+    node.attr ("group", group)
+    node.attr ("enabled", "yes")
+    
+    # now save content
+    doc.file_dump (valvula_conf, 4)
+    print "INFO: User configured access configured"
+    sys.exit (0)
+    
+    return
+    
+
 #### MAIN ####
 parser = OptionParser()
 parser.add_option("-l", "--list-listeners", action="store_true", dest="list_listeners", default=False,
@@ -589,6 +626,8 @@ parser.add_option("-n", "--show-postfix-conf", action="store_true", dest="show_p
                   help="Allows to show postfix configuration (like postconf -n) but allowing to change the file to inspect.")
 parser.add_option("-y", "--config-mysql", action="store_true", dest="config_mysql", default=False,
                   help="Configure to configure valvula to use the provided MySQL credentials. Use %s -y db_name db_user db_pass" % sys.argv[0])
+parser.add_option("-u", "--set-user", action="store_true", dest="set_user", default=False,
+                  help="Configure valvulad server to run with the provided user and group. Use %s -u user group" % sys.argv[0])
 
 # parse options received
 (options, args) = parser.parse_args ()
@@ -609,6 +648,8 @@ elif options.show_postfix_conf:
     print get_postfix_normalized ()
 elif options.config_mysql:
     configure_mysql_account (options, args)
+elif options.set_user:
+    set_user (options, args)
 else:
     print "INFO: run %s --help to get additional information" % sys.argv[0]
 
