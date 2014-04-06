@@ -483,7 +483,15 @@ def _add_postfix_valvula_declaration (postfix_section, host, port, order, config
 
     # check specific postfix sections to ensure they have the minimum required by postfix
     if postfix_section == "smtpd_recipient_restrictions":
-        handler.write ("%s = %s, reject_unauth_destination\n" % (postfix_section, decl))
+        if order == "first":
+            handler.write ("%s = %s, permit_mynetworks, reject_unauth_destination\n" % (postfix_section, decl))
+        else:
+            handler.write ("%s = permit_mynetworks, reject_unauth_destination, %s\n" % (postfix_section, decl))
+    elif postfix_section == "smtpd_relay_restrictions":
+        if order == "first":
+            handler.write ("%s = %s,  permit_mynetworks, permit_sasl_authenticated, defer_unauth_destination\n" % (postfix_section, decl))
+        else:
+            handler.write ("%s = permit_mynetworks, permit_sasl_authenticated, defer_unauth_destination, %s\n" % (postfix_section, decl))
     else:
         # rest of cases
         handler.write ("%s = %s\n" % (postfix_section, decl))
