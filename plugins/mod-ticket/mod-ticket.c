@@ -381,7 +381,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	/* get if the limit is expired */
 	valid_until = GET_CELL_AS_LONG (row, 3);
-	if (valvula_now () > valid_until) {
+	if (valid_until != -1 && valvula_now () > valid_until) {
 		/* release results */
 		valvulad_db_release_result (result);
 
