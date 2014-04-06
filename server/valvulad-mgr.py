@@ -477,13 +477,17 @@ def _add_postfix_valvula_declaration (postfix_section, host, port, order, config
         return
     # end if
 
-    print "Declaration (%s) not found in (%s), just add it..." % (postfix_section, config_file)
-    print "OUTPUT: %s" % output
-
     # postfix section is not present just added
     handler = open (config_file, "a")
     handler.write ("\n\n")
-    handler.write ("%s = %s\n" % (postfix_section, decl))
+
+    # check specific postfix sections to ensure they have the minimum required by postfix
+    if postfix_section == "smtpd_recipient_restrictions":
+        handler.write ("%s = %s, reject_unauth_destination\n" % (postfix_section, decl))
+    else:
+        # rest of cases
+        handler.write ("%s = %s\n" % (postfix_section, decl))
+    # end if
     handler.close ()
 
     return
