@@ -204,6 +204,10 @@ axlPointer __valvula_listener_new (ValvulaListenerData * data)
 	/* seems listener to be created, now create the BEEP
 	 * connection around it */
 	listener = valvula_connection_new_empty (ctx, fd, ValvulaRoleMasterListener);
+	if (listener == NULL) {
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Unable to start listener at the provided location %s:%s", host, str_port);
+		return NULL;
+	} /* end if */
 
 	/* configure listener */
 	listener->port = str_port;

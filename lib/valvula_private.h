@@ -104,6 +104,8 @@ struct _ValvulaCtx {
 	/*** valvula hash ***/
 	ValvulaHash             * data;
 
+	int                       request_line_limit;
+
 };
 
 /** 
@@ -133,6 +135,8 @@ struct _ValvulaConnection {
 
 	ValvulaRequest    * request;
 	axl_bool            process_launched;
+
+	int                 lines_found;
 };
 
 struct _ValvulaHash {

@@ -48,6 +48,9 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
 								 int                      port,
 								 axlPointer               user_data);
 
+void        valvula_ctx_set_request_line_limit    (ValvulaCtx       * ctx,
+						   int                line_limit);
+
 void        valvula_ctx_set_default_reply_state   (ValvulaCtx       * ctx,
 						   ValvulaState       state);
 

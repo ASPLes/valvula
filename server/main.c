@@ -99,16 +99,19 @@ void valvulad_signal (int _signal)
  */
 void valvulad_detach_process (void)
 {
+
+	msg ("Detaching from console, creating child process (parent: %d)", getpid ());
+
 	pid_t   pid;
 	/* fork */
 	pid = fork ();
 	switch (pid) {
 	case -1:
-		syslog (LOG_ERR, "unable to detach process, failed to executing child process");
+		error ("unable to detach process, failed to executing child process");
 		exit (-1);
 	case 0:
 		/* running inside the child process */
-		syslog (LOG_INFO, "running child created in detached mode");
+		msg ("running child created in detached mode (child pid: %d)", getpid ());
 		return;
 	default:
 		/* child process created (parent code) */
@@ -116,7 +119,7 @@ void valvulad_detach_process (void)
 	} /* end switch */
 
 	/* terminate current process */
-	syslog (LOG_INFO, "finishing parent process (created child: %d, parent: %d)..", pid, getpid ());
+	msg ("finishing parent process (created child: %d, parent: %d)..", pid, getpid ());
 	exit (0);
 	return;
 }
@@ -178,16 +181,16 @@ int main (int argc, char ** argv)
 	/* parse arguments */
 	install_arguments (argc, argv);
 
-	/* init here valvula library and valvulaD context */
-	if (! valvulad_init (&ctx)) {
-		error ("Failed to initialize ValvulaD context, unable to start server");
-		exit (-1);
-	} /* end if */
-
 	/* check detach operation */
 	if (exarg_is_defined ("detach")) {
 		valvulad_detach_process ();
 		/* caller do not follow */
+	} /* end if */
+
+	/* init here valvula library and valvulaD context */
+	if (! valvulad_init (&ctx)) {
+		error ("Failed to initialize ValvulaD context, unable to start server");
+		exit (-1);
 	} /* end if */
 
 	if (exarg_is_defined ("verbose")) {
