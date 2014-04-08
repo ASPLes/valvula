@@ -203,11 +203,6 @@ int main (int argc, char ** argv)
 		exit (-1);
 	}
 
-	if (! valvulad_run_config (ctx)) {
-		error ("Failed to start configuration, unable to start the server");
-		exit (-1);
-	} /* end if */
-
 	/* install signal handling */
 	signal (SIGINT,  valvulad_signal); 		
 	signal (SIGSEGV, valvulad_signal);
@@ -221,6 +216,11 @@ int main (int argc, char ** argv)
 	/* check for sighup */
 	signal (SIGHUP,  valvulad_signal);
 #endif
+
+	if (! valvulad_run_config (ctx)) {
+		error ("Failed to start configuration, unable to start the server");
+		exit (-1);
+	} /* end if */
 
 	/* now wait for requests */
 	msg ("Valvula server started, processing requests..");
