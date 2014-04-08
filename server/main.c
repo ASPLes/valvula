@@ -255,7 +255,7 @@ int main (int argc, char ** argv)
 
 	/* now check result from valvulad_config_log */
 	if (! result) {
-		error ("Failed to load configuration file");
+		printf ("ERROR: Failed to load configuration file (run with %s -o -d to get more details)..\n", argv[0]);
 		exit (-1);
 	}
 
@@ -273,14 +273,18 @@ int main (int argc, char ** argv)
 	signal (SIGHUP,  valvulad_signal);
 #endif
 
-	if (! valvulad_run_config (ctx)) {
-		error ("Failed to start configuration, unable to start the server");
-		exit (-1);
-	} /* end if */
-
 	/* write pid file */
 	valvulad_place_pidfile ();
 	
+	if (! valvulad_run_config (ctx)) {
+		/* remove pid file */
+		if (valvula_support_file_test (pid_file_path, FILE_IS_REGULAR | FILE_EXISTS))
+			unlink (pid_file_path);
+
+		printf ("ERROR: Failed to start configuration, unable to start the server\n");
+		exit (-1);
+	} /* end if */
+
 	/* now wait for requests */
 	msg ("Valvula server started, processing requests..");
 	valvula_listener_wait (ctx->ctx);
