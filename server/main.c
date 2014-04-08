@@ -40,6 +40,11 @@
 /* global context */
 ValvuladCtx * ctx = NULL;
 
+/** 
+ * Default pid file configured.
+ */
+const char * pid_file_path = "/var/run/valvulad.pid";
+
 #define HELP_HEADER "ValvulaD: a high performance policy daemon\n\
 Copyright (C) 2014  Advanced Software Production Line, S.L.\n\n"
 
@@ -173,6 +178,33 @@ void install_arguments (int argc, char ** argv)
 	return;
 }
 
+/**
+ * @internal Places current process identifier into the file provided
+ * by the user.
+ */
+void valvulad_place_pidfile (void)
+{
+	FILE * pid_file = NULL;
+	int    pid      = getpid ();
+	char   buffer[20];
+	int    size;
+
+	/* open pid file or create it to place the pid file */
+	pid_file = fopen (pid_file_path, "w");
+	if (pid_file == NULL) {
+		abort_error ("Unable to open pid file at: %s", pid_file_path);
+		return;
+	} /* end if */
+	
+	/* stringfy pid */
+	size = axl_stream_printf_buffer (buffer, 20, NULL, "%d", pid);
+	msg ("signaling PID %d at %s", pid, pid_file_path);
+	fwrite (buffer, size, 1, pid_file);
+
+	fclose (pid_file);
+	return;
+}
+
 
 int main (int argc, char ** argv) 
 {
@@ -246,6 +278,9 @@ int main (int argc, char ** argv)
 		exit (-1);
 	} /* end if */
 
+	/* write pid file */
+	valvulad_place_pidfile ();
+	
 	/* now wait for requests */
 	msg ("Valvula server started, processing requests..");
 	valvula_listener_wait (ctx->ctx);
