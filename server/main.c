@@ -49,25 +49,42 @@ at <vortex@lists.aspl.es>."
 
 void valvulad_signal (int _signal)
 {
-	ValvuladCtx * ctxd     = ctx;
-	ValvulaCtx  * temp_ctx = ctx->ctx;
-	ValvulaCtx  * ctx      = temp_ctx;
-	char        * bt_file  = NULL;
-	char        * cmd;
+	ValvuladCtx       * ctxd     = ctx;
+	ValvulaCtx        * temp_ctx = ctx->ctx;
+	ValvulaCtx        * ctx      = temp_ctx;
+	char              * bt_file  = NULL;
+	char              * cmd;
+	ValvulaAsyncQueue * queue;
+	axlNode           * node;
 
 	/* unlock listener */
 	if (_signal == SIGINT || _signal == SIGTERM) 
 		valvula_listener_unlock (ctx);
 	else if (_signal == SIGSEGV || _signal == SIGABRT) {
 		valvula_log (VALVULA_LEVEL_CRITICAL, "Critical signal received: %d", _signal);
-		bt_file = valvulad_support_get_backtrace (ctxd, getpid ());
-		if (bt_file && valvula_support_file_test (bt_file, FILE_EXISTS)) {
-			cmd = axl_strdup_printf ("cat %s", bt_file);
-			if (system (cmd)) 
-				printf ("ERROR: command %s failed..\n", cmd);
-			axl_free (cmd);
+
+		/* get signal handling */
+		node = axl_doc_get (ctxd->config, "/valvula/global-settings/signal");
+		if (HAS_ATTR_VALUE (node, "action", "hold")) {
+			/* create waiting queue */
+			queue = valvula_async_queue_new ();
+			/* hold it */
+			valvula_async_queue_pop (queue);
+
+		} else if (HAS_ATTR_VALUE (node, "action", "backtrace")) {
+			bt_file = valvulad_support_get_backtrace (ctxd, getpid ());
+			if (bt_file && valvula_support_file_test (bt_file, FILE_EXISTS)) {
+				cmd = axl_strdup_printf ("cat %s", bt_file);
+				if (system (cmd)) 
+					printf ("ERROR: command %s failed..\n", cmd);
+				axl_free (cmd);
+			} /* end if */
+			axl_free (bt_file);
 		} /* end if */
-		axl_free (bt_file);
+
+		/* now kill the process */
+		/* that is, just do nothing */
+
 	} /* end if */
 
 	return;
