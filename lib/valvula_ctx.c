@@ -63,8 +63,32 @@ ValvulaCtx * valvula_ctx_new (void)
 	/* default state */
 	ctx->default_state = VALVULA_STATE_DUNNO;
 
+	/* set default line limit request */
+	ctx->request_line_limit = 40;
+
 	/* return context created */
 	return ctx;
+}
+
+/** 
+ * @brief Allows to change and limit request line limit for every
+ * request received. If the provided request limit is exceeded the
+ * connection is closed.
+ *
+ * @param ctx The context where the request line limit is going to be
+ * configured.
+ *
+ * @param line_limit The line limit to be configured.
+ *
+ * 
+ */
+void        valvula_ctx_set_request_line_limit    (ValvulaCtx       * ctx,
+						   int                line_limit)
+{
+	if (ctx == NULL)
+		return;
+	ctx->request_line_limit = line_limit;
+	return;
 }
 
 /** 

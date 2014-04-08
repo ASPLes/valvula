@@ -292,6 +292,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	axlNode           * node;
 	ValvulaConnection * listener;
 	int                 gid, pid;
+	int                 request_line_limit;
 
 	if (ctx == NULL || ctx->ctx == NULL)
 		return axl_false;
@@ -366,6 +367,16 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 			return axl_false;
 		}
 
+	} /* end if */
+
+	/* set default request limit if defined */
+	node = axl_doc_get (ctx->config, "/valvula/global-settings/request-line");
+	if (node && HAS_ATTR (node, "limit")) {
+		request_line_limit = valvula_support_strtod (ATTR_VALUE (node, "limit"), NULL);
+		if (request_line_limit != 40) {
+			msg ("Configuring request line limit to %d", request_line_limit);
+			valvula_ctx_set_request_line_limit (ctx->ctx, request_line_limit);
+		} /* end if */
 	} /* end if */
 
 	return axl_true; 

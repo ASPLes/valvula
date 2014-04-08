@@ -417,6 +417,15 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "Found content line: %s (%d bytes)", buffer, bytes_read);
 
+	/* increase number of lines found until now to limit them */
+	connection->lines_found += 1;
+	if (connection->lines_found > ctx->request_line_limit) {
+		valvula_log (VALVULA_LEVEL_CRITICAL, "Exceeded  line limit (%d) with %d while reading request, closing..",
+			     ctx->request_line_limit, connection->lines_found);
+		valvula_connection_close (connection);
+		return;
+	} /* ned if */
+
 	/* prepare request type to hold all info */
 	if (! connection->request)
 		connection->request = axl_new (ValvulaRequest, 1);
