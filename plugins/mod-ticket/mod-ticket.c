@@ -164,6 +164,8 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "valid_until", "int",
 				  /* ticket plan id */
 				  "ticket_plan_id", "int",
+				  /* flag to block the user */
+				  "block_ticket", "int",
 				  NULL);
 
 	/* day tracking */
@@ -294,9 +296,10 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 				     axlPointer          request_data,
 				     char             ** message)
 {
-	axl_bool domain_in_tickets    = axl_false;
-	axl_bool sasl_user_in_tickets = axl_false;
-	axl_bool alternative_user     = axl_false;
+	axl_bool        domain_in_tickets    = axl_false;
+	axl_bool        sasl_user_in_tickets = axl_false;
+	axl_bool        alternative_user     = axl_false;
+	const char    * descriptive_user     = "<unknown>";
 
 	/* get result and row */
 	ValvuladRes    result  = NULL;
@@ -307,6 +310,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	long           valid_until;
 	long           total_used;
 	long           record_id;
+	long           block_ticket;
 
 	long           ticket_plan_id;
 	long           total_limit;
@@ -327,10 +331,12 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		if (valvula_get_sender_domain (request)) {
 			result               = valvulad_db_run_query (ctx, "SELECT domain FROM domain_ticket WHERE domain like '#%s#'", valvula_get_sender_domain (request));
 			domain_in_tickets    = mod_ticket_ensure_alternative_user (ctx, result, valvula_get_sender_domain (request));
+			descriptive_user     = valvula_get_sender_domain (request);
 		} /* end if */
 		if (valvula_get_sasl_user (request)) {
 			result               = valvulad_db_run_query (ctx, "SELECT sasl_user FROM domain_ticket WHERE sasl_user like '#%s#'", valvula_get_sasl_user (request));
 			sasl_user_in_tickets = mod_ticket_ensure_alternative_user (ctx, result, valvula_get_sasl_user (request));
+			descriptive_user     = valvula_get_sasl_user (request);
 		} /* end if */
 
 		/* update alternative user flag */
@@ -349,18 +355,18 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	if (sasl_user_in_tickets) {
 		/* prepare query to get the right user */
 		if (alternative_user)
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE sasl_user LIKE '#%s#'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE sasl_user LIKE '#%s#'";
 		else 
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE sasl_user = '%s'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE sasl_user = '%s'";
 
 		/* run query */
 		result = valvulad_db_run_query (ctx,  query, valvula_get_sasl_user (request));
 	} else if (domain_in_tickets) {
 		/* prepare query to get the right domain */
 		if (alternative_user) 
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE domain LIKE '#%s#'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE domain LIKE '#%s#'";
 		else
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id FROM domain_ticket WHERE domain = '%s'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE domain = '%s'";
 
 		/* run query */
 		result = valvulad_db_run_query (ctx, query, valvula_get_sender_domain (request));
@@ -400,6 +406,20 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	current_month_usage = GET_CELL_AS_LONG (row, 2);
 	ticket_plan_id      = GET_CELL_AS_LONG (row, 4);
 	record_id           = GET_CELL_AS_LONG (row, 5);
+	block_ticket        = GET_CELL_AS_LONG (row, 6);
+
+	if (block_ticket) {
+		/* release result */
+		valvulad_db_release_result (result);
+
+		/* unlock */
+		valvula_mutex_unlock (&work_mutex);
+
+		valvulad_reject (ctx, request, "Rejecting operation because ticket (%d) is blocked(%d) for user (%s)",
+				 ticket_plan_id, block_ticket, descriptive_user);
+				 
+		return VALVULA_STATE_REJECT;
+	}
 
 	/* release result */
 	valvulad_db_release_result (result);

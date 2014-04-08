@@ -762,10 +762,75 @@ axl_bool test_03 (void) {
 		printf ("ERROR (2): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
 		return axl_false;
 	} /* end if */
-	
+
+	/* SHOULD NOT WORK:  */
+	printf ("Test --: Testing (block_ticket) flag for test@limited.com..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (2.17.27): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	/* add credits */
+	if (! valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET total_used = 0 WHERE sasl_user = 'test@limited.com'")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD WORK */
+	printf ("Test --: testing (block_ticket), ensure account works..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (2.17.27): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		return axl_false;
+	} /* end if */
+
+	/* block account */
+	if (! valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET block_ticket = '1' WHERE sasl_user = 'test@limited.com'")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD NOT WORK:  */
+	printf ("Test --: Testing (block_ticket) flag for test@limited.com..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (2.17.27): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
 	/* finish test */
 	common_finish (ctx);
-	
 
 	return axl_true;
 }
