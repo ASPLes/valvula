@@ -537,7 +537,7 @@ axl_bool test_03 (void) {
 	path = "test_03.conf";
 	ctx  = test_valvula_load_config ("Test 03: ", path, axl_true);
 	if (! ctx) {
-		printf ("ERROR: unable to load configuration file at %s\n", path);
+		printf ("ERROR (1): unable to load configuration file at %s\n", path);
 		return axl_false;
 	} /* end if */
 
@@ -546,26 +546,26 @@ axl_bool test_03 (void) {
 
 	/* check if the module was loaded */
 	if (axl_list_length (ctx->registered_modules) == 0) {
-		printf ("ERROR: expected to find 1 module loaded but found only %d..\n", axl_list_length (ctx->registered_modules));
+		printf ("ERROR (2): expected to find 1 module loaded but found only %d..\n", axl_list_length (ctx->registered_modules));
 		return axl_false;
 	} /* end if */
 
 	/* prepare all information at the mod ticket module */
 	if (! valvulad_db_run_non_query (ctx, "DELETE FROM ticket_plan")) {
-		printf ("ERROR: failed to remove old plans..\n");
+		printf ("ERROR (3): failed to remove old plans..\n");
 		return axl_false;
 	} /* end if */
 
 	/* delete domain tickets */
 	if (! valvulad_db_run_non_query (ctx, "DELETE FROM domain_ticket")) {
-		printf ("ERROR: failed to remove old plans..\n");
+		printf ("ERROR (4): failed to remove old plans..\n");
 		return axl_false;
 	} /* end if */
 
 	/* now add some ticke plans */
 	query = "INSERT INTO ticket_plan (name, description, total_limit, day_limit, month_limit) VALUES ('test 03', 'description', 20, 4, 10)";
 	if (! valvulad_db_run_non_query (ctx, query)) {
-		printf ("ERROR: failed to remove old plans..\n");
+		printf ("ERROR (5): failed to remove old plans..\n");
 		return axl_false;
 	} /* end if */
 
@@ -573,7 +573,7 @@ axl_bool test_03 (void) {
 	/* add the user that is going to be limited */
 	query = "INSERT INTO domain_ticket (sasl_user, valid_until, ticket_plan_id) VALUES ('test@limited.com', %d, (SELECT max(id) FROM ticket_plan))";
 	if (! valvulad_db_run_non_query (ctx, query, valvula_now () + 1000)) {
-		printf ("ERROR: failed to remove old plans..\n");
+		printf ("ERROR (6): failed to remove old plans..\n");
 		return axl_false;
 	} /* end if */
 
@@ -592,7 +592,7 @@ axl_bool test_03 (void) {
 		"plain", "francis@aspl.es", NULL);
 
 	if (state != VALVULA_STATE_DUNNO) {
-		printf ("ERROR (1): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		printf ("ERROR (7): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
 		return axl_false;
 	} /* end if */
 
@@ -665,7 +665,7 @@ axl_bool test_03 (void) {
 		"plain", "test@limited.com", NULL);
 
 	if (state != VALVULA_STATE_REJECT) {
-		printf ("ERROR (2): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		printf ("ERROR (8): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
 		return axl_false;
 	} /* end if */
 
@@ -675,7 +675,7 @@ axl_bool test_03 (void) {
 	/* add the user that is going to be limited */
 	query = "INSERT INTO domain_ticket (sasl_user, valid_until, ticket_plan_id) VALUES ('test@limited2.com, test@limited3.com, test@limited4.com', %d, (SELECT max(id) FROM ticket_plan))";
 	if (! valvulad_db_run_non_query (ctx, query, valvula_now () + 1000)) {
-		printf ("ERROR: failed to remove old plans..\n");
+		printf ("ERROR (9): failed to remove old plans..\n");
 		return axl_false;
 	} /* end if */
 
@@ -686,7 +686,7 @@ axl_bool test_03 (void) {
 	printf ("Test --:\n");
 
 	if (record_id <= 0) {
-		printf ("ERROR: failed to get domain ticket created for multi user, expected a value > 0 but found %ld\n", record_id);
+		printf ("ERROR (10): failed to get domain ticket created for multi user, expected a value > 0 but found %ld\n", record_id);
 		return axl_false;
 	} /* end if */
 
@@ -759,7 +759,7 @@ axl_bool test_03 (void) {
 		"plain", "test@limited3.com", NULL);
 
 	if (state != VALVULA_STATE_REJECT) {
-		printf ("ERROR (2): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		printf ("ERROR (11): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
 		return axl_false;
 	} /* end if */
 
@@ -783,7 +783,7 @@ axl_bool test_03 (void) {
 
 	/* add credits */
 	if (! valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET total_used = 0 WHERE sasl_user = 'test@limited.com'")) {
-		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		printf ("ERROR (12): expected to insert value with valvulad_db_run_non_query but found a failure..\n");
 		return axl_false;
 	} /* end if */
 
@@ -801,13 +801,13 @@ axl_bool test_03 (void) {
 		"plain", "test@limited.com", NULL);
 
 	if (state != VALVULA_STATE_DUNNO) {
-		printf ("ERROR (2.17.27): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		printf ("ERROR (2.17.27.13): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
 		return axl_false;
 	} /* end if */
 
 	/* block account */
 	if (! valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET block_ticket = '1' WHERE sasl_user = 'test@limited.com'")) {
-		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		printf ("ERROR (14): expected to insert value with valvulad_db_run_non_query but found a failure..\n");
 		return axl_false;
 	} /* end if */
 
@@ -825,7 +825,7 @@ axl_bool test_03 (void) {
 		"plain", "test@limited.com", NULL);
 
 	if (state != VALVULA_STATE_REJECT) {
-		printf ("ERROR (2.17.27): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		printf ("ERROR (2.17.27.15): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
 		return axl_false;
 	} /* end if */
 
