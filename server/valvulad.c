@@ -401,8 +401,11 @@ void valvulad_error (ValvuladCtx * ctx, axl_bool ignore_debug, const char * file
 }
 
 /** 
- * @brief Allows to report in a consistent maner when an operation is
+ * @brief Allows to report in a consistent manner when an operation is
  * rejected.
+ *
+ * Message rejection will also be configured on the provided \ref
+ * ValvulaRequest so it is also reported to postfix.
  *
  * @param ctx The context where the operation will take place.
  *
@@ -414,16 +417,33 @@ void valvulad_error (ValvuladCtx * ctx, axl_bool ignore_debug, const char * file
  */
 void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char * format, ...)
 {
-	va_list     args;
-	char      * message;
-
+	va_list        args;
+	char         * message;
+	const char   * sasl_user = valvula_get_sasl_user (request);
+	
 	va_start (args, format);
 	/* create the message */
 	message = axl_stream_strdup_printfv (format, args);
 	va_end (args);
 
-	msg ("REJECT: %s -> %s : %s", request->sender, request->recipient, message);
-	axl_free (message);
+	msg ("REJECT: %s -> %s%s%s%s%s: %s", request->sender, request->recipient, 
+	     /* drop SASL information */
+	     sasl_user ? " (" : "",
+	     sasl_user ? "sasl_user=" : "",
+	     sasl_user ? sasl_user : "",
+	     sasl_user ? ") " : "",
+	     /* include message */
+	     message);
+
+	/* configure reject message into request to reply it in the
+	 * case nothing is configured */
+	if (! request->message_reply) {
+		/* store message and let request to release it */
+		request->message_reply = message;
+	} else {
+		/* release message */
+		axl_free (message);
+	}
 
 	return;
 }

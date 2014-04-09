@@ -423,6 +423,9 @@ typedef struct _ValvulaRequest {
 	/* additional info */
 	char * etrn_domain;
 	char * stress;
+
+	/* message reply to report */
+	char * message_reply;
 	
 } ValvulaRequest;
 

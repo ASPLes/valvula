@@ -665,6 +665,8 @@ void                valvula_connection_free (ValvulaConnection * conn)
 		
 		axl_free (conn->request->etrn_domain);
 		axl_free (conn->request->stress);
+
+		axl_free (conn->request->message_reply);
 		
 		axl_free (conn->request);
 	} /* end if */

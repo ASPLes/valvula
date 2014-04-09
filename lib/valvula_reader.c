@@ -190,11 +190,19 @@ axl_bool __valvula_reader_find_next_registry (axlPointer key, axlPointer data, a
 	return axl_false; /* dont stop iterating */
 }
 
-void __valvula_reader_send (ValvulaConnection * connection, const char * _message)
+void __valvula_reader_send (ValvulaConnection * connection, const char * _status, const char * _message)
 {
 	ValvulaCtx * ctx = connection->ctx;
 	int          bytes_written;
-	char       * message = axl_strdup_printf ("action=%s\n\n", _message);
+	char       * message;
+
+	/* build message */
+	if (_message)
+		message = axl_strdup_printf ("action=%s %s\n\n", _status, _message);
+	else if (connection->request->message_reply)
+		message = axl_strdup_printf ("action=%s %s\n\n", _status, connection->request->message_reply);
+	else
+		message = axl_strdup_printf ("action=%s\n\n", _status);
 
 	/* send content and catch bytes written */
 	bytes_written = send (connection->session, message, strlen (message), 0);
@@ -226,27 +234,27 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 {
 	switch (state) {
 	case VALVULA_STATE_OK:
-		__valvula_reader_send (connection, "ok");
+		__valvula_reader_send (connection, "ok", message);
 		break;
 	case VALVULA_STATE_DUNNO:
-		__valvula_reader_send (connection, "dunno");
+		__valvula_reader_send (connection, "dunno", message);
 		break;
 	case VALVULA_STATE_REJECT:
-		__valvula_reader_send (connection, "reject");
+		__valvula_reader_send (connection, "reject", message);
 		break;
 	case VALVULA_STATE_DEFER_IF_PERMIT:
-		__valvula_reader_send (connection, "defer_if_permit");
+		__valvula_reader_send (connection, "defer_if_permit", message);
 		break;
 	case VALVULA_STATE_DEFER_IF_REJECT:
-		__valvula_reader_send (connection, "defer_is_reject");
+		__valvula_reader_send (connection, "defer_is_reject", message);
 		break;
 	case VALVULA_STATE_DEFER:
-		__valvula_reader_send (connection, "defer");
+		__valvula_reader_send (connection, "defer", message);
 		break;
 	case VALVULA_STATE_BCC:
 		break;
 	case VALVULA_STATE_DISCARD:
-		__valvula_reader_send (connection, "discard");
+		__valvula_reader_send (connection, "discard", message);
 		break;
 	case VALVULA_STATE_REDIRECT:
 		break;
