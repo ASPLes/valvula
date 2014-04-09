@@ -70,7 +70,7 @@ void valvulad_log_init (ValvuladCtx * ctx)
 	msg ("Checking for usage of syslog %d", ctx->use_syslog);
 	if (ctx->use_syslog) {
 		/* open syslog */
-		openlog ("valvulad", LOG_PID, LOG_DAEMON);
+		openlog ("valvulad", LOG_PID, LOG_MAIL);
 		msg ("Using syslog facility for logging");
 		return;
 	} /* end if */

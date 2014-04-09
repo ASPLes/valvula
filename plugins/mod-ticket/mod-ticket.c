@@ -236,7 +236,7 @@ axl_bool mod_ticket_ensure_alternative_user (ValvuladCtx * ctx, ValvuladRes resu
 
 	/* check result received */
 	if (result == NULL) {
-		msg ("No alternative user found for %s", user_or_domain);
+		/* msg ("No alternative user found for %s", user_or_domain); */
 		return axl_false;
 	}
 
@@ -256,7 +256,7 @@ axl_bool mod_ticket_ensure_alternative_user (ValvuladCtx * ctx, ValvuladRes resu
 
 				/* trim value */
 				axl_stream_trim (items[iterator]);
-				msg ("Alternative checking %s with %s", user_or_domain, items[iterator]);
+				/*msg ("Alternative checking %s with %s", user_or_domain, items[iterator]);*/
 				
 				if (axl_cmp (items[iterator], user_or_domain)) {
 					/* release results */
@@ -282,7 +282,7 @@ axl_bool mod_ticket_ensure_alternative_user (ValvuladCtx * ctx, ValvuladRes resu
 	/* release results */
 	valvulad_db_release_result (result);
 
-	msg ("No alternative user found for %s (2)", user_or_domain);
+	/* msg ("No alternative user found for %s (2)", user_or_domain); */
 	return axl_false;
 
 }
