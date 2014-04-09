@@ -33,7 +33,7 @@ Description: Base library used by the server valvulad
 Package: libvalvula-server-dev
 Section: libs
 Architecture: any
-Depends: libc6, libaxl-dev (>= 0.5.6), libvalvula-server
+Depends: libc6, libaxl-dev (>= 0.5.6), libvalvula-server (>= ${Source-Version})
 Description: Base library used by the server valvulad (dev headers)
   libvalvula-server development headers
 
