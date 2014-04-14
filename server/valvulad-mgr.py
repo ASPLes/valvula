@@ -147,7 +147,7 @@ def find_listener (host, port):
 def check_and_get_host_port (decl):
 
     if ":" in decl:
-        items = filter (filter_empty, args.split (":"))
+        items = filter (filter_empty, decl.split (":"))
         host  = items[0]
         port  = items[1]
     else:
@@ -626,6 +626,67 @@ def set_user (options, args):
     sys.exit (0)
     
     return
+
+def socket_read_line (s):
+    ret = ''
+    while True:
+        c = s.recv(1)
+        if c == '\n' or c == '':
+            break
+        else:
+            ret += c
+    return ret
+
+def test_server (options, args):
+    # get all data to be sent
+    server_location = raw_input ("Input server location: ").strip ()
+    dest_account    = raw_input ("Destination account: ").strip ()
+    source_account  = raw_input ("Source account: ").strip ()
+    sasl_user       = raw_input ("Sasl user: ").strip ()
+
+    # get host and port to connect to
+    (host, port) = check_and_get_host_port (server_location)
+
+    import time
+
+    # record start
+    start = int(round(time.time() * 1000))
+    
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect ((host, port))
+
+    s.send ("request=smtpd_access_policy\n")
+    s.send ("protocol_state=smtpd_access_policy\n")
+    s.send ("protocol_name=SMTP\n")
+
+    s.send ("sender=%s\n" % source_account)
+    s.send ("recipient=%s\n" % dest_account)
+    s.send ("recipient_count=1\n")
+
+    import hashlib
+    import time
+    queue_id = hashlib.md5 (time.ctime ()).hexdigest ()[:9].upper ()
+    
+    s.send ("queue_id=%s\n" % queue_id)
+    s.send ("message_size=2819\n")
+
+    s.send ("sasl_method=PLAIN\n")
+    s.send ("sasl_username=%s\n" % sasl_user)
+    # s.send ("sasl_sender=%s\n" % queue_id)
+
+    s.send ("\n")
+
+    # now read reply
+    reply = socket_read_line (s)
+
+    # record start
+    stop = int(round(time.time() * 1000))
+    
+    print "INFO: message received: %s" % reply
+    print "INFO: reply in %d milliseconds" % (stop - start)
+    
+    return
     
 
 #### MAIN ####
@@ -648,6 +709,8 @@ parser.add_option("-y", "--config-mysql", action="store_true", dest="config_mysq
                   help="Configure to configure valvula to use the provided MySQL credentials. Use %s -y db_name db_user db_pass" % sys.argv[0])
 parser.add_option("-u", "--set-user", action="store_true", dest="set_user", default=False,
                   help="Configure valvulad server to run with the provided user and group. Use %s -u user group" % sys.argv[0])
+parser.add_option("-t", "--test-server", action="store_true", dest="test_server", default=False,
+                  help="Allows to test local server, giving real data to check valvulad function")
 
 # parse options received
 (options, args) = parser.parse_args ()
@@ -670,6 +733,8 @@ elif options.config_mysql:
     configure_mysql_account (options, args)
 elif options.set_user:
     set_user (options, args)
+elif options.test_server:
+    test_server (options, args)
 else:
     print "INFO: run %s --help to get additional information" % sys.argv[0]
 
