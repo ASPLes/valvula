@@ -87,6 +87,7 @@ ValvuladRes     valvulad_db_run_query     (ValvuladCtx * ctx,
 
 ValvuladRow      valvulad_db_get_row       (ValvuladCtx * ctx, ValvuladRes result);
 
+void             valvulad_db_first_row     (ValvuladCtx * ctx, ValvuladRes result);
 
 /** 
  * @brief Get the cell inside a particular a particular row at the given position.

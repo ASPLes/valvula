@@ -62,45 +62,35 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "id", "autoincrement int", 
 				  /* rule status */
 				  "is_active", "int",
-				  /* source domain or account to apply restriction */
+				  /* level: where this rule applies: server, domain, user. 
+				   * Rules with server level applies first, then domain and 
+				   * finaly user.  */
+				  "level", "varchar(10)",
+				  /* source domain or account to apply restriction. If defined
+				   * applies. If not defined, applies to all destinations. */
+				  "destination", "varchar(1024)",
+				  /* source domain or account to apply restriction. If defined
+				   * applies. If not defined, applies to all sources */
 				  "source", "varchar(1024)",
 				  "description", "varchar(500)",
 				  /* status: reject, discard, ok */
 				  "status", "varchar(32)",
 				  NULL);
 
-	/* now create domain level table, rules that only affects when
-	 * the destination domain matches with the stored value */
+	/** 
+	 * bwl_global_sasl table allows to implement sasl user
+	 * blocking. That is, even having a valid sasl user account,
+	 * this table allows to blocking at server level.
+	 */
 	valvulad_db_ensure_table (ctx, 
 				  /* table name */
-				  "bwl_by_domain", 
+				  "bwl_global_sasl", 
 				  /* attributes */
-				  "id", "autoincrement int",
+				  "id", "autoincrement int", 
 				  /* rule status */
 				  "is_active", "int",
-				  /* destination domain or account to apply restriction */
-				  "destination", "varchar(1024)", 
 				  /* source domain or account to apply restriction */
-				  "source", "varchar(1024)",
-				  "description", "varchar(500)",
-				  /* status: reject, discard, ok */
-				  "status", "varchar(32)",
-				  NULL);
-
-	/* now create account level table, rules that only affects
-	 * when the destination account matches with the stored
-	 * value */
-	valvulad_db_ensure_table (ctx, 
-				  /* table name */
-				  "bwl_by_account", 
-				  /* attributes */
-				  "id", "autoincrement int",
-				  /* rule status */
-				  "is_active", "int",
-				  /* destination account to apply restriction */
-				  "account", "varchar(1024)", 
-				  /* source domain or account to apply restriction */
-				  "source", "varchar(1024)",
+				  "sasl_user", "varchar(1024)",
 				  "description", "varchar(500)",
 				  /* status: reject, discard, ok */
 				  "status", "varchar(32)",
@@ -109,53 +99,166 @@ static int  bwl_init (ValvuladCtx * _ctx)
 	return axl_true;
 }
 
-/** 
- * @brief Process request for the module.
- */
-ValvulaState bwl_process_request (ValvulaCtx        * _ctx, 
-				     ValvulaConnection * connection, 
-				     ValvulaRequest    * request,
-				     axlPointer          request_data,
-				     char             ** message)
+ValvulaState bwl_check_status_rules (ValvulaCtx     * _ctx,
+				     ValvulaRequest * request,
+				     const char     * level,
+				     ValvuladRes      result,
+				     axl_bool         first_specific)
 {
-	const char    * sender_domain = valvula_get_sender_domain (request);
-	const char    * sender        = request->sender;
-	const char    * status;
-	ValvulaState    state;
-	char          * query;
 
+	ValvuladRow     row;
+	const char    * status;
+	const char    * source;
+	const char    * destination;
+
+	/* reset cursor */
+	valvulad_db_first_row (ctx, result);
+
+	/* get row and then status */
+	row            = GET_ROW (result);
+	while (row) {
+
+		/* get status */
+		status      = GET_CELL (row, 0);
+		source      = GET_CELL (row, 1);
+		destination = GET_CELL (row, 2);
+
+		/* skip general rules first, look for specific rules where all attributes are defined */
+		if (first_specific && (!source || strlen (source) == 0 || !destination || strlen (destination) == 0)) {
+			/* get next row */
+			row = GET_ROW (result);
+			continue;
+		} /* end if */
+
+		/* ensure source matches */
+		if (! valvula_address_rule_match (ctx->ctx, source, request->sender)) {
+			wrn ("BWL: rule does not match(1) status=%s, source=%s, destination=%s", status, source, destination);
+			/* get next row */
+			row = GET_ROW (result);
+			continue;
+		} /* end if */
+
+		if (! valvula_address_rule_match (ctx->ctx, destination, request->recipient)) {
+			wrn ("BWL: rule does not match(2) status=%s, source=%s, destination=%s", status, source, destination);
+			/* get next row */
+			row = GET_ROW (result);
+			continue;
+		} /* end if */
+			
+
+		msg ("BWL: checking status=%s, source=%s, destination=%s", status, source, destination);
+		msg ("BWL:        with request source=%s, destination=%s", request->sender, request->recipient);
+		
+		/* now check values */
+		if (axl_stream_casecmp (status, "ok", 2)) 
+			return VALVULA_STATE_OK;
+		
+		if (axl_stream_casecmp (status, "reject", 6)) {
+			valvulad_reject (ctx, request, "Rejecting due to blacklist (%s)", level);
+			return VALVULA_STATE_REJECT;
+			
+		} /* end if */
+		if (axl_stream_casecmp (status, "discard", 7)) {
+			valvulad_reject (ctx, request, "Discard due to blacklist (%s)", level);
+			return VALVULA_STATE_DISCARD;
+			
+		} /* end if */
+
+		/* get next row */
+		row = GET_ROW (result);
+
+	} /* end while */
+
+	/* report dunno state */
+	return VALVULA_STATE_DUNNO;
+}
+
+ValvulaState bwl_check_status (ValvulaCtx     * _ctx,
+			       ValvulaRequest * request,
+			       const char     * level,
+			       const char     * format,
+			       ...)
+{
 	/* get result and row */
 	ValvuladRes     result  = NULL;
-	ValvuladRow     row;
+	char          * query;
+	va_list         args;
 
-	/* get current status*/
-	result = valvulad_db_run_query (ctx, "SELECT status FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s')",
-					sender, sender);
+	/* state with default value */
+	ValvulaState    state;
+
+	/* open arguments */
+	va_start (args, format);
+
+	query = axl_strdup_printfv (format, args);
+
+	va_end (args);
+
+	if (query == NULL) {
+		error ("Unable to allocate query to check black/white lists, reporting dunno");
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* call to create the query */
+	result = valvulad_db_run_query (ctx, query);
+	axl_free (query);
 	if (! result) {
+		/* release result */
+		valvulad_db_release_result (result);
+
 		/* maybe the database configuration was removed before checking previous request, no problem */
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
-	/* get row and then status */
-	row = GET_ROW (result);
-	if (row == NULL || row[0] == NULL)
-		return VALVULA_STATE_DUNNO;
+	msg ("Checking request from %s -> %s", request->sender, request->recipient);
 
-	/* get status */
-	status = row[0];
+	/* first check specific rules */
+	state = bwl_check_status_rules (_ctx, request, level, result, /* specific */ axl_true);
+	if (state != VALVULA_STATE_DUNNO) {
+		/* release result */
+		valvulad_db_release_result (result);
+		return state;
+	} /* end if */
 
-	/* now check values */
-	if (axl_stream_casecmp (status, "ok"))
-		return VALVULA_STATE_OK;
-	if (axl_stream_casecmp (status, "reject")) {
-		valvulad_reject (ctx, request, "Rejecting due to blacklist");
-		return VALVULA_STATE_REJECT;
+	/* now check rest of rules */
+	state = bwl_check_status_rules (_ctx, request, level, result, /* generic */ axl_false);
+	if (state != VALVULA_STATE_DUNNO) {
+		/* release result */
+		valvulad_db_release_result (result);
+		return state;
 	} /* end if */
-	if (axl_stream_casecmp (status, "discard")) {
-		valvulad_reject (ctx, request, "Discard due to blacklist");
-		return VALVULA_STATE_DISCARD;
-	} /* end if */
-		
+
+	/* release result */
+	valvulad_db_release_result (result);
+
+	/* report status */
+	return state;
+}
+
+
+/** 
+ * @brief Process request for the module.
+ */
+ValvulaState bwl_process_request (ValvulaCtx        * _ctx, 
+				  ValvulaConnection * connection, 
+				  ValvulaRequest    * request,
+				  axlPointer          request_data,
+				  char             ** message)
+{
+	const char    * sender_domain    = valvula_get_sender_domain (request);
+	const char    * recipient_domain = valvula_get_recipient_domain (request);
+	const char    * sender           = request->sender;
+	const char    * recipient        = request->recipient;
+	ValvulaState    state;
+
+
+	/* get current status at domain level */
+	state  = bwl_check_status (_ctx, request, "global server lists", "SELECT status, source, destination FROM bwl_global WHERE level='server' AND is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",
+				   sender_domain, sender, recipient_domain, recipient);
+	/* check valvula state reported */
+	if (state != VALVULA_STATE_DUNNO) 
+		return state;
+
 
 	/* by default report return dunno */
 	return VALVULA_STATE_DUNNO;
@@ -198,3 +301,6 @@ ValvuladModDef module_def = {
 };
 
 END_C_DECLS
+
+
+

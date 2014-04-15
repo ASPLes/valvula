@@ -689,6 +689,99 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
 }
 
 /** 
+ * @brief Allows to check if the provided address matches the provided
+ * rule.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param rule The rule that is being attempted to match.
+ *
+ * @param address The address that is being matched.
+ *
+ * Examples:
+ * \code
+ * rule=NULL            address=anything        MATCH
+ * rule=''              address=anything        MATCH
+ * rule=test.com        address=test@test.com   MATCH
+ * rule=test2.com       address=test@test.com   NOT MATCH
+ * rule=test.com        address=test.com        MATCH
+ * rule=test@test.com   address=test@test.com   MATCH
+ * rule=test2@test.com  address=test@test.com   NOT MATCH
+ * \endcode
+ *    
+ * @return The function returns axl_true in the case everything
+ * matches, otherwise axl_false is reported. The function also returns
+ * axl_false every time address is NULL and/or ctx is NULL.
+ */
+axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, const char * address)
+{
+	/* check rule and address */
+	if (ctx == NULL || address == NULL)
+		return axl_false;
+	if (rule == NULL || strlen (rule) == 0)
+		return axl_true;
+	if (axl_cmp (rule, address))
+		return axl_true;
+	
+	if (!strstr (rule, "@") && axl_cmp (rule, valvula_get_domain (address)))
+		return axl_true;
+
+	/* reporting it doesn't match */
+	return axl_false;
+}
+
+/** 
+ * @brief Allows to get the domain part of the provided adderss.
+ *
+ * @param address The address that is being queried to report its domain part.
+ *
+ * @return A reference to the domain or NULL if it fails. If the
+ * function receives a domain, the function reports a domain.
+ */
+const char * valvula_get_domain (const char * address)
+{
+	int iterator = 0;
+	if (! address)
+		return NULL;
+
+	/* find the end of the string or @ */
+	while (address[iterator] && address[iterator] != '@')
+		iterator++;
+
+	if (address[iterator] == '@')
+		return address + iterator + 1;
+
+	return address;
+}
+
+/** 
+ * @brief Allows to get recipient domain defined at the valvula
+ * request.
+ *
+ * @param request The request operation that is being checked to
+ * report recipient domain.
+ *
+ * @return Recipient domain or NULL if it fails.
+ */
+const char * valvula_get_recipient_domain (ValvulaRequest * request)
+{
+	int iterator;
+
+	if (request == NULL || request->recipient == NULL)
+		return NULL;
+	
+	/* next iterator */
+	iterator = 0;
+	while (request->recipient[iterator] && request->recipient[iterator] != '@')
+		iterator++;
+
+	/* report the recipient */
+	if (request->recipient[iterator] == '@')
+		return &(request->recipient[iterator+1]);
+	return request->recipient;
+}
+
+/** 
  * @brief Allows to get current epoch (now).
  *
  * @return Number of seconds that represents epoch now.
