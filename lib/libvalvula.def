@@ -2,6 +2,7 @@ EXPORTS
 _valvula_log
 _valvula_log2
 _valvula_log_common
+valvula_address_rule_match
 valvula_async_queue_foreach
 valvula_async_queue_items
 valvula_async_queue_length
@@ -68,7 +69,9 @@ valvula_ctx_unref
 valvula_ctx_unref2
 valvula_exit_ctx
 valvula_get_day
+valvula_get_domain
 valvula_get_month
+valvula_get_recipient_domain
 valvula_get_sasl_user
 valvula_get_sender_domain
 valvula_gethostbyname

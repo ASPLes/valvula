@@ -136,6 +136,79 @@ void common_finish (ValvuladCtx * ctx)
 	return;
 }
 
+axl_bool  test_00 (void) {
+
+	ValvulaCtx      * ctx   = valvula_ctx_new ();
+
+	/*** check valvula_get_domain ***/
+
+	/* check valvula_get_domain */
+	if (! axl_cmp (valvula_get_domain ("francis@aspl.es"), "aspl.es")) {
+		printf ("ERROR 0.1: expected different value: %s..\n", valvula_get_domain ("francis@aspl.es"));
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_domain */
+	if (! axl_cmp (valvula_get_domain ("aspl.es"), "aspl.es")) {
+		printf ("ERROR 0.2: expected different value: %s..\n", valvula_get_domain ("aspl.es"));
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_domain */
+	if (axl_cmp (valvula_get_domain (NULL), "aspl.es")) {
+		printf ("ERROR 0.3: expected different value..\n");
+		return axl_false;
+	} /* end if */
+
+	/*** check valvula_address_rule_match ***/
+
+	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, NULL, "francis@aspl.es")) {
+		printf ("ERROR 0.4: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, "", "francis@aspl.es")) {
+		printf ("ERROR 0.5: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, "test.com", "test@test.com")) {
+		printf ("ERROR 0.6: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (valvula_address_rule_match (ctx, "test.com", "francis@aspl.es")) {
+		printf ("ERROR 0.7: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, "test.com", "test.com")) {
+		printf ("ERROR 0.8: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (valvula_address_rule_match (ctx, "test2@test.com", "test@test.com")) {
+		printf ("ERROR 0.9: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (valvula_address_rule_match (ctx, "francis@aspl.es", "francis2@aspl.es")) {
+		printf ("ERROR 0.10: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
+	valvula_ctx_unref (&ctx);
+
+	return axl_true;
+}
+
 
 axl_bool  test_01 (void)
 {
@@ -850,6 +923,169 @@ axl_bool test_04 (void) {
 	return axl_true;
 }
 
+/* test mod bwl */
+axl_bool test_05 (void) {
+
+	ValvuladCtx   * ctx;
+	const char    * path;
+	ValvulaState    state;
+	
+
+	/* load basic configuration */
+	path = "test_05.conf";
+	ctx  = test_valvula_load_config ("Test 05: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 05: phase 1\n");
+	printf ("Test --:\n");
+
+	/** delete current rules **/
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM bwl_global")) {
+		printf ("ERROR: unable to remove all global rules..\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (4.1): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		return axl_false;
+	}
+
+	printf ("Test 05: testing * -> francis@aspl.es (reject)\n");
+	/** 
+	 * Test * -> francis@aspl.es : rejected 
+	 */
+	/* insert content */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, destination, status, level) VALUES ('1', 'francis@aspl.es', 'reject', 'server')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state == VALVULA_STATE_DUNNO) {
+		printf ("ERROR (4.2): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		return axl_false;
+	}
+
+	printf ("Test 05: testing test@test.com -> francis@aspl.es (ok)\n");
+
+	/** 
+	 * Test test@test.com -> francis@aspl.es : ok 
+	 */
+	/* now insert a rule to allow especific deliveries even when
+	 * we have a more generic rule (the one we inserted before) */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, source, destination, status, level) VALUES ('1', 'test@test.com', 'francis@aspl.es', 'ok', 'server')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+	
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_OK) {
+		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
+		return axl_false;
+	}
+
+	/** 
+	 * Test test.com -> * : reject
+	 */
+	printf ("Test 05: testing test.com -> * (reject)\n");
+
+	/* now insert a rule to allow especific deliveries even when
+	 * we have a more generic rule (the one we inserted before) */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, source, status, level) VALUES ('1', 'test.com', 'reject', 'server')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+	
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "francis2@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.4): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	}
+
+	printf ("Test 05: testing test.com -> * (reject) do not limit test@test.com -> francis@aspl.es (previous accepted)\n");
+
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_OK) {
+		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
+		return axl_false;
+	}
+	
+
+	/* finish test */
+	common_finish (ctx);
+
+	return axl_true;	
+}
+
 #define CHECK_TEST(name) if (run_test_name == NULL || axl_cmp (run_test_name, name))
 
 typedef axl_bool (* ValvulaTestHandler) (void);
@@ -888,7 +1124,7 @@ int main (int argc, char ** argv)
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
-	printf ("** Available tests: test_01, test_02, test_02a, test_03\n");
+	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_03, test_04, test_05\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
 	printf ("**     <valvula@lists.aspl.es> Valvula Mailing list\n**\n");
@@ -906,6 +1142,10 @@ int main (int argc, char ** argv)
 		}
 		argc--;
 	} /* end if */
+
+	/* run tests */
+	CHECK_TEST("test_00")
+	run_test (test_00, "Test 00: generic API function checks");
 
 	/* run tests */
 	CHECK_TEST("test_01")
@@ -930,6 +1170,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_04")
 	run_test (test_04, "Test 04: test valvulad-mgr.py");
+
+	/* run tests */
+	CHECK_TEST("test_05")
+	run_test (test_05, "Test 05: test mod-bwl");
 
 	printf ("All tests passed OK!\n");
 

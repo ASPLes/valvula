@@ -297,6 +297,24 @@ ValvuladRow      valvulad_db_get_row       (ValvuladCtx * ctx, ValvuladRes resul
 	return mysql_fetch_row (result);
 }
 
+/** 
+ * @brief Allows to reset a \ref ValvulaRes resource to the first row.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param result The result pointer that was received from \ref valvulad_db_run_query
+ *
+ */
+void            valvulad_db_first_row (ValvuladCtx * ctx, ValvuladRes result)
+{
+	/* check references and report error */
+	if (ctx == NULL || result == NULL)
+		return;
+
+	mysql_data_seek (result, 0);
+	return;
+}
+
 
 /** 
  * @brief Allows to get the content of the cell at the provided

@@ -367,23 +367,29 @@ int  setenv  (const char *name, const char *value, int overwrite);
 
 /** internal definitions **/
 void _valvula_log (ValvulaCtx        * ctx,
-		   const       char * file,
-		   int                line,
+		   const char        * file,
+		   int                 line,
 		   ValvulaDebugLevel   log_level,
-		   const char       * message,
+		   const char        * message,
 		   ...);
 
 void _valvula_log2 (ValvulaCtx        * ctx,
-		   const       char * file,
-		   int                line,
-		   ValvulaDebugLevel   log_level,
-		   const char       * message,
+		    const char        * file,
+		    int                 line,
+		    ValvulaDebugLevel   log_level,
+		    const char        * message,
 		    ...);
 
 
 const char * valvula_get_sender_domain (ValvulaRequest * request);
 
+const char * valvula_get_recipient_domain (ValvulaRequest * request);
+
 const char * valvula_get_sasl_user (ValvulaRequest * request);
+
+axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, const char * address);
+
+const char * valvula_get_domain (const char * address);
 
 long         valvula_now (void);
 
