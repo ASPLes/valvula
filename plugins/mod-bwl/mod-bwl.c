@@ -118,183 +118,45 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 				     axlPointer          request_data,
 				     char             ** message)
 {
-	axl_bool        domain_in_bwls    = axl_false;
-	axl_bool        sasl_user_in_bwls = axl_false;
-	axl_bool        alternative_user     = axl_false;
-	const char    * descriptive_user     = "<unknown>";
+	const char    * sender_domain = valvula_get_sender_domain (request);
+	const char    * sender        = request->sender;
+	const char    * status;
+	ValvulaState    state;
+	char          * query;
 
 	/* get result and row */
-	ValvuladRes    result  = NULL;
-	ValvuladRow    row;
+	ValvuladRes     result  = NULL;
+	ValvuladRow     row;
 
-	long           current_day_usage;
-	long           current_month_usage;
-	long           valid_until;
-	long           total_used;
-	long           record_id;
-	long           block_bwl;
-
-	long           bwl_plan_id;
-	long           total_limit;
-	long           day_limit;
-	long           month_limit;
-	
-	const char   * query;
-
-	/* check if the domain is limited by bwl */
-	if (valvula_get_sender_domain (request))
-		domain_in_bwls    = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_bwl WHERE domain = '%s'", valvula_get_sender_domain (request));
-	if (valvula_get_sasl_user (request))
-		sasl_user_in_bwls = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_bwl WHERE sasl_user = '%s'", valvula_get_sasl_user (request));
-
-	/* check for alternative names */
-	if (! domain_in_bwls && ! sasl_user_in_bwls) {
-		/* check for alternatives */
-		if (valvula_get_sender_domain (request)) {
-			result               = valvulad_db_run_query (ctx, "SELECT domain FROM domain_bwl WHERE domain like '#%s#'", valvula_get_sender_domain (request));
-			domain_in_bwls    = mod_bwl_ensure_alternative_user (ctx, result, valvula_get_sender_domain (request));
-			descriptive_user     = valvula_get_sender_domain (request);
-		} /* end if */
-		if (valvula_get_sasl_user (request)) {
-			result               = valvulad_db_run_query (ctx, "SELECT sasl_user FROM domain_bwl WHERE sasl_user like '#%s#'", valvula_get_sasl_user (request));
-			sasl_user_in_bwls = mod_bwl_ensure_alternative_user (ctx, result, valvula_get_sasl_user (request));
-			descriptive_user     = valvula_get_sasl_user (request);
-		} /* end if */
-
-		/* update alternative user flag */
-		alternative_user = domain_in_bwls || sasl_user_in_bwls;
-	}
-
-	/* skip if the domain or the sasl user in the request is not
-	 * limited by the domain request */
-	if (! domain_in_bwls && ! sasl_user_in_bwls) 
-		return VALVULA_STATE_DUNNO;
-
-	/* get current bwls for this domain */
-	if (sasl_user_in_bwls) {
-		/* prepare query to get the right user */
-		if (alternative_user)
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, bwl_plan_id, id, block_bwl FROM domain_bwl WHERE sasl_user LIKE '#%s#'";
-		else 
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, bwl_plan_id, id, block_bwl FROM domain_bwl WHERE sasl_user = '%s'";
-
-		/* run query */
-		result = valvulad_db_run_query (ctx,  query, valvula_get_sasl_user (request));
-	} else if (domain_in_bwls) {
-		/* prepare query to get the right domain */
-		if (alternative_user) 
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, bwl_plan_id, id, block_bwl FROM domain_bwl WHERE domain LIKE '#%s#'";
-		else
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, bwl_plan_id, id, block_bwl FROM domain_bwl WHERE domain = '%s'";
-
-		/* run query */
-		result = valvulad_db_run_query (ctx, query, valvula_get_sender_domain (request));
-	} /* end if */
-
+	/* get current status*/
+	result = valvulad_db_run_query (ctx, "SELECT status FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s')",
+					sender, sender);
 	if (! result) {
-		/* maybe the database configurat was removed before checking previous request, no problem */
+		/* maybe the database configuration was removed before checking previous request, no problem */
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
-	/* get the values we are interesting in */
-	row = __bwl_get_row_or_fail (ctx, result);
-	if (row == NULL) 
+	/* get row and then status */
+	row = GET_ROW (result);
+	if (row == NULL || row[0] == NULL)
 		return VALVULA_STATE_DUNNO;
 
-	/* get if the limit is expired */
-	valid_until = GET_CELL_AS_LONG (row, 3);
-	if (valid_until != -1 && valvula_now () > valid_until) {
-		/* release results */
-		valvulad_db_release_result (result);
+	/* get status */
+	status = row[0];
 
-		/* not accepted */
-		valvulad_reject (ctx, request, "Rejecting operation because bwls are expired (valid_until %d < %d)",
-				 valid_until, valvula_now ());
+	/* now check values */
+	if (axl_stream_casecmp (status, "ok"))
+		return VALVULA_STATE_OK;
+	if (axl_stream_casecmp (status, "reject")) {
+		valvulad_reject (ctx, request, "Rejecting due to blacklist");
 		return VALVULA_STATE_REJECT;
 	} /* end if */
-
-	/* get daily use, monthly use and total usage */
-	total_used          = GET_CELL_AS_LONG (row, 0);
-	current_day_usage   = GET_CELL_AS_LONG (row, 1);
-	current_month_usage = GET_CELL_AS_LONG (row, 2);
-	bwl_plan_id      = GET_CELL_AS_LONG (row, 4);
-	record_id           = GET_CELL_AS_LONG (row, 5);
-	block_bwl        = GET_CELL_AS_LONG (row, 6);
-
-	if (block_bwl) {
-		/* release result */
-		valvulad_db_release_result (result);
-
-		valvulad_reject (ctx, request, "Rejecting operation because bwl (%d) is blocked(%d) for user (%s)",
-				 bwl_plan_id, block_bwl, descriptive_user);
-				 
-		return VALVULA_STATE_REJECT;
-	}
-
-	/* release result */
-	valvulad_db_release_result (result);
-
-	/* now get limits from plan */
-	result = valvulad_db_run_query (ctx, "SELECT total_limit, day_limit, month_limit FROM bwl_plan WHERE id = '%d'",
-					bwl_plan_id);
-	if (result == NULL) {
-		/* don't record an error here because the database
-		 * record may have vanished during the execution of
-		 * this tests */
-
-		return VALVULA_STATE_DUNNO;
+	if (axl_stream_casecmp (status, "discard")) {
+		valvulad_reject (ctx, request, "Discard due to blacklist");
+		return VALVULA_STATE_DISCARD;
 	} /* end if */
+		
 
-	/* get row from result */
-	row = __bwl_get_row_or_fail (ctx, result);
-	if (row == NULL) 
-		return VALVULA_STATE_DUNNO;
-
-	/* get values */
-	total_limit = GET_CELL_AS_LONG (row, 0);
-	day_limit   = GET_CELL_AS_LONG (row, 1);
-	month_limit = GET_CELL_AS_LONG (row, 2);
-
-	/* release result */
-	valvulad_db_release_result (result);
-
-	/* apply operations */
-	total_used ++;
-	current_day_usage ++;
-	current_month_usage ++;
-
-	/* msg ("mod-bwl: %s total limit: %d (used: %d), day limit: %d (used: %d), month limit: %d (used: %d)",
-	     valvula_get_sasl_user (request) ? valvula_get_sasl_user (request) : valvula_get_sender_domain (request),
-	     total_limit, total_used, day_limit, current_day_usage, month_limit, current_month_usage);*/
-
-	/* check total used limit */
-	if (total_used > total_limit) {
-
-		valvulad_reject (ctx, request, "Rejecting operation because total plan limit's reached (%d)", total_used);
-		return VALVULA_STATE_REJECT;
-	} /* end if */
-
-	/* check day limit */
-	if (current_day_usage > day_limit) {
-
-		valvulad_reject (ctx, request, "Rejecting operation because day limit reached (%d)", day_limit);
-		return VALVULA_STATE_REJECT;
-	} /* end if */
-
-	/* check month limit */
-	if (current_month_usage > month_limit) {
-
-		valvulad_reject (ctx, request, "Rejecting operation because month limit reached (%d)", month_limit);
-		return VALVULA_STATE_REJECT;
-	} /* end if */
-
-	/* operation accepted, update database */
-	if (! valvulad_db_run_non_query (ctx, "UPDATE domain_bwl SET current_day_usage = %d, current_month_usage = %d, total_used = %d WHERE id = %d",
-					 current_day_usage, current_month_usage, total_used, record_id)) {
-		error ("Failed to update record on mod-bwl");
-	} /* end if */
-
-	
 	/* by default report return dunno */
 	return VALVULA_STATE_DUNNO;
 }
