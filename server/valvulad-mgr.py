@@ -640,51 +640,70 @@ def socket_read_line (s):
 def test_server (options, args):
     # get all data to be sent
     server_location = raw_input ("Input server location: ").strip ()
-    dest_account    = raw_input ("Destination account: ").strip ()
     source_account  = raw_input ("Source account: ").strip ()
-    sasl_user       = raw_input ("Sasl user: ").strip ()
+
+    # get dest account
+    dest_account    = raw_input ("Destination account [%s]: " % source_account).strip ()
+    if not dest_account:
+        dest_account = source_account
+
+    # get sasl user
+    sasl_user       = raw_input ("Sasl user [%s]: " % source_account).strip ()
+    if not sasl_user:
+        sasl_user = source_account
+        
+    test_operations = raw_input ("How many test operations? [1]: ").strip ()
+    if not test_operations:
+        test_operations = 1
+    else:
+        test_operations = int (test_operations)
 
     # get host and port to connect to
     (host, port) = check_and_get_host_port (server_location)
 
     import time
 
-    # record start
-    start = int(round(time.time() * 1000))
-    
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect ((host, port))
+    iterator = 0
+    while iterator < test_operations:
+        # record start
+        start = int(round(time.time() * 1000))
 
-    s.send ("request=smtpd_access_policy\n")
-    s.send ("protocol_state=smtpd_access_policy\n")
-    s.send ("protocol_name=SMTP\n")
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect ((host, port))
 
-    s.send ("sender=%s\n" % source_account)
-    s.send ("recipient=%s\n" % dest_account)
-    s.send ("recipient_count=1\n")
+        s.send ("request=smtpd_access_policy\n")
+        s.send ("protocol_state=smtpd_access_policy\n")
+        s.send ("protocol_name=SMTP\n")
 
-    import hashlib
-    import time
-    queue_id = hashlib.md5 (time.ctime ()).hexdigest ()[:9].upper ()
-    
-    s.send ("queue_id=%s\n" % queue_id)
-    s.send ("message_size=2819\n")
+        s.send ("sender=%s\n" % source_account)
+        s.send ("recipient=%s\n" % dest_account)
+        s.send ("recipient_count=1\n")
 
-    s.send ("sasl_method=PLAIN\n")
-    s.send ("sasl_username=%s\n" % sasl_user)
-    # s.send ("sasl_sender=%s\n" % queue_id)
+        import hashlib
+        import time
+        queue_id = hashlib.md5 (time.ctime ()).hexdigest ()[:9].upper ()
 
-    s.send ("\n")
+        s.send ("queue_id=%s\n" % queue_id)
+        s.send ("message_size=2819\n")
 
-    # now read reply
-    reply = socket_read_line (s)
+        s.send ("sasl_method=PLAIN\n")
+        s.send ("sasl_username=%s\n" % sasl_user)
+        # s.send ("sasl_sender=%s\n" % queue_id)
 
-    # record start
-    stop = int(round(time.time() * 1000))
-    
-    print "INFO: message received: %s" % reply
-    print "INFO: reply in %d milliseconds" % (stop - start)
+        s.send ("\n")
+
+        # now read reply
+        reply = socket_read_line (s)
+
+        # record start
+        stop = int(round(time.time() * 1000))
+
+        print "INFO: message received: %s" % reply
+        print "INFO: reply in %d milliseconds" % (stop - start)
+
+        iterator += 1
+    # end while
     
     return
     
