@@ -1,6 +1,17 @@
 EXTRA_DIST = \
 	test_01.conf \
-	test_03.conf
+	test_03.conf \
+	test_02b.postfix.cf \
+	test_02b.conf \
+	test_03.conf \
+	test_05.conf \
+	test_02.conf.ref \
+	test_01_multi_first_comment2.base.ref \
+	test_01_multi_first_comment.base.ref \
+	test_01_multi_first.base.ref \
+	test_01.base.ref \
+	test_01_last.base.ref
+
 
 if ENABLE_POLL_SUPPORT
 INCLUDE_VALVULA_POLL=-DVALVULA_HAVE_POLL=1

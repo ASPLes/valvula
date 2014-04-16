@@ -91,18 +91,8 @@ int          test_readline (ValvulaCtx * ctx, VALVULA_SOCKET session, char  * bu
 
 }
 
-ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, axl_bool run_config)
-{
-	ValvuladCtx * result;
-
-	/* show a message */
-	printf ("%s: loading configuration file at: %s\n", label, path);
-
-	if (! valvulad_init (&result)) {
-		printf ("ERROR: failed to initialize Valvulad context..\n");
-		printf ("   Maybe mysql database is failing? Please create user valvula, password valvula\n");
-		return NULL;
-	}
+ValvuladCtx *  test_valvula_load_config_aux (const char * label, const char * path, axl_bool run_config, 
+					     ValvuladCtx * result, const char * postfix_file) {
 
 	/* enable debug */
 	if (test_common_enable_debug) {
@@ -112,6 +102,9 @@ ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, 
 		valvulad_color_log_enable (result, axl_true);
 		result->debug_queries = axl_true;
 	}
+
+	/* configure postfix file */
+	result->postfix_file = postfix_file;
 
 	/* load config provided */
 	if (! valvulad_config_load (result, path)) {
@@ -126,6 +119,22 @@ ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, 
 	} /* end if */
 
 	return result;
+}
+
+ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, axl_bool run_config)
+{
+	ValvuladCtx * result;
+
+	/* show a message */
+	printf ("%s: loading configuration file at: %s\n", label, path);
+
+	if (! valvulad_init (&result)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		printf ("   Maybe mysql database is failing? Please create user valvula, password valvula\n");
+		return NULL;
+	}
+
+	return test_valvula_load_config_aux (label, path, run_config, result, "/etc/postfix/main.cf");
 }
 
 void common_finish (ValvuladCtx * ctx)
@@ -541,6 +550,26 @@ axl_bool  test_02a (void)
 
 	/* release request */
 	axl_free (request);
+
+	return axl_true;
+}
+
+axl_bool  test_02b (void)
+{
+	ValvuladCtx * ctx = axl_new (ValvuladCtx, 1);
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 02-b", "test_02b.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* finish library */
+	common_finish (ctx);
+
 
 	return axl_true;
 }
@@ -972,7 +1001,7 @@ axl_bool test_05 (void) {
 	 * Test * -> francis@aspl.es : rejected 
 	 */
 	/* insert content */
-	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, destination, status, level) VALUES ('1', 'francis@aspl.es', 'reject', 'server')")) {
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, destination, status) VALUES ('1', 'francis@aspl.es', 'reject')")) {
 		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
 		return axl_false;
 	} /* end if */
@@ -1003,7 +1032,7 @@ axl_bool test_05 (void) {
 	 */
 	/* now insert a rule to allow especific deliveries even when
 	 * we have a more generic rule (the one we inserted before) */
-	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, source, destination, status, level) VALUES ('1', 'test@test.com', 'francis@aspl.es', 'ok', 'server')")) {
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, source, destination, status) VALUES ('1', 'test@test.com', 'francis@aspl.es', 'ok')")) {
 		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
 		return axl_false;
 	} /* end if */
@@ -1034,7 +1063,7 @@ axl_bool test_05 (void) {
 
 	/* now insert a rule to allow especific deliveries even when
 	 * we have a more generic rule (the one we inserted before) */
-	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, source, status, level) VALUES ('1', 'test.com', 'reject', 'server')")) {
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, source, status) VALUES ('1', 'test.com', 'reject')")) {
 		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
 		return axl_false;
 	} /* end if */
@@ -1078,6 +1107,8 @@ axl_bool test_05 (void) {
 		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
 		return axl_false;
 	}
+
+	printf ("Test 05: test domain level rules\n");
 	
 
 	/* finish test */
@@ -1124,7 +1155,7 @@ int main (int argc, char ** argv)
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
-	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_03, test_04, test_05\n");
+	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_03, test_04, test_05\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
 	printf ("**     <valvula@lists.aspl.es> Valvula Mailing list\n**\n");
@@ -1162,6 +1193,10 @@ int main (int argc, char ** argv)
 	/* various api functions to get information from requests */
 	CHECK_TEST("test_02a")
 	run_test (test_02a, "Test 02a: API functions to get data from requests");
+
+	/* run tests */
+	CHECK_TEST("test_02b")
+	run_test (test_02b, "Test 02-b: test local domains detection support");
 
 	/* run tests */
 	CHECK_TEST("test_03")

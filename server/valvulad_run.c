@@ -283,6 +283,88 @@ axl_bool __valvulad_run_time_tracking        (ValvulaCtx  * _ctx,
 			   * again in the future */
 }
 
+char * __valvulad_read_line (FILE * _file)
+{
+	char buffer[2048];
+	int  iterator = 0;
+	char value;
+	
+	value = fgetc (_file);
+	while (value != '\n' && value != '\0' && iterator < 2048) {
+
+		/* next position */
+		iterator++;
+
+		/* get next value */
+		value = fgetc (_file);
+	} /* end while */
+
+	/* protect operation done */
+	buffer[iterator] = 0;
+
+	if (iterator == 0)
+		return NULL;
+
+	return axl_strdup (buffer);
+}
+
+
+axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
+{
+	FILE       * _file;
+	char       * line;
+	const char * postfix_file = "/etc/postfix/main.cf";
+
+	/* open postfix configuration */
+	_file = fopen (postfix_file, "r");
+	if (_file == NULL) {
+		error ("Unable to open postfix file %s, fopen() system call failed, errno=%d", postfix_file, errno);
+		return axl_false;
+	} /* end if */
+
+	/* get first line */
+	line = __valvulad_read_line (_file);
+	while (line) {
+		printf ("Line found: %s", line);
+		if (strstr ("virtual_mailbox_domains", line)) {
+			/* found virtual mailbox declaration */
+			printf ("LINE FOUND: %s\n", line);
+		} /* end if */
+		
+
+		/* get next line */
+		free (line);
+		line = __valvulad_read_line (_file);
+	} /* end while */
+
+	fclose (_file);
+
+	return axl_true;
+}
+
+axl_bool valvulad_run_check_local_domains_config (ValvuladCtx * ctx) {
+	axlNode    * node;
+	const char * config;
+
+	node = axl_doc_get (ctx->config, "/valvula/enviroment/local-domains");
+	if (node == NULL) 
+		return axl_true;
+	
+	/* get configuration value */
+	config = ATTR_VALUE (node, "config");
+	if (config == NULL) {
+		error ("Failed to access 'config' attribute inside <valvula/enviroment/local-domains>, unable to load local domains configuration");
+		return axl_false;
+	} /* end if */
+
+	if (axl_cmp (config, "autodetect")) {
+		/* try to detect postfix configuration */
+		if (! valvulad_run_check_local_domains_config_autodetect (ctx))
+			return axl_false;
+	}
+
+	return axl_false;
+}
 
 /** 
  * @brief Starts valvulad engine using the current configuration.
@@ -378,6 +460,13 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 			valvula_ctx_set_request_line_limit (ctx->ctx, request_line_limit);
 		} /* end if */
 	} /* end if */
+
+	/* check local-domains configuration */
+	if (! valvulad_run_check_local_domains_config (ctx)) {
+		error ("Unable to startup local domains configuration");
+		return axl_false;
+	} /* end if */
+		
 
 	return axl_true; 
 }
