@@ -62,10 +62,28 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "id", "autoincrement int", 
 				  /* rule status */
 				  "is_active", "int",
-				  /* level: where this rule applies: server, domain, user. 
-				   * Rules with server level applies first, then domain and 
-				   * finaly user.  */
-				  "level", "varchar(10)",
+				  /* source domain or account to apply restriction. If defined
+				   * applies. If not defined, applies to all sources. When source 
+				   is a local destination, it must be autenticated */
+				  "source", "varchar(1024)",
+				  /* source domain or account to apply restriction. If defined
+				   * applies. If not defined, applies to all local destinations. */
+				  "destination", "varchar(1024)",
+				  /* rule description */
+				  "description", "varchar(500)",
+				  /* status: reject, discard, ok */
+				  "status", "varchar(32)",
+				  NULL);
+
+	/* create databases to be used by the module */
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "bwl_domain", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  /* rule status */
+				  "is_active", "int",
+				  /* 
 				  /* source domain or account to apply restriction. If defined
 				   * applies. If not defined, applies to all destinations. */
 				  "destination", "varchar(1024)",
@@ -252,8 +270,8 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 	ValvulaState    state;
 
 
-	/* get current status at domain level */
-	state  = bwl_check_status (_ctx, request, "global server lists", "SELECT status, source, destination FROM bwl_global WHERE level='server' AND is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",
+	/* get current status at server level */
+	state  = bwl_check_status (_ctx, request, "global server lists", "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",
 				   sender_domain, sender, recipient_domain, recipient);
 	/* check valvula state reported */
 	if (state != VALVULA_STATE_DUNNO) 
@@ -304,3 +322,47 @@ END_C_DECLS
 
 
 
+/** 
+ * \section how_bwl_module_works How mod-bwl works
+ *
+ * The module install three tables to handle different levels of black
+ * and white lists. They are applied in the following order and each
+ * one takes precedence:
+ *
+ * - bwl_global : server level table that includes white lists and
+ *     black lists. If there is a rule here that matches, the rest of
+ *     the tables do not applies.
+ *
+ * - bwl_domain : domain level table that includes white lists and
+ *     black lists that applies to a particular domain. Because it
+ *     applies to a domain, the rule must have as source or
+ *     destination an account of that domain or the domain itself. 
+ *
+ * - bwl_account : account level table that includes white lists and
+ *     black lists that applies to a particular account. Because it
+ *     applies to an account, the rule must have as source or as
+ *     destination the provided account.
+ *
+ * Now, white lists and black lists are differenciated through the status field:
+ *
+ * - A white list rule includes a "ok" indication in the status field.
+ *
+ * - A Black list rule includes a "reject" or "discard" indication at the status field.
+ *
+ * Now, there is a difference on how an white list or a black list
+ * rule is applied. 
+ *
+ * - For a black list, there is no especial operation. The rule is
+ *   applied at the provided level in the given order (server, then
+ *   domain, then account table).
+ * 
+ * - For a white list it changes. When adding a whitelist rule, if it
+ *   the destination is defined it must be an account or domain that
+ *   is handled by the server (local domains). In the case the
+ *   destination account or domain is not handled by this server, rule
+ *   will only work when the sending user is authenticated (SASL ok).
+ * 
+ * 
+ *
+ * 
+ */

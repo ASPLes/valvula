@@ -78,6 +78,20 @@ typedef struct _ValvuladCtx {
 	 * @brief List of on day change registered handlers 
 	 */
 	axlList        * on_month_change_handlers;
+
+	/** 
+	 * @brief Default location for the postfix configuration file.
+	 */
+	const char     * postfix_file;
+
+	/** 
+	 * @brief Local domains configurations.
+	 */
+	const char     * ld_query;
+	const char     * ld_user;
+	const char     * ld_pass;
+	const char     * ld_dbname;
+	const char     * ld_host;
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {
@@ -234,6 +248,8 @@ void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char *
 char          * valvulad_support_get_backtrace (ValvuladCtx * ctx, int pid);
 
 axl_bool valvulad_init (ValvuladCtx ** result);
+
+axl_bool valvulad_init_aux (ValvuladCtx * ctx);
 
 void valvulad_exit (ValvuladCtx * ctx);
 

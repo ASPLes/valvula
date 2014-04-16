@@ -463,6 +463,26 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 	if (ctx == NULL)
 		return axl_false;
 
+	if (! valvulad_init_aux (ctx)) 
+		return axl_false;
+
+	/* setup result */
+	(*result) = ctx;
+
+	return axl_true;
+}
+
+/** 
+ * @brief Auxiliar initialization function that allows to provide the
+ * \ref ValvuladCtx context.
+ *
+ * @param ctx The context where the initialization will take place.
+ *
+ * @return axl_true in the case initialization was ok, otherwise
+ * axl_false is returned.
+ */
+axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
+
 	/* create library context */
 	ctx->ctx = valvula_ctx_new ();
 	if (ctx->ctx == NULL)
@@ -474,13 +494,15 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 	/* setup clean function for threads */
 	valvula_thread_pool_set_cleanup_func (ctx->ctx, valvulad_cleanup_mysql);
 
+	/* default initialization function */
+	if (! ctx->postfix_file)
+		ctx->postfix_file = "/etc/postfix/main.cf";
+
 	msg ("Valvulad context initialized");
 
 	/* init modules */
 	valvulad_module_init (ctx);
 
-	/* setup result */
-	(*result) = ctx;
 	return axl_true;
 }
 
