@@ -290,7 +290,7 @@ char * __valvulad_read_line (FILE * _file)
 	char value;
 	
 	value = fgetc (_file);
-	while (value != '\n' && value != '\0' && iterator < 2048) {
+	while (value != '\n' && value != '\0' && iterator < (2048 - 1)) {
 
 		/* next position */
 		iterator++;
