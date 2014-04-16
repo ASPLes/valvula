@@ -241,7 +241,7 @@ case $host in
 esac
 AC_SUBST(EXARG_FLAGS)	
 
-dnl mod-sasl-mysql flags
+dnl mysql-support flags
 MYSQL_CFLAGS=`mysql_config --cflags 2>/dev/null`
 MYSQL_LIBS=`mysql_config --libs 2>/dev/null`
 AC_SUBST(MYSQL_CFLAGS)
@@ -288,7 +288,7 @@ fi
 echo
 mysql_msg=""
 if test "x$mysql_devel_found" = "xno"; then
-     mysql_msg=" (Applications using MySQL, like mod-sasl-mysql, won't work)"
+     mysql_msg=" (Support for MySQL, won't work)"
 fi
 
 echo "   Build with MySQL support:       [$mysql_devel_found]$mysql_msg"
