@@ -10,7 +10,8 @@ EXTRA_DIST = \
 	test_01_multi_first_comment.base.ref \
 	test_01_multi_first.base.ref \
 	test_01.base.ref \
-	test_01_last.base.ref
+	test_01_last.base.ref \
+	test-02b-mysql-domains.cf 
 
 
 if ENABLE_POLL_SUPPORT

@@ -521,6 +521,15 @@ void valvulad_exit (ValvuladCtx * ctx)
 	/* release on month change handlers */
 	axl_list_free (ctx->on_month_change_handlers);
 	ctx->on_month_change_handlers = NULL;
+
+	/* release valvulad local domains configuration */
+	axl_free (ctx->ld_user);
+	axl_free (ctx->ld_pass);
+	axl_free (ctx->ld_host);
+	axl_free (ctx->ld_dbname);
+	axl_free (ctx->ld_query);
+
+	axl_hash_free (ctx->ld_hash);
 	
 	/* release all context resources */
 	axl_doc_free (ctx->config);
