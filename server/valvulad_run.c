@@ -747,7 +747,6 @@ axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
 		return axl_false;
 
 	/* check domain first it static hash table */
-	msg ("Checking domain [%s] into hash %d (%p)", domain, axl_hash_items (ctx->ld_hash), ctx->ld_hash);
 	if (axl_hash_get (ctx->ld_hash, (axlPointer) domain))
 		return axl_true;
 

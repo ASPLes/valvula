@@ -1083,6 +1083,12 @@ axl_bool test_05 (void) {
 		return axl_false;
 	} /* end if */
 
+	/** delete current rules **/
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM bwl_domain")) {
+		printf ("ERROR: unable to remove all global rules..\n");
+		return axl_false;
+	} /* end if */
+
 	/* SHOULD WORK: now try to run some requests. The following
 	 * should work by allowing unlimited users to pass through the
 	 * module */
@@ -1239,7 +1245,92 @@ axl_bool test_05 (void) {
 	}
 
 	printf ("Test 05: test domain level rules\n");
+
+	/* now insert a rule to allow especific deliveries even when
+	 * we have a more generic rule (the one we inserted before) */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_domain (is_active, rules_for, source, status) VALUES ('1', 'aspl.es', 'test2.com', 'reject')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: test2.com -> aspl.es (reject)\n");
 	
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test2.com", "alise@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.6): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 05: test accoutn level rules\n");
+
+	printf ("Test --: test@test3.com -> rmandro@aspl.es (reject)\n");
+
+	/* now insert a rule to allow especific deliveries even when
+	 * we have a more generic rule (the one we inserted before) */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_account (is_active, rules_for, source, status) VALUES ('1', 'rmandro@aspl.es', 'test@test3.com', 'reject')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+	
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test3.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.7): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: checking test4.com -> rmandro@aspl.es (reject) (account level)\n");
+
+	/* now insert a rule to allow especific deliveries even when
+	 * we have a more generic rule (the one we inserted before) */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_account (is_active, rules_for, source, status) VALUES ('1', 'rmandro@aspl.es', 'test4.com', 'reject')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+	
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.8): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
 
 	/* finish test */
 	common_finish (ctx);
