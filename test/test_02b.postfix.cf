@@ -131,7 +131,7 @@ smtpd_use_tls = yes
 
 # BEGIN DOVECOT 
 # Set of domains that are considered local
-mydestination = $myhostname, localhost.localdomain, localhost
+mydestination = $myhostname, localhost.localdomain, localhost, aspl-test.com, aspl-1234.com
 
 # SASL activation
 smtpd_sasl_type = dovecot
@@ -139,7 +139,7 @@ smtpd_sasl_path = private/auth
 
 virtual_transport = dovecot
 dovecot_destination_recipient_limit = 1
-virtual_mailbox_domains = mysql:/etc/postfix/mysql-domains.cf 
+virtual_mailbox_domains = mysql:test-02b-mysql-domains.cf 
 virtual_mailbox_maps = mysql:/etc/postfix/mysql-accounts.cf
 # END DOVECOT
 

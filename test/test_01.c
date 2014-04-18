@@ -556,7 +556,8 @@ axl_bool  test_02a (void)
 
 axl_bool  test_02b (void)
 {
-	ValvuladCtx * ctx = axl_new (ValvuladCtx, 1);
+	ValvuladCtx    * ctx = axl_new (ValvuladCtx, 1);
+	ValvulaRequest * request;
 
 	/* init the library */
 	if (! valvulad_init_aux (ctx)) {
@@ -566,6 +567,111 @@ axl_bool  test_02b (void)
 
 	/* load configuration */
 	test_valvula_load_config_aux ("Test 02-b", "test_02b.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* create some tables */
+	if (! valvulad_db_ensure_table (ctx, "domain", "domain", "text", "active", "int", NULL)) {
+		printf ("ERROR: unable to create local domain table..\n");
+		return axl_false;
+	} /* end if */
+
+	/* insert some values */
+	valvulad_db_run_non_query (ctx, "DELETE FROM domain");
+	valvulad_db_run_non_query (ctx, "INSERT INTO domain (domain, active) VALUES ('aspl.es', 1)");
+	valvulad_db_run_non_query (ctx, "INSERT INTO domain (domain, active) VALUES ('asplhosting.com', 1)");
+	valvulad_db_run_non_query (ctx, "INSERT INTO domain (domain, active) VALUES ('microsoft.com', 1)");
+	valvulad_db_run_non_query (ctx, "INSERT INTO domain (domain, active) VALUES ('core-admin.com', 1)");
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_domain (ctx, "aspl.es")) {
+		printf ("ERROR: expected aspl.es to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_domain (ctx, "asplhosting.com")) {
+		printf ("ERROR: expected aspl.es to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_domain (ctx, "microsoft.com")) {
+		printf ("ERROR: expected aspl.es to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_domain (ctx, "core-admin.com")) {
+		printf ("ERROR: expected aspl.es to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_domain (ctx, "aspl2.es")) {
+		printf ("ERROR: expected aspl2.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_domain (ctx, "asplhosting2.es")) {
+		printf ("ERROR: expected aspl2.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_domain (ctx, "'; SELECT 1 --")) {
+		printf ("ERROR: expected aspl2.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_domain (ctx, "''''")) {
+		printf ("ERROR: expected aspl2.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: checking local domain detection..\n");
+	
+	/* now check domains that are declared at the configuration
+	 * file but not found in the database. */
+	if (! valvulad_run_is_local_domain (ctx, "mysql.aspl.es")) {
+		printf ("ERROR: expected mysql.aspl.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	if (! valvulad_run_is_local_domain (ctx, "aspl-test.com")) {
+		printf ("ERROR: expected mysql.aspl.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	if (! valvulad_run_is_local_domain (ctx, "aspl-1234.com")) {
+		printf ("ERROR: expected mysql.aspl.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	if (valvulad_run_is_local_domain (ctx, "aspl-test-12345.com")) {
+		printf ("ERROR: expected aspl-test-12345.com NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: checking local delivery detection..\n");
+
+	/* create request */
+	request = axl_new (ValvulaRequest, 1);
+	request->recipient = "francis@aspl.es";
+	
+	if (! valvulad_run_is_local_delivery (ctx, request)) {
+		printf ("ERROR: expected to find local delivery indication, but found it wasn't!\n");
+		return axl_false;
+	}
+
+	request->recipient = "francis@google.com";
+	if (valvulad_run_is_local_delivery (ctx, request)) {
+		printf ("ERROR: expected to NOT find local delivery indication, but found it wasn't!\n");
+		return axl_false;
+	}
+
+	/* release memory */
+	axl_free (request);
 
 	/* finish library */
 	common_finish (ctx);

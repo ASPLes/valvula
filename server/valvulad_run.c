@@ -34,6 +34,7 @@
  *         info@aspl.es - http://www.aspl.es/valvula
  */
 #include <valvulad_run.h>
+#include <mysql.h>
 
 #include <dirent.h>
 
@@ -288,9 +289,16 @@ char * __valvulad_read_line (FILE * _file)
 	char buffer[2048];
 	int  iterator = 0;
 	char value;
+
+	memset (buffer, 0, 2048);
 	
 	value = fgetc (_file);
-	while (value != '\n' && value != '\0' && iterator < (2048 - 1)) {
+	if (value == EOF) 
+		return NULL;
+
+	while (value != EOF && value != '\n' && value != '\0' && iterator < (2048 - 1)) {
+		/* store value */
+		buffer[iterator] = value;
 
 		/* next position */
 		iterator++;
@@ -302,10 +310,124 @@ char * __valvulad_read_line (FILE * _file)
 	/* protect operation done */
 	buffer[iterator] = 0;
 
-	if (iterator == 0)
-		return NULL;
+	if (iterator == 0) {
+		if (value == EOF)
+			return NULL;
+		return axl_strdup ("");
+	}
 
 	return axl_strdup (buffer);
+}
+
+/* get key and decl */
+void __valvulad_run_get_key_decl (char * line, char ** key, char ** decl)
+{
+	int iterator = 0;
+
+	/* set default values */
+	(*key)  = NULL;
+	(*decl) = NULL;
+
+	while (line[iterator] && line[iterator] != '=')
+		iterator++;
+	
+	/* value not found inside string */
+	if (line[iterator] != '=')
+		return;
+
+	line[iterator] = 0;
+	axl_stream_trim (line);
+	axl_stream_trim (line + iterator + 1);
+
+	(*key)  = axl_strdup (line);
+	(*decl) = axl_strdup (line + iterator + 1);
+	
+	return;
+}
+
+axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCtx * ctx, const char * postfix_decl)
+{
+
+	char      ** items;
+	char       * key;
+	char       * decl;
+	const char * path;
+	FILE       * _file;
+	char       * line;
+	axl_bool     result = axl_true;
+	
+	/* split content */
+	items = axl_split (postfix_decl, 1, "=");
+
+	if (items == NULL) {
+		error ("Empty declaration or imcomplete: %s", postfix_decl);
+		return axl_false;
+	} /* end if */
+
+	if (items[1] == NULL) {
+		error ("Declaration found but it has no content: %s", postfix_decl);
+		axl_freev (items);
+		return axl_false;
+	}
+
+	/* clean values */
+	axl_stream_trim (items[1]);
+	msg ("Working with postfix declaration: %s (from %s)", items[1], ctx->postfix_file);
+	
+	/* mysql support */
+	if (axl_memcmp ("mysql:", items[1], 6)) {
+		path = items[1] + 6;
+		msg ("Found postfix mysql configuration, opening: %s..", path);
+		_file = fopen (path, "r");
+		if (_file) {
+			/* get first line */
+			line = __valvulad_read_line (_file);
+			while (line) {
+				/* check to find the right declaration */
+				axl_stream_trim (line);
+				
+				if (line[0] != '#') {
+					/* get key and decl */
+					__valvulad_run_get_key_decl (line, &key, &decl);
+
+					if (key && decl) {
+						msg ("Declaration found: [%s] -> [%s]", key, decl);
+						if (axl_cmp (key, "user"))
+							ctx->ld_user = axl_strdup (decl);
+						else if (axl_cmp (key, "password"))
+							ctx->ld_pass = axl_strdup (decl);
+						else if (axl_cmp (key, "hosts"))
+							ctx->ld_host = axl_strdup (decl);
+						else if (axl_cmp (key, "dbname"))
+							ctx->ld_dbname = axl_strdup (decl);
+						else if (axl_cmp (key, "query"))
+							ctx->ld_query  = axl_strdup (decl);
+					} /* end if */
+
+					/* key and decl */
+					axl_free (key);
+					axl_free (decl);
+					
+				} /* end if */
+				
+				/* get next line */
+				free (line);
+				line = __valvulad_read_line (_file);
+			} /* end while */
+		} /* end if */
+
+		if (! _file) {
+			error ("Unable to open file %s, errno=%d", path, errno);
+			result = axl_false;
+		} /* end if */
+
+		fclose (_file);
+
+	} /* end if */
+
+	/* release items */
+	axl_freev (items);
+	return result;
 }
 
 
@@ -313,24 +435,25 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 {
 	FILE       * _file;
 	char       * line;
-	const char * postfix_file = "/etc/postfix/main.cf";
 
 	/* open postfix configuration */
-	_file = fopen (postfix_file, "r");
+	_file = fopen (ctx->postfix_file, "r");
 	if (_file == NULL) {
-		error ("Unable to open postfix file %s, fopen() system call failed, errno=%d", postfix_file, errno);
+		error ("Unable to open postfix file %s, fopen() system call failed, errno=%d", ctx->postfix_file, errno);
 		return axl_false;
 	} /* end if */
 
 	/* get first line */
 	line = __valvulad_read_line (_file);
 	while (line) {
-		printf ("Line found: %s", line);
-		if (strstr ("virtual_mailbox_domains", line)) {
-			/* found virtual mailbox declaration */
-			printf ("LINE FOUND: %s\n", line);
-		} /* end if */
+		/* check to find the right declaration */
+		axl_stream_trim (line);
 		
+		if (line[0] != '#' && strstr (line, "virtual_mailbox_domains") != NULL) {
+			/* found virtual mailbox declaration */
+			valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, line);
+
+		} /* end if */
 
 		/* get next line */
 		free (line);
@@ -338,6 +461,125 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 	} /* end while */
 
 	fclose (_file);
+
+	return axl_true;
+}
+
+void valvulad_run_load_static_names_record_from_file (ValvuladCtx * ctx, axlHash * hash, const char * file)
+{
+	char   buffer[514];
+	FILE * _file = fopen (file, "r");
+	int    bytes = 0;
+
+	/* init buffer */
+	memset (buffer, 0, 514);
+
+	if (_file) {
+		/* read content from buffer */
+		bytes = fread (buffer, 512, 1, _file);
+		if (bytes > 0) {
+			msg ("Registering %s..", buffer);
+			axl_hash_insert_full (hash, axl_strdup (buffer), axl_free, INT_TO_PTR (axl_true), NULL);
+		} /* end if */
+
+		/* only close if defined */
+		fclose (_file);
+	} /* end if */
+
+
+	return;
+}
+
+void valvulad_run_load_static_names_record (ValvuladCtx * ctx, axlHash * hash, const char * line)
+{
+	char ** items;
+	char ** values;
+	int     iterator;
+
+	items = axl_split (line, 1, "=");
+	if (items == NULL || items[0] == NULL || items[1] == NULL) {
+		axl_freev (items);
+		return;
+	} /* end if */
+
+	values   = axl_split (items[1], 1, ",");
+	iterator = 0;
+	while (values[iterator]) {
+		/* clean representation */
+		axl_stream_trim (values[iterator]);
+
+		/* register the name if it is defined and it is not a reference */
+		if (strlen (values[iterator]) > 0 && strstr (values[iterator], "$") == NULL) {
+			
+			if (strstr (values[iterator], "/")) {
+				/* found file reference, open it */
+				valvulad_run_load_static_names_record_from_file (ctx, hash, values[iterator]);
+
+			} else if (! axl_hash_get (hash, values[iterator])) {
+				msg ("Registering %s..", values[iterator]);
+				/* key not found, store it into the hash */
+				axl_hash_insert_full (hash, axl_strdup (values[iterator]), axl_free, INT_TO_PTR (axl_true), NULL);
+			} /* end if */
+		} /* end if */
+
+		/* next position */
+		iterator++;
+	} /* end if */
+
+	/* release values */
+	axl_freev (items);
+	axl_freev (values);
+		
+	return;
+}
+
+axl_bool valvulad_run_load_static_names (ValvuladCtx * ctx)
+{
+	/* create empty hash */
+	axlHash * hash    = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	axlHash * oldHash = NULL;
+	FILE    * _file;
+	char    * line;
+
+	/* open postfix configuration */
+	_file = fopen (ctx->postfix_file, "r");
+	if (_file == NULL) {
+		error ("Unable to open postfix file %s, fopen() system call failed, errno=%d", ctx->postfix_file, errno);
+		return axl_false;
+	} /* end if */
+
+	/* get first line */
+	line = __valvulad_read_line (_file);
+	while (line) {
+		/* check to find the right declaration */
+		axl_stream_trim (line);
+		
+		if (line[0] != '#') { 
+			if (axl_memcmp (line, "myhostname", 10)) {
+				valvulad_run_load_static_names_record (ctx, hash, line);
+			} else if (axl_memcmp (line, "myorigin", 8)) {
+				valvulad_run_load_static_names_record (ctx, hash, line);
+			} else if (axl_memcmp (line, "mydestination", 13)) {
+				valvulad_run_load_static_names_record (ctx, hash, line);
+			}
+
+		} /* end if */
+
+		/* get next line */
+		free (line);
+		line = __valvulad_read_line (_file);
+	} /* end while */
+
+	fclose (_file);
+
+	/* copy old hash */
+	oldHash = ctx->ld_hash;
+
+	/* update reference */
+	ctx->ld_hash = hash;
+
+	/* release old hash */
+	axl_hash_free (oldHash);
 
 	return axl_true;
 }
@@ -363,7 +605,12 @@ axl_bool valvulad_run_check_local_domains_config (ValvuladCtx * ctx) {
 			return axl_false;
 	}
 
-	return axl_false;
+	/* now read common host names declared at postfix
+	 * configuration */
+	if (! valvulad_run_load_static_names (ctx))
+		return axl_false;
+
+	return axl_true;
 }
 
 /** 
@@ -469,6 +716,136 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 		
 
 	return axl_true; 
+}
+
+/** 
+ * @brief Allows to check if the provided domain is considered local,
+ * that is, current server is handling this domain so a delivery to
+ * this domain won't be relayed.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param domain The domain to be checked.
+ *
+ * @return axl_true if the domain is considered local, otherwise
+ * axl_false is returned. The function also returns axl_false in the case domain or ctx references are NULL.
+ *
+ * This function will report proper results if current valvulad server
+ * is properly configured. Please, check valvula configuration at
+ * valvula.conf, inside xml path /valvula/enviroment/local-domains.
+ */
+axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
+{
+	MYSQL     * dbconn;
+	char      * query;
+	int         port = 3306;
+	MYSQL_RES * result;
+	MYSQL_ROW   row;
+	axl_bool    f_result = axl_false;
+
+	if (ctx == NULL || domain == NULL)
+		return axl_false;
+
+	/* check domain first it static hash table */
+	if (axl_hash_get (ctx->ld_hash, (axlPointer) domain))
+		return axl_true;
+
+	if (ctx->ld_query) {
+
+		/* mysql mode */
+		query = axl_strdup (ctx->ld_query);
+		axl_replace (query, "%s", domain);
+
+		/* create a mysql connection */
+		dbconn = mysql_init (NULL);
+
+		/* create a connection */
+		if (mysql_real_connect (dbconn, 
+					/* get host */
+					ctx->ld_host,
+					/* get user */
+					ctx->ld_user,
+					/* get password */
+					ctx->ld_pass,
+					/* get database */
+					ctx->ld_dbname,
+					port, NULL, 0) == NULL) {
+			error ("Mysql connect error: %s, failed to run SQL command", mysql_error (dbconn));
+			return axl_false;
+		} /* end if */
+
+		/* now run query */
+		if (mysql_query (dbconn, query)) {
+			axl_free (query);
+			error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
+			
+			/* release the connection */
+			mysql_close (dbconn);
+			return axl_false;
+		} /* end if */
+
+		/* return result */
+		result = mysql_store_result (dbconn);
+		if (result == NULL) {
+			axl_free (query);
+			error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
+			
+			/* release the connection */
+			mysql_close (dbconn);
+			return axl_false;
+		} /* end if */
+
+		row = mysql_fetch_row (result);
+		if (row == NULL || row[0] == NULL) {
+			/* release result */
+			mysql_free_result (result);
+
+			/* release query */
+			axl_free (query);
+		
+			/* close connection */
+			mysql_close (dbconn);
+			
+			return axl_false;
+		} /* end if */
+
+		/* compare result */
+		f_result = axl_cmp (row[0], domain);
+
+		/* release result */
+		mysql_free_result (result);
+
+		/* release query */
+		axl_free (query);
+
+		/* close connection */
+		mysql_close (dbconn);
+	}
+
+	return f_result;
+}
+
+
+/** 
+ * @brief Allows to check if the provided request represents a local
+ * delivery (to domains handled by this server).
+ *
+ * @param ctx The context where the operation will be checked.
+ *
+ * @param request The request to be checked.
+ *
+ * @return axl_true in the case the request is considered local,
+ * otherwise axl_false is returned, which in that case, represents a
+ * relay operation. The function also returns axl_false in the case
+ * request or ctx is NULL.
+ */
+axl_bool valvulad_run_is_local_delivery (ValvuladCtx * ctx, ValvulaRequest * request)
+{
+	if (ctx == NULL || request == NULL)
+		return axl_false;
+
+	/* check if the recipient domain represents a local delivery */
+	return valvulad_run_is_local_domain (ctx, valvula_get_recipient_domain (request));
 }
 
 

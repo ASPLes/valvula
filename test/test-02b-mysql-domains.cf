@@ -1,0 +1,9 @@
+# User account location
+# More information: 
+# http://www.postfix.com/mysql_table.5.html
+user     = valvula
+password = valvula
+hosts    = 127.0.0.1
+dbname   = valvula
+# query (it must return the alias or set of alias separated by commas).
+query    = SELECT domain FROM domain WHERE domain='%s' and active = 1

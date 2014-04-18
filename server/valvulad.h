@@ -87,11 +87,16 @@ typedef struct _ValvuladCtx {
 	/** 
 	 * @brief Local domains configurations.
 	 */
-	const char     * ld_query;
-	const char     * ld_user;
-	const char     * ld_pass;
-	const char     * ld_dbname;
-	const char     * ld_host;
+	char           * ld_query;
+	char           * ld_user;
+	char           * ld_pass;
+	char           * ld_dbname;
+	char           * ld_host;
+	/** 
+	 * @brief This hash holds a set of domains that are found at
+	 * configuration files or static files.
+	 */
+	axlHash        * ld_hash;
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {
