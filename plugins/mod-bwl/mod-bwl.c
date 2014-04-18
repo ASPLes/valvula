@@ -83,9 +83,26 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "id", "autoincrement int", 
 				  /* rule status */
 				  "is_active", "int",
+				  /* rules that applies to this domain. */
+				  "rules_for", "varchar(1024)",
 				  /* source domain or account to apply restriction. If defined
-				   * applies. If not defined, applies to all destinations. */
-				  "destination", "varchar(1024)",
+				   * applies. If not defined, applies to all sources */
+				  "source", "varchar(1024)",
+				  "description", "varchar(500)",
+				  /* status: reject, discard, ok */
+				  "status", "varchar(32)",
+				  NULL);
+
+	/* create databases to be used by the module */
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "bwl_account", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  /* rule status */
+				  "is_active", "int",
+				  /* rules that applies to this domain. */
+				  "rules_for", "varchar(1024)",
 				  /* source domain or account to apply restriction. If defined
 				   * applies. If not defined, applies to all sources */
 				  "source", "varchar(1024)",
@@ -116,11 +133,27 @@ static int  bwl_init (ValvuladCtx * _ctx)
 	return axl_true;
 }
 
-ValvulaState bwl_check_status_rules (ValvulaCtx     * _ctx,
-				     ValvulaRequest * request,
-				     const char     * level,
-				     ValvuladRes      result,
-				     axl_bool         first_specific)
+typedef enum {
+	/**
+	 * @internal Rules applied at server level.
+	 */
+	VALVULA_MOD_BWL_SERVER  = 1,
+	/** 
+	 * @internal Rules applied at domain level.
+	 */
+	VALVULA_MOD_BWL_DOMAIN  = 2,
+	/** 
+	 * @internal Rules applied at account level.
+	 */
+	VALVULA_MOD_BWL_ACCOUNT = 3,
+} ValvulaModBwlLevel;
+
+ValvulaState bwl_check_status_rules (ValvulaCtx         * _ctx,
+				     ValvulaRequest     * request,
+				     ValvulaModBwlLevel   level,
+				     const char         * level_label,
+				     ValvuladRes          result,
+				     axl_bool             first_specific)
 {
 
 	ValvuladRow     row;
@@ -180,12 +213,12 @@ ValvulaState bwl_check_status_rules (ValvulaCtx     * _ctx,
 		}
 		
 		if (axl_stream_casecmp (status, "reject", 6)) {
-			valvulad_reject (ctx, request, "Rejecting due to blacklist (%s)", level);
+			valvulad_reject (ctx, request, "Rejecting due to blacklist (%s)", level_label);
 			return VALVULA_STATE_REJECT;
 			
 		} /* end if */
 		if (axl_stream_casecmp (status, "discard", 7)) {
-			valvulad_reject (ctx, request, "Discard due to blacklist (%s)", level);
+			valvulad_reject (ctx, request, "Discard due to blacklist (%s)", level_label);
 			return VALVULA_STATE_DISCARD;
 			
 		} /* end if */
@@ -199,10 +232,11 @@ ValvulaState bwl_check_status_rules (ValvulaCtx     * _ctx,
 	return VALVULA_STATE_DUNNO;
 }
 
-ValvulaState bwl_check_status (ValvulaCtx     * _ctx,
-			       ValvulaRequest * request,
-			       const char     * level,
-			       const char     * format,
+ValvulaState bwl_check_status (ValvulaCtx         * _ctx,
+			       ValvulaRequest     * request,
+			       ValvulaModBwlLevel   level,
+			       const char         * level_label,
+			       const char         * format,
 			       ...)
 {
 	/* get result and row */
@@ -239,7 +273,7 @@ ValvulaState bwl_check_status (ValvulaCtx     * _ctx,
 	msg ("Checking request from %s -> %s", request->sender, request->recipient);
 
 	/* first check specific rules */
-	state = bwl_check_status_rules (_ctx, request, level, result, /* specific */ axl_true);
+	state = bwl_check_status_rules (_ctx, request, level, level_label, result, /* specific */ axl_true);
 	if (state != VALVULA_STATE_DUNNO) {
 		/* release result */
 		valvulad_db_release_result (result);
@@ -247,7 +281,7 @@ ValvulaState bwl_check_status (ValvulaCtx     * _ctx,
 	} /* end if */
 
 	/* now check rest of rules */
-	state = bwl_check_status_rules (_ctx, request, level, result, /* generic */ axl_false);
+	state = bwl_check_status_rules (_ctx, request, level, level_label, result, /* generic */ axl_false);
 	if (state != VALVULA_STATE_DUNNO) {
 		/* release result */
 		valvulad_db_release_result (result);
@@ -279,12 +313,32 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 
 
 	/* get current status at server level */
-	state  = bwl_check_status (_ctx, request, "global server lists", "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",
+	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",
 				   sender_domain, sender, recipient_domain, recipient);
 	/* check valvula state reported */
 	if (state != VALVULA_STATE_DUNNO) 
 		return state;
 
+	/* check if recipient_domain is for a local delivery */
+	if (valvulad_run_is_local_delivery (ctx, request)) {
+		/* get current status at domain level: rules that applies to recipient 
+		   domain and has to do with source account or source domain */
+		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_DOMAIN, "domain lists", 
+					   "SELECT status, source, '%s' as destination FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s')",
+					   recipient, recipient_domain, sender, sender_domain);
+		/* check valvula state reported */
+		if (state != VALVULA_STATE_DUNNO) 
+			return state;
+
+		/* get current status at domain level: rules that applies to recipient 
+		   domain and has to do with source account or source domain */
+		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_ACCOUNT, "account lists", 
+					   "SELECT status, source, '%s' as destination FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s')",
+					   recipient, recipient, sender, sender_domain);
+		/* check valvula state reported */
+		if (state != VALVULA_STATE_DUNNO) 
+			return state;
+	} /* end if */
 
 	/* by default report return dunno */
 	return VALVULA_STATE_DUNNO;
@@ -344,12 +398,16 @@ END_C_DECLS
  * - bwl_domain : domain level table that includes white lists and
  *     black lists that applies to a particular domain. Because it
  *     applies to a domain, the rule must have as source or
- *     destination an account of that domain or the domain itself. 
+ *     destination an account of that domain or the domain
+ *     itself. Rules applied at this level can only accept traffic
+ *     received (delivered to its domain).
  *
  * - bwl_account : account level table that includes white lists and
  *     black lists that applies to a particular account. Because it
  *     applies to an account, the rule must have as source or as
- *     destination the provided account.
+ *     destination the provided account. Rules applied at this level
+ *     can only accept traffic received on the account (not outgoing
+ *     traffic).
  *
  * Now, white lists and black lists are differenciated through the status field:
  *
