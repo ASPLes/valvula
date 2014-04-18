@@ -747,6 +747,7 @@ axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
 		return axl_false;
 
 	/* check domain first it static hash table */
+	msg ("Checking domain [%s] into hash %d (%p)", domain, axl_hash_items (ctx->ld_hash), ctx->ld_hash);
 	if (axl_hash_get (ctx->ld_hash, (axlPointer) domain))
 		return axl_true;
 
@@ -846,6 +847,34 @@ axl_bool valvulad_run_is_local_delivery (ValvuladCtx * ctx, ValvulaRequest * req
 
 	/* check if the recipient domain represents a local delivery */
 	return valvulad_run_is_local_domain (ctx, valvula_get_recipient_domain (request));
+}
+
+/** 
+ * @brief Allows to add a particular domain into the local domains
+ * hash. This will make this domain to be considered as local by
+ * valvula. This way, valvula will change the way it works for
+ * operations involving this domain.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param domain The domain that is being added.
+ */
+void     valvulad_run_add_local_domain (ValvuladCtx * ctx, const char * domain)
+{
+	if (ctx == NULL || domain == NULL)
+		return;
+
+	/* init hash */
+	if (ctx->ld_hash == NULL)
+		ctx->ld_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+
+	if (axl_hash_get (ctx->ld_hash, (axlPointer) domain))
+		return;
+
+	/* insert domain */
+	axl_hash_insert_full (ctx->ld_hash, axl_strdup (domain), axl_free, INT_TO_PTR (axl_true), NULL);
+
+	return;
 }
 
 

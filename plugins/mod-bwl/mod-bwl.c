@@ -83,7 +83,6 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "id", "autoincrement int", 
 				  /* rule status */
 				  "is_active", "int",
-				  /* 
 				  /* source domain or account to apply restriction. If defined
 				   * applies. If not defined, applies to all destinations. */
 				  "destination", "varchar(1024)",
@@ -168,8 +167,17 @@ ValvulaState bwl_check_status_rules (ValvulaCtx     * _ctx,
 		msg ("BWL:        with request source=%s, destination=%s", request->sender, request->recipient);
 		
 		/* now check values */
-		if (axl_stream_casecmp (status, "ok", 2)) 
-			return VALVULA_STATE_OK;
+		if (axl_stream_casecmp (status, "ok", 2)) {
+			/* accept it if the sender or reception domain is local */
+			if (valvulad_run_is_local_delivery (ctx, request)) {
+				/* so, reached this point we have that
+				 * the rule (whitelist) was added and
+				 * it matches with a local delivery */
+				return VALVULA_STATE_OK;
+			} else {
+				wrn ("Skipping rule because it is not a local delivery..");
+			} /* end if */
+		}
 		
 		if (axl_stream_casecmp (status, "reject", 6)) {
 			valvulad_reject (ctx, request, "Rejecting due to blacklist (%s)", level);
@@ -358,9 +366,9 @@ END_C_DECLS
  * 
  * - For a white list it changes. When adding a whitelist rule, if it
  *   the destination is defined it must be an account or domain that
- *   is handled by the server (local domains). In the case the
- *   destination account or domain is not handled by this server, rule
- *   will only work when the sending user is authenticated (SASL ok).
+ *   is handled by the server (local domains). Rules that tries to
+ *   accept traffic for domains that aren't handled by this server are
+ *   ignored.
  * 
  * 
  *

@@ -1143,9 +1143,33 @@ axl_bool test_05 (void) {
 		return axl_false;
 	} /* end if */
 	
-	/* SHOULD WORK: now try to run some requests. The following
-	 * should work by allowing unlimited users to pass through the
-	 * module */
+	/* SHOULD NOT WORK because aspl.es is not local: now try to
+	 * run some requests. The following should work by allowing
+	 * unlimited users to pass through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	}
+
+	/* register aspl.es as local */
+	valvulad_run_add_local_domain (ctx, "aspl.es");
+
+	printf ("Test --: added aspl.es as local domain, checking again..\n");
+
+	/* SHOULD WORK because aspl.es IS local: now try to run some
+	 * requests. The following should work by allowing unlimited
+	 * users to pass through the module */
 	state = test_valvula_request (/* policy server location */
 		"127.0.0.1", "3579", 
 		/* state */
@@ -1158,7 +1182,7 @@ axl_bool test_05 (void) {
 		"plain", "francis@aspl.es", NULL);
 
 	if (state != VALVULA_STATE_OK) {
-		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
+		printf ("ERROR (4.3.1): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
 		return axl_false;
 	}
 
@@ -1210,7 +1234,7 @@ axl_bool test_05 (void) {
 		"plain", "francis@aspl.es", NULL);
 
 	if (state != VALVULA_STATE_OK) {
-		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
+		printf ("ERROR (4.5): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
 		return axl_false;
 	}
 
