@@ -1451,7 +1451,7 @@ axl_bool test_05 (void) {
 	/* finish test */
 	common_finish (ctx);
 
-	return axl_true;	
+	return axl_true;
 }
 
 /* test mod slm */
