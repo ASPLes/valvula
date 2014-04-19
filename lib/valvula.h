@@ -385,6 +385,8 @@ const char * valvula_get_sender_domain (ValvulaRequest * request);
 
 const char * valvula_get_recipient_domain (ValvulaRequest * request);
 
+axl_bool     valvula_is_authenticated (ValvulaRequest * request);
+
 const char * valvula_get_sasl_user (ValvulaRequest * request);
 
 axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, const char * address);

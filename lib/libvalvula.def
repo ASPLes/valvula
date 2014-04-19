@@ -118,6 +118,7 @@ valvula_io_waiting_set_have_dispatch
 valvula_io_waiting_set_is_set_fd_group
 valvula_io_waiting_set_wait_on_fd_group
 valvula_io_waiting_use
+valvula_is_authenticated
 valvula_is_exiting
 valvula_listener_accept
 valvula_listener_cleanup

@@ -97,6 +97,34 @@ typedef struct _ValvuladCtx {
 	 * configuration files or static files.
 	 */
 	axlHash        * ld_hash;
+
+	/** 
+	 * @brief Local accounts configurations.
+	 */
+	char           * la_query;
+	char           * la_user;
+	char           * la_pass;
+	char           * la_dbname;
+	char           * la_host;
+	/** 
+	 * @brief This hash holds a set of local accounts that are
+	 * found at configuration files or static files.
+	 */
+	axlHash        * la_hash;
+
+	/** 
+	 * @brief Local aliases configurations.
+	 */
+	char           * ls_query;
+	char           * ls_user;
+	char           * ls_pass;
+	char           * ls_dbname;
+	char           * ls_host;
+	/** 
+	 * @brief This hash holds a set of aliases that are found at
+	 * configuration files or static files.
+	 */
+	axlHash        * ls_hash;
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {

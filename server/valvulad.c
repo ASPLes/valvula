@@ -528,8 +528,21 @@ void valvulad_exit (ValvuladCtx * ctx)
 	axl_free (ctx->ld_host);
 	axl_free (ctx->ld_dbname);
 	axl_free (ctx->ld_query);
-
 	axl_hash_free (ctx->ld_hash);
+
+	axl_free (ctx->ls_user);
+	axl_free (ctx->ls_pass);
+	axl_free (ctx->ls_host);
+	axl_free (ctx->ls_dbname);
+	axl_free (ctx->ls_query);
+	axl_hash_free (ctx->ls_hash);
+
+	axl_free (ctx->la_user);
+	axl_free (ctx->la_pass);
+	axl_free (ctx->la_host);
+	axl_free (ctx->la_dbname);
+	axl_free (ctx->la_query);
+	axl_hash_free (ctx->la_hash);
 	
 	/* release all context resources */
 	axl_doc_free (ctx->config);

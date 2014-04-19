@@ -1,0 +1,10 @@
+# User account location
+# More information: 
+# http://www.postfix.com/mysql_table.5.html
+user     = valvula
+password = valvula
+hosts    = 127.0.0.1
+table    = mailbox
+dbname   = valvula
+# query (it must return the alias or set of alias separated by commas).
+query    = SELECT username FROM mailbox WHERE username='%s' AND active = 1 AND domain = '%d'
