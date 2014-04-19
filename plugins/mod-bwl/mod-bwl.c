@@ -126,8 +126,6 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  /* source domain or account to apply restriction */
 				  "sasl_user", "varchar(1024)",
 				  "description", "varchar(500)",
-				  /* status: reject, discard, ok */
-				  "status", "varchar(32)",
 				  NULL);
 
 	return axl_true;
@@ -295,6 +293,17 @@ ValvulaState bwl_check_status (ValvulaCtx         * _ctx,
 	return state;
 }
 
+axl_bool bwl_is_sasl_user_blocked (ValvuladCtx * ctx, ValvulaRequest * request)
+{
+	/* request is authenticated, check exceptions */
+	if (valvulad_db_boolean_query (ctx, "SELECT sasl_user FROM bwl_global_sasl WHERE sasl_user = '%s'", request->sasl_username)) {
+		valvulad_reject (ctx, request, "Rejecting sasl user (%s) due to administrative configuration (mod-bwl)", request->sasl_username);
+		return axl_true; /* report rejected */
+	} /* end if */
+
+	return axl_false; /* not rejected */
+}
+
 
 /** 
  * @brief Process request for the module.
@@ -311,6 +320,9 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 	const char    * recipient        = request->recipient;
 	ValvulaState    state;
 
+	/* check if sasl user is blocked */
+	if (valvula_is_authenticated (request) && bwl_is_sasl_user_blocked (ctx, request))
+		return VALVULA_STATE_REJECT;
 
 	/* get current status at server level */
 	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",

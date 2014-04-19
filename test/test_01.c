@@ -1403,6 +1403,51 @@ axl_bool test_05 (void) {
 		return axl_false;
 	} /* end if */
 
+	printf ("Test --: checking bwl sasl restrictions..\n");
+
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_OK) {
+		printf ("ERROR (4.9): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
+		return axl_false;
+	}
+
+	/* now insert restriction */
+	valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global_sasl (is_active, sasl_user) VALUES ('1', 'francis@aspl.es')");
+
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.11): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	valvulad_db_run_non_query (ctx, "DELETE FROM bwl_global_sasl");
+
 	/* finish test */
 	common_finish (ctx);
 
