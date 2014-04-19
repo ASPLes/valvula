@@ -451,7 +451,11 @@ typedef enum {
 	VALVULA_STATE_REJECT = 2,
 	/** 
 	 * @brief Defer (reject temporally) the operation if rest of
-	 * rules allows the operation.
+	 * rules allows the operation. This causes the Postfix SMTP
+	 * server to reject the request with a 450 temporary error
+	 * code and with text "Service temporarily unavailable", if
+	 * the Postfix SMTP server finds no reason to reject the
+	 * request permanently.
 	 */
 	VALVULA_STATE_DEFER_IF_PERMIT = 3,
 	/** 
