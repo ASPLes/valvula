@@ -672,6 +672,20 @@ const char * valvula_get_sender_domain (ValvulaRequest * request)
 }
 
 /** 
+ * @brief Allows to check if the provided request is authenticated
+ * (SASL user enabled).
+ *
+ * @param request The request that is being checked.
+ *
+ * @return axl_true In the case the request represents an
+ * authenticated transaction, otherwise axl_false is returned. 
+ */
+axl_bool     valvula_is_authenticated (ValvulaRequest * request)
+{
+	return valvula_get_sasl_user (request) != NULL;
+}
+
+/** 
  * @brief Allows to get sasl_user associated to the request.
  *
  * @param request that is being queried.

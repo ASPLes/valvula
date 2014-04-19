@@ -345,7 +345,7 @@ void __valvulad_run_get_key_decl (char * line, char ** key, char ** decl)
 	return;
 }
 
-axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCtx * ctx, const char * postfix_decl)
+axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCtx * ctx, const char * postfix_decl, const char * section)
 {
 
 	char      ** items;
@@ -392,16 +392,40 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 
 					if (key && decl) {
 						msg ("Declaration found: [%s] -> [%s]", key, decl);
-						if (axl_cmp (key, "user"))
-							ctx->ld_user = axl_strdup (decl);
-						else if (axl_cmp (key, "password"))
-							ctx->ld_pass = axl_strdup (decl);
-						else if (axl_cmp (key, "hosts"))
-							ctx->ld_host = axl_strdup (decl);
-						else if (axl_cmp (key, "dbname"))
-							ctx->ld_dbname = axl_strdup (decl);
-						else if (axl_cmp (key, "query"))
-							ctx->ld_query  = axl_strdup (decl);
+						if (axl_cmp (section, "virtual_mailbox_domains")) {
+							if (axl_cmp (key, "user"))
+								ctx->ld_user = axl_strdup (decl);
+							else if (axl_cmp (key, "password"))
+								ctx->ld_pass = axl_strdup (decl);
+							else if (axl_cmp (key, "hosts"))
+								ctx->ld_host = axl_strdup (decl);
+							else if (axl_cmp (key, "dbname"))
+								ctx->ld_dbname = axl_strdup (decl);
+							else if (axl_cmp (key, "query"))
+								ctx->ld_query  = axl_strdup (decl);
+						} else if (axl_cmp (section, "virtual_alias_maps")) {
+							if (axl_cmp (key, "user"))
+								ctx->ls_user = axl_strdup (decl);
+							else if (axl_cmp (key, "password"))
+								ctx->ls_pass = axl_strdup (decl);
+							else if (axl_cmp (key, "hosts"))
+								ctx->ls_host = axl_strdup (decl);
+							else if (axl_cmp (key, "dbname"))
+								ctx->ls_dbname = axl_strdup (decl);
+							else if (axl_cmp (key, "query"))
+								ctx->ls_query  = axl_strdup (decl);
+						} else if (axl_cmp (section, "virtual_mailbox_maps")) {
+							if (axl_cmp (key, "user"))
+								ctx->la_user = axl_strdup (decl);
+							else if (axl_cmp (key, "password"))
+								ctx->la_pass = axl_strdup (decl);
+							else if (axl_cmp (key, "hosts"))
+								ctx->la_host = axl_strdup (decl);
+							else if (axl_cmp (key, "dbname"))
+								ctx->la_dbname = axl_strdup (decl);
+							else if (axl_cmp (key, "query"))
+								ctx->la_query  = axl_strdup (decl);
+						}
 					} /* end if */
 
 					/* key and decl */
@@ -451,8 +475,13 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 		
 		if (line[0] != '#' && strstr (line, "virtual_mailbox_domains") != NULL) {
 			/* found virtual mailbox declaration */
-			valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, line);
-
+			valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, line, "virtual_mailbox_domains");
+		} else if (line[0] != '#' && strstr (line, "virtual_alias_maps") != NULL) {
+			/* found virtual mailbox declaration */
+			valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, line, "virtual_alias_maps");
+		} else if (line[0] != '#' && strstr (line, "virtual_mailbox_maps") != NULL) {
+			/* found virtual mailbox declaration */
+			valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, line, "virtual_mailbox_maps");
 		} /* end if */
 
 		/* get next line */
@@ -718,43 +747,71 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	return axl_true; 
 }
 
-/** 
- * @brief Allows to check if the provided domain is considered local,
- * that is, current server is handling this domain so a delivery to
- * this domain won't be relayed.
- *
- * @param ctx The context where the operation will take place.
- *
- * @param domain The domain to be checked.
- *
- * @return axl_true if the domain is considered local, otherwise
- * axl_false is returned. The function also returns axl_false in the case domain or ctx references are NULL.
- *
- * This function will report proper results if current valvulad server
- * is properly configured. Please, check valvula configuration at
- * valvula.conf, inside xml path /valvula/enviroment/local-domains.
- */
-axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
-{
-	MYSQL     * dbconn;
-	char      * query;
-	int         port = 3306;
-	MYSQL_RES * result;
-	MYSQL_ROW   row;
-	axl_bool    f_result = axl_false;
+typedef enum {
+	VALVULAD_OBJECT_ACCOUNT = 1,
+	VALVULAD_OBJECT_DOMAIN = 2,
+	VALVULAD_OBJECT_ALIAS = 3
+} ValvuladObjectRequest;
 
-	if (ctx == NULL || domain == NULL)
+axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * item_name, ValvuladObjectRequest request_type)
+{
+	MYSQL      * dbconn;
+	int          port = 3306;
+	MYSQL_RES  * result;
+	MYSQL_ROW    row;
+	axl_bool     f_result = axl_false;
+
+	char       * query  = NULL;
+	const char * user   = NULL;
+	const char * pass   = NULL;
+	const char * host   = NULL;
+	const char * dbname = NULL;
+
+	if (ctx == NULL || item_name == NULL)
 		return axl_false;
 
-	/* check domain first it static hash table */
-	if (axl_hash_get (ctx->ld_hash, (axlPointer) domain))
-		return axl_true;
+	/* check item_name first it static hash table */
+	switch (request_type) {
+	case VALVULAD_OBJECT_DOMAIN:
+		if (axl_hash_get (ctx->ld_hash, (axlPointer) item_name))
+			return axl_true;
+		/* get query reference */
+		query   = ctx->ld_query;
+		user    = ctx->ld_user;
+		pass    = ctx->ld_pass;
+		host    = ctx->ld_host;
+		dbname  = ctx->ld_dbname;
+		break;
+	case VALVULAD_OBJECT_ACCOUNT:
+		if (axl_hash_get (ctx->la_hash, (axlPointer) item_name))
+			return axl_true;
+		/* get query reference */
+		query   = ctx->la_query;
+		user    = ctx->la_user;
+		pass    = ctx->la_pass;
+		host    = ctx->la_host;
+		dbname  = ctx->la_dbname;
+		break;
+	case VALVULAD_OBJECT_ALIAS:
+		if (axl_hash_get (ctx->ls_hash, (axlPointer) item_name))
+			return axl_true;
+		/* get query reference */
+		query   = ctx->ls_query;
+		user    = ctx->ls_user;
+		pass    = ctx->ls_pass;
+		host    = ctx->ls_host;
+		dbname  = ctx->ls_dbname;
+		break;
+	} /* end if */
 
-	if (ctx->ld_query) {
+	msg ("Checking %s to be (%d): %s", item_name, request_type, query);
+
+	if (query) {
 
 		/* mysql mode */
-		query = axl_strdup (ctx->ld_query);
-		axl_replace (query, "%s", domain);
+		query = axl_strdup (query);
+		axl_replace (query, "%s", item_name);
+		axl_replace (query, "%d", valvula_get_domain (item_name));
 
 		/* create a mysql connection */
 		dbconn = mysql_init (NULL);
@@ -762,13 +819,13 @@ axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
 		/* create a connection */
 		if (mysql_real_connect (dbconn, 
 					/* get host */
-					ctx->ld_host,
+					host,
 					/* get user */
-					ctx->ld_user,
+					user,
 					/* get password */
-					ctx->ld_pass,
+					pass,
 					/* get database */
-					ctx->ld_dbname,
+					dbname,
 					port, NULL, 0) == NULL) {
 			error ("Mysql connect error: %s, failed to run SQL command", mysql_error (dbconn));
 			return axl_false;
@@ -810,7 +867,7 @@ axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
 		} /* end if */
 
 		/* compare result */
-		f_result = axl_cmp (row[0], domain);
+		f_result = axl_cmp (row[0], item_name);
 
 		/* release result */
 		mysql_free_result (result);
@@ -823,6 +880,51 @@ axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
 	}
 
 	return f_result;
+}
+
+/** 
+ * @brief Allows to check if the provided domain is considered local,
+ * that is, current server is handling this domain so a delivery to
+ * this domain won't be relayed.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param domain The domain to be checked.
+ *
+ * @return axl_true if the domain is considered local, otherwise
+ * axl_false is returned. The function also returns axl_false in the case domain or ctx references are NULL.
+ *
+ * This function will report proper results if current valvulad server
+ * is properly configured. Please, check valvula configuration at
+ * valvula.conf, inside xml path /valvula/enviroment/local-domains.
+ */
+axl_bool valvulad_run_is_local_domain (ValvuladCtx * ctx, const char * domain)
+{
+	/* Call to request common object */
+	return __valvulad_run_request_common_object (ctx, domain, VALVULAD_OBJECT_DOMAIN);
+}
+
+/** 
+ * @brief Allows to check if the provided address is considered local,
+ * that is, current server is handling this account or alias so a
+ * delivery to this account/alias won't be relayed.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param address The address/alias to be checked.
+ *
+ * @return axl_true if the address/alias is considered local,
+ * otherwise axl_false is returned. The function also returns
+ * axl_false in the case address/alias or ctx references are NULL.
+ *
+ * This function will report proper results if current valvulad server
+ * is properly configured. Please, check valvula configuration at
+ * valvula.conf, inside xml path /valvula/enviroment/local-domains.
+ */
+axl_bool valvulad_run_is_local_address (ValvuladCtx * ctx, const char * address)
+{
+	/* Call to request common object */
+	return __valvulad_run_request_common_object (ctx, address, VALVULAD_OBJECT_ACCOUNT) || __valvulad_run_request_common_object (ctx, address, VALVULAD_OBJECT_ALIAS);
 }
 
 

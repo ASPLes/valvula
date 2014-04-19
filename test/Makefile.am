@@ -11,7 +11,12 @@ EXTRA_DIST = \
 	test_01_multi_first.base.ref \
 	test_01.base.ref \
 	test_01_last.base.ref \
-	test-02b-mysql-domains.cf 
+	test-02b-mysql-domains.cf  \
+	test-02b-mysql-accounts.cf \
+	test-02b-mysql-aliases.cf \
+	test_06.conf \
+	test_06.same-domain.conf \
+	test_06.valid-from.conf
 
 
 if ENABLE_POLL_SUPPORT

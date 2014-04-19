@@ -25,7 +25,7 @@ myhostname = mysql.aspl.es
 
 # aliases configuration
 alias_maps = hash:/etc/aliases
-virtual_alias_maps = mysql:/etc/postfix/mysql-aliases.cf
+virtual_alias_maps = mysql:test-02b-mysql-accounts.cf 
 
 # Domain used to complete local users (not activated)
 myorigin = /etc/mailname
@@ -140,7 +140,7 @@ smtpd_sasl_path = private/auth
 virtual_transport = dovecot
 dovecot_destination_recipient_limit = 1
 virtual_mailbox_domains = mysql:test-02b-mysql-domains.cf 
-virtual_mailbox_maps = mysql:/etc/postfix/mysql-accounts.cf
+virtual_mailbox_maps = mysql:test-02b-mysql-accounts.cf 
 # END DOVECOT
 
 

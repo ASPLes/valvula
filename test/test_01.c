@@ -680,6 +680,77 @@ axl_bool  test_02b (void)
 	return axl_true;
 }
 
+axl_bool  test_02c (void)
+{
+	ValvuladCtx    * ctx = axl_new (ValvuladCtx, 1);
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 02-b", "test_02b.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* create some tables */
+	if (! valvulad_db_ensure_table (ctx, "mailbox", "username", "text", "active", "int", "domain", "text", NULL)) {
+		printf ("ERROR: unable to create local domain table..\n");
+		return axl_false;
+	} /* end if */
+
+	/* create some tables */
+	if (! valvulad_db_ensure_table (ctx, "alias", "goto", "text", "active", "int", "domain", "text", "address", "text", NULL)) {
+		printf ("ERROR: unable to create local domain table..\n");
+		return axl_false;
+	} /* end if */
+
+	/* insert some values */
+	valvulad_db_run_non_query (ctx, "DELETE FROM mailbox");
+	valvulad_db_run_non_query (ctx, "INSERT INTO mailbox (username, active, domain) VALUES ('francis@aspl.es', '1', 'aspl.es')");
+	valvulad_db_run_non_query (ctx, "INSERT INTO mailbox (username, active, domain) VALUES ('test@limited.com', '1', 'limited.com')");
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_address (ctx, "francis@aspl.es")) {
+		printf ("ERROR: expected francis@aspl.es to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_address (ctx, "test@limited.com")) {
+		printf ("ERROR: expected test@limited.com to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_address (ctx, "test@asplhosting2.es")) {
+		printf ("ERROR: expected test@asplhosting2.es NOT to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_domain (ctx, "'; SELECT 1 --")) {
+		printf ("ERROR: expected aspl2.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: now test alias support\n");
+	valvulad_db_run_non_query (ctx, "DELETE FROM alias");
+	valvulad_db_run_non_query (ctx, "INSERT INTO alias (address, goto, active, domain) VALUES ('test@limited.com', 'aspl@asplhosting.com', '1', 'limited.com')");
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_address (ctx, "aspl@asplhosting.com")) {
+		printf ("ERROR: expected aspl@asplhosting.com to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* finish library */
+	common_finish (ctx);
+
+
+	return axl_true;
+}
+
 axl_bool test_03_test_sending_day_limit_and_final_reject (const char * auth_user, int allowed_sending_item) {
 	int            iterator;
 	ValvulaState   state;
@@ -1338,6 +1409,185 @@ axl_bool test_05 (void) {
 	return axl_true;	
 }
 
+/* test mod slm */
+axl_bool test_06 (void) {
+
+	ValvuladCtx   * ctx = axl_new (ValvuladCtx, 1);
+	ValvulaState    state;
+
+	printf ("Test 06: checking mod-slm=full\n");
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 06", "test_06.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* ctx  = test_valvula_load_config ("Test 06: ", path, axl_true);  */
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test06.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (1.1): expected failure for authenticated operation that do not match..\n");
+		return axl_false;
+	}
+
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "anything@test4.com", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (1.1): expected OK operation for authenticated operation that do match..\n");
+		return axl_false;
+	}
+
+	/* finish test */
+	common_finish (ctx);
+
+	printf ("Test 06: checking mod-slm=same-domain\n");
+
+	/* init the library */
+	ctx = axl_new (ValvuladCtx, 1);
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load basic configuration */
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 06", "test_06.same-domain.conf", axl_true, ctx, "test_02b.postfix.cf");
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test_06.same-domain.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/* record account */
+	valvulad_db_run_non_query (ctx, "DELETE FROM mailbox");
+	valvulad_db_run_non_query (ctx, "INSERT INTO mailbox (username, active, domain) VALUES ('anything@test4.com', '1', 'test4.com')");
+
+	/* SHOULD WORK */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "account@test4.com", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (1.3): expected OK operation for authenticated operation that do match (same-domain)..\n");
+		return axl_false;
+	}
+
+	/* SHOULD WORK */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything2@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "account2@test4.com", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (1.4): expected REJECT operation for authenticated operation that do match (same-domain)..\n");
+		return axl_false;
+	}
+
+	/* finish test */
+	common_finish (ctx);
+
+	printf ("Test 06: checking valid-from support\n");
+
+	/* init the library */
+	ctx = axl_new (ValvuladCtx, 1);
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load basic configuration */
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 06", "test_06.valid-from.conf", axl_true, ctx, "test_02b.postfix.cf");
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test_06.valid-from.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD WORK */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "account@test4.com", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (1.3): expected OK operation for authenticated operation that do match (valid-from)..\n");
+		return axl_false;
+	}
+
+	/* SHOULD WORK */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything2@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "account2@test4.com", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (1.4): expected REJECT operation for authenticated operation that do match (valid-from)..\n");
+		return axl_false;
+	}
+
+	/* finish test */
+	common_finish (ctx);
+
+	return axl_true;	
+}
+
 #define CHECK_TEST(name) if (run_test_name == NULL || axl_cmp (run_test_name, name))
 
 typedef axl_bool (* ValvulaTestHandler) (void);
@@ -1376,7 +1626,8 @@ int main (int argc, char ** argv)
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
-	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_03, test_04, test_05\n");
+	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_03, test_04, test_05,\n");
+	printf ("**                  test_06\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
 	printf ("**     <valvula@lists.aspl.es> Valvula Mailing list\n**\n");
@@ -1420,6 +1671,10 @@ int main (int argc, char ** argv)
 	run_test (test_02b, "Test 02-b: test local domains detection support");
 
 	/* run tests */
+	CHECK_TEST("test_02c")
+	run_test (test_02c, "Test 02-c: test local accounts detection support");
+
+	/* run tests */
 	CHECK_TEST("test_03")
 	run_test (test_03, "Test 03: checking mod-ticket");
 
@@ -1430,6 +1685,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_05")
 	run_test (test_05, "Test 05: test mod-bwl");
+
+	/* run tests */
+	CHECK_TEST("test_06")
+	run_test (test_06, "Test 06: test mod-slm");
 
 	printf ("All tests passed OK!\n");
 
