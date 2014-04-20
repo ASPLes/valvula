@@ -1659,7 +1659,7 @@ axl_bool test_06 (void) {
 axl_bool test_07 (void) {
 
 	ValvuladCtx   * ctx = axl_new (ValvuladCtx, 1);
-	ValvulaState    state;
+	/* ValvulaState    state; */
 
 	printf ("Test 07: checking mod-mquota\n");
 
