@@ -1655,6 +1655,35 @@ axl_bool test_06 (void) {
 	return axl_true;	
 }
 
+/* test mod mquota */
+axl_bool test_07 (void) {
+
+	ValvuladCtx   * ctx = axl_new (ValvuladCtx, 1);
+	ValvulaState    state;
+
+	printf ("Test 07: checking mod-mquota\n");
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 07", "test_07.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* ctx  = test_valvula_load_config ("Test 06: ", path, axl_true);  */
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test07.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/* finish test */
+	common_finish (ctx);
+
+	return axl_true;	
+}
+
 #define CHECK_TEST(name) if (run_test_name == NULL || axl_cmp (run_test_name, name))
 
 typedef axl_bool (* ValvulaTestHandler) (void);
@@ -1756,6 +1785,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_06")
 	run_test (test_06, "Test 06: test mod-slm");
+
+	/* run tests */
+	CHECK_TEST("test_07")
+	run_test (test_07, "Test 07: test mod-mquota");
 
 	printf ("All tests passed OK!\n");
 

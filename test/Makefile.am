@@ -16,7 +16,8 @@ EXTRA_DIST = \
 	test-02b-mysql-aliases.cf \
 	test_06.conf \
 	test_06.same-domain.conf \
-	test_06.valid-from.conf
+	test_06.valid-from.conf \
+	test_07.conf
 
 
 if ENABLE_POLL_SUPPORT
