@@ -1160,6 +1160,12 @@ axl_bool test_05 (void) {
 		return axl_false;
 	} /* end if */
 
+	/** delete current rules **/
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM bwl_global_sasl")) {
+		printf ("ERROR: unable to remove all global rules..\n");
+		return axl_false;
+	} /* end if */
+
 	/* SHOULD WORK: now try to run some requests. The following
 	 * should work by allowing unlimited users to pass through the
 	 * module */
