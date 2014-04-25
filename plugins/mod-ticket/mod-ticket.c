@@ -345,8 +345,10 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	/* skip if the domain or the sasl user in the request is not
 	 * limited by the domain request */
-	if (! domain_in_tickets && ! sasl_user_in_tickets) 
+	if (! domain_in_tickets && ! sasl_user_in_tickets) {
+		printf ("..1..\n");
 		return VALVULA_STATE_DUNNO;
+	}
 
 	/* lock */
 	valvula_mutex_lock (&work_mutex);
@@ -377,13 +379,16 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		valvula_mutex_unlock (&work_mutex);
 
 		/* maybe the database configurat was removed before checking previous request, no problem */
+		printf ("..2..\n");
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
 	/* get the values we are interesting in */
 	row = __ticket_get_row_or_fail (ctx, result);
-	if (row == NULL) 
+	if (row == NULL) {
+		printf ("..3..\n");
 		return VALVULA_STATE_DUNNO;
+	}
 
 	/* get if the limit is expired */
 	valid_until = GET_CELL_AS_LONG (row, 3);
@@ -434,13 +439,17 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
+
+		printf ("..4..\n");
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
 	/* get row from result */
 	row = __ticket_get_row_or_fail (ctx, result);
-	if (row == NULL) 
+	if (row == NULL) {
+		printf ("..5..\n");
 		return VALVULA_STATE_DUNNO;
+	}
 
 	/* get values */
 	total_limit = GET_CELL_AS_LONG (row, 0);
@@ -497,6 +506,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	
 	/* by default report return dunno */
+	printf ("..6..\n");
 	return VALVULA_STATE_DUNNO;
 }
 
