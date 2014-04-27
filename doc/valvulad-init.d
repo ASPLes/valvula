@@ -2,7 +2,7 @@
 
 ### BEGIN INIT INFO
 # Provides:          valvulad
-# Required-Start:    $local_fs $remote_fs $syslog $named $network $time
+# Required-Start:    $local_fs $remote_fs $syslog $named $network $time $mysql
 # Required-Stop:     $local_fs $remote_fs $syslog $named $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6  
