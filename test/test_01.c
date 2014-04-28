@@ -328,6 +328,9 @@ ValvulaState test_valvula_request (const char * policy_server, const char * port
 	send_content (session, "sasl_username", sasl_username);
 	send_content (session, "sasl_sender", sasl_sender);
 
+	/* client address */
+	send_content (session, "client_address", policy_server);
+
 	/* send finalization */
 	send (session, "\n", 1, 0);
 
@@ -780,7 +783,7 @@ axl_bool test_03_test_sending_day_limit_and_final_reject (const char * auth_user
 		iterator++;
 	}
 
-	printf ("Test 03: now test that day limited has been reached a no more messages are allowed than %d..\n", allowed_sending_item);
+	printf ("Test 03: now test if account %s is limited to %d..\n", auth_user, allowed_sending_item);
 	/* SHOULD WORK: now try to run some requests. The following
 	 * should work  */
 	state = test_valvula_request (/* policy server location */
@@ -1665,11 +1668,21 @@ axl_bool test_06 (void) {
 	return axl_true;	
 }
 
+typedef axl_bool (*Test07MinuteHandler)   (ValvulaCtx  * _ctx, 
+					   axlPointer   user_data,
+					   axlPointer   user_data2);
+
 /* test mod mquota */
 axl_bool test_07 (void) {
 
-	ValvuladCtx   * ctx = axl_new (ValvuladCtx, 1);
-	/* ValvulaState    state; */
+	Test07MinuteHandler    minute_handler;
+	ValvuladCtx          * ctx;
+	ValvulaState           state; 
+	ValvuladModule       * module;
+	int                    iterator;
+
+	/* get reference */
+	ctx = axl_new (ValvuladCtx, 1);
 
 	printf ("Test 07: checking mod-mquota\n");
 
@@ -1688,8 +1701,91 @@ axl_bool test_07 (void) {
 		return axl_false;
 	} /* end if */
 
+	printf ("Test 07: test basic minute limites..\n");
+
+	/* call to send content */
+	/* SHOULD WORK */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"hyper3@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (7.1): expected DUNNO operation for simple quota operation..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 07: now test to reach current limit..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
+		return axl_false;
+
+	/* perfect, limit reached, now "manually" change time */
+	module         = valvulad_module_find_by_name (ctx, "mod-mquota");
+	if (module == NULL) {
+		printf ("Test 07: expected to find module (mod-mquota) reference to call internal functions..\n");
+		return axl_false;
+	}
+	
+	/* get minute handler */
+	minute_handler = valvulad_module_get_symbol (ctx, module, "__mod_mquota_minute_handler");
+	if (minute_handler == NULL) {
+		printf ("Test 07: unable to find minute handler to call it to force minute change.. NULL reference returned..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 07: simulating minute handler change..\n");
+	minute_handler (ctx->ctx, NULL, NULL);
+
+	printf ("Test 07: doing again another send operation..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 5))
+		return axl_false;
+
+	printf ("Test 07: simulating minute handler change (again)..\n");
+	minute_handler (ctx->ctx, NULL, NULL);
+
+	printf ("Test 07: try to hit hour limit...\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 0))
+		return axl_false;
+
+	/* try to change hour to reach global limit  */
+	printf ("Test 07: changing hour..\n");
+	iterator = 0;
+	while (iterator < 60) {
+		/* change minutes */
+		minute_handler (ctx->ctx, NULL, NULL);
+
+		/* next iterator */
+		iterator++;
+	}
+
+	printf ("Test 07: reach again minute limit..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 5))
+		return axl_false;
+
+	/* change minutes */
+	minute_handler (ctx->ctx, NULL, NULL);
 
 
+	printf ("Test 07: change hour...\n");	
+	iterator = 0;
+	while (iterator < 60) {
+		/* change minutes */
+		minute_handler (ctx->ctx, NULL, NULL);
+
+		/* next iterator */
+		iterator++;
+	}
+
+	printf ("Test 07: reach again minute limit (2)..\n");
+	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 5))
+		return axl_false;
+	
 	/* finish test */
 	common_finish (ctx);
 
@@ -1730,7 +1826,7 @@ int main (int argc, char ** argv)
 	printf ("** Regression tests: valvula: %s \n",
 		VERSION);
 	printf ("** To gather information about time performance you can use:\n**\n");
-	printf ("**     time ./test_01 [--help] [--debug] [--run-test=NAME]\n**\n");
+	printf ("**     time ./test_01 [--help] [--debug] [--no-unmap] [--run-test=NAME]\n**\n");
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
@@ -1746,6 +1842,8 @@ int main (int argc, char ** argv)
 			exit (0);
 		if (axl_cmp (argv[argc], "--debug")) 
 			test_common_enable_debug = axl_true;
+		if (axl_cmp (argv[argc], "--no-unmap"))
+			valvulad_module_set_no_unmap_modules (axl_true);
 
 		if (argv[argc] && axl_memcmp (argv[argc], "--run-test", 10)) {
 			run_test_name = argv[argc] + 11;

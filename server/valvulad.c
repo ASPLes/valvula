@@ -509,6 +509,9 @@ axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
 void valvulad_exit (ValvuladCtx * ctx)
 {
 	/* stop modules */
+	msg ("Calling to stop modules..");
+	valvulad_module_notify_close (ctx);
+
 	msg ("Releasing modules (loaded: %d)..", axl_list_length (ctx->registered_modules));
 	valvulad_module_cleanup (ctx);
 

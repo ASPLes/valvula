@@ -125,6 +125,7 @@ typedef struct _ValvuladCtx {
 	 * configuration files or static files.
 	 */
 	axlHash        * ls_hash;
+
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {

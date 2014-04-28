@@ -825,6 +825,36 @@ long         valvula_get_day (void)
 }
 
 /** 
+ * @brief Allows to get current hour.
+ *
+ * @return Current hour reported.
+ */
+long         valvula_get_hour (void)
+{
+	 time_t      t;
+	 struct tm * tmp;
+	 
+	 t = time(NULL);
+	 tmp = localtime (&t);
+	 return tmp->tm_hour;
+}
+
+/** 
+ * @brief Allows to get current minute.
+ *
+ * @return Current minute reported.
+ */
+long         valvula_get_minute (void)
+{
+	 time_t      t;
+	 struct tm * tmp;
+	 
+	 t = time(NULL);
+	 tmp = localtime (&t);
+	 return tmp->tm_min;
+}
+
+/** 
  * @brief Allows to get current month.
  *
  * @return Current month reported.
