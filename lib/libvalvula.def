@@ -70,6 +70,8 @@ valvula_ctx_unref2
 valvula_exit_ctx
 valvula_get_day
 valvula_get_domain
+valvula_get_hour
+valvula_get_minute
 valvula_get_month
 valvula_get_recipient_domain
 valvula_get_sasl_user

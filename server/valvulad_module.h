@@ -88,6 +88,10 @@ ValvuladModule   * valvulad_module_open         (ValvuladCtx   * ctx,
 ValvuladModule   * valvulad_module_find_by_name (ValvuladCtx * ctx,
 						 const char  * mod_name);
 
+axlPointer         valvulad_module_get_symbol   (ValvuladCtx    * ctx,
+						 ValvuladModule * module,
+						 const char     * name);
+
 void               valvulad_module_unload      (ValvuladCtx   * ctx,
 						const char    * module);
 

@@ -397,6 +397,10 @@ long         valvula_now (void);
 
 long         valvula_get_day (void);
 
+long         valvula_get_hour (void);
+
+long         valvula_get_minute (void);
+
 long         valvula_get_month (void);
 
 END_C_DECLS

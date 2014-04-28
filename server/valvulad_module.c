@@ -138,6 +138,34 @@ ValvuladModule * valvulad_module_open (ValvuladCtx * ctx, const char * module)
 }
 
 /** 
+ * @brief Allows to get a particular symbol (by name) from the provided module.
+ *
+ * @param ctx The context where the operation will happen.
+ *
+ * @param module The module where the look up operation will take place.
+ *
+ * @param name The symbol name that is being looked. The caller must
+ * properly cast reference returned to work. This function is not safe.
+ *
+ * @return The function returns the reference found or NULL if it
+ * fails or ctx, module or name references are NULL.
+ */
+axlPointer         valvulad_module_get_symbol   (ValvuladCtx    * ctx,
+						 ValvuladModule * module,
+						 const char     * name)
+{
+	if (ctx == NULL || module == NULL || name == NULL)
+		return NULL;
+
+	/* find the module */
+#if defined(AXL_OS_UNIX)
+	return dlsym (module->handle, name);
+#elif defined(AXL_OS_WIN32)
+	return GetProcAddress (module->handle, name);
+#endif
+}
+
+/** 
  * @brief Allows to find a the module by the provided name.
  *
  * @param ctx The context where the operation will take place.
