@@ -754,7 +754,7 @@ axl_bool  test_02c (void)
 	return axl_true;
 }
 
-axl_bool test_03_test_sending_day_limit_and_final_reject (const char * auth_user, int allowed_sending_item) {
+axl_bool test_sending_limit_and_final_reject (const char * auth_user, int allowed_sending_item, axl_bool check_final_error) {
 	int            iterator;
 	ValvulaState   state;
 
@@ -783,7 +783,10 @@ axl_bool test_03_test_sending_day_limit_and_final_reject (const char * auth_user
 		iterator++;
 	}
 
-	printf ("Test 03: now test if account %s is limited to %d..\n", auth_user, allowed_sending_item);
+	if (! check_final_error)
+		return axl_true;
+
+	printf ("Test --: now test if account %s is limited to %d..\n", auth_user, allowed_sending_item);
 	/* SHOULD WORK: now try to run some requests. The following
 	 * should work  */
 	state = test_valvula_request (/* policy server location */
@@ -887,21 +890,21 @@ axl_bool test_03 (void) {
 
 
 	printf ("Test 03: testing allowed tickets (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: perfect, now notify day change and see we can keep on sending (1)...\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: testing again allowed tickets (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: perfect, now notify day change to test last 2 rounds for month limit (2)...\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: now try to reach month limit (3)...");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 2))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 2, axl_true))
 		return axl_false;
 
 	printf ("Test 03: phase 3\n");
@@ -913,7 +916,7 @@ axl_bool test_03 (void) {
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: test again (4)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: phase 4\n");
@@ -922,12 +925,12 @@ axl_bool test_03 (void) {
 	/* try to reach total limit */
 	printf ("Test 03: sending 4 more messages (change day)..\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: sending 2 more messages (change day)..\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 2))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 2, axl_true))
 		return axl_false;
 
 	printf ("Test 03: now testing if total limits are honoured even after updating days or months (4)\n");
@@ -977,14 +980,14 @@ axl_bool test_03 (void) {
 	} /* end if */
 
 	printf ("Test 03: now testing test@limited2.com..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited2.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited2.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: perfect, now notify day change and see we can keep on sending (1)...\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: now testing test@limited3.com..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited3.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited3.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: phase 7\n");
@@ -994,7 +997,7 @@ axl_bool test_03 (void) {
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: now testing test@limited4.com..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited4.com", 2))
+	if (! test_sending_limit_and_final_reject ("test@limited4.com", 2, axl_true))
 		return axl_false;
 
 	printf ("Test 03: now testing if total limits are honoured even after updating days or months (4)\n");
@@ -1005,14 +1008,14 @@ axl_bool test_03 (void) {
 	printf ("Test --:\n");
 
 	printf ("Test 03: now testing test@limited2.com..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited2.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited2.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: perfect, now notify day change and see we can keep on sending (1)...\n");
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: now testing test@limited3.com..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited3.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited3.com", 4, axl_true))
 		return axl_false;
 
 	printf ("Test 03: phase 7\n");
@@ -1022,7 +1025,7 @@ axl_bool test_03 (void) {
 	valvulad_notify_date_change (ctx, valvula_get_day () + 1, VALVULAD_DATE_ITEM_DAY);
 
 	printf ("Test 03: now testing test@limited4.com..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited4.com", 2))
+	if (! test_sending_limit_and_final_reject ("test@limited4.com", 2, axl_true))
 		return axl_false;
 
 	printf ("Test 03: now testing if total limits are honoured even after updating days or months (4)\n");
@@ -1722,7 +1725,7 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	printf ("Test 07: now test to reach current limit..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 4))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 4, axl_true))
 		return axl_false;
 
 	/* perfect, limit reached, now "manually" change time */
@@ -1743,14 +1746,14 @@ axl_bool test_07 (void) {
 	minute_handler (ctx->ctx, NULL, NULL);
 
 	printf ("Test 07: doing again another send operation..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 5))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 5, axl_true))
 		return axl_false;
 
 	printf ("Test 07: simulating minute handler change (again)..\n");
 	minute_handler (ctx->ctx, NULL, NULL);
 
 	printf ("Test 07: try to hit hour limit...\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 0))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 0, axl_true))
 		return axl_false;
 
 	/* try to change hour to reach global limit  */
@@ -1765,7 +1768,7 @@ axl_bool test_07 (void) {
 	}
 
 	printf ("Test 07: reach again minute limit..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 5))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 5, axl_true))
 		return axl_false;
 
 	/* change minutes */
@@ -1783,7 +1786,25 @@ axl_bool test_07 (void) {
 	}
 
 	printf ("Test 07: reach again minute limit (2)..\n");
-	if (! test_03_test_sending_day_limit_and_final_reject ("test@limited.com", 5))
+	if (! test_sending_limit_and_final_reject ("test@limited.com", 5, axl_true))
+		return axl_false;
+
+	/** DOMAIN TEST ***/
+
+	printf ("Test 07: test limits BY DOMAIN (limited2.com)..\n");
+	if (! test_sending_limit_and_final_reject ("test@limited2.com", 3, axl_false))
+		return axl_false;
+
+	printf ("Test 07: sending another 3 (test1@limited2.com).....\n");
+	if (! test_sending_limit_and_final_reject ("test1@limited2.com", 3, axl_false))
+		return axl_false;
+
+	printf ("Test 07: sending another 2 (test2@limited2.com).....\n");
+	if (! test_sending_limit_and_final_reject ("test2@limited2.com", 2, axl_false))
+		return axl_false;
+
+	printf ("Test 07: sending another 2 (test4@limited2.com).....\n");
+	if (! test_sending_limit_and_final_reject ("test4@limited2.com", 2, axl_true))
 		return axl_false;
 	
 	/* finish test */

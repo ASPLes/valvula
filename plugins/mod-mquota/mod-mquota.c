@@ -58,8 +58,12 @@ typedef enum {
 ValvulaMutex hash_mutex;
 
 /* these hashes tracks activity */
+/* account level */
 axlHash * __mod_mquota_minute_hash;
 axlHash * __mod_mquota_hour_hash;
+/* domain level */
+axlHash * __mod_mquota_domain_minute_hash;
+axlHash * __mod_mquota_domain_hour_hash;
 
 typedef struct _ModMquotaLimit {
 	/* this period id has a reference to the plan that this period
@@ -82,10 +86,16 @@ typedef struct _ModMquotaLimit {
 	int            hour_limit;
 	int            global_limit;
 
+	/* domain limits */
+	int            domain_minute_limit;
+	int            domain_hour_limit;
+	int            domain_global_limit;
+
 	/* mutex and hash that tracks global counting for this
 	 * period. Each ModMquotaLimit represents a period that is
 	 * being applied inside a plan. */
 	axlHash      * accounting;
+	axlHash      * domain_accounting;
 
 } ModMquotaLimit;
 
@@ -112,12 +122,11 @@ axl_bool mod_mquota_time_is_before (long hour_a, long minute_a,
 
 ModMquotaLimit * mod_mquota_report_limit_select (ModMquotaLimit * limit)
 {
-	return limit;
-	/* if (limit && limit->label)
+	if (limit && limit->label)
 		msg ("Selecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label, 
 		     limit->global_limit, limit->hour_limit, limit->minute_limit);
 	if (limit == NULL)
-	wrn ("No sending mquota period was found.."); */
+		wrn ("No sending mquota period was found.."); 
 	return limit;
 } /* end if */
 
@@ -199,6 +208,11 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	__mod_mquota_minute_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 	axl_hash_free (hash);
 
+	/* reset domain hash */
+	hash = __mod_mquota_domain_minute_hash;
+	__mod_mquota_domain_minute_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	axl_hash_free (hash);
+
 	/* reset hour hash if reached */
 	__mod_mquota_hour_track ++;
 	if (__mod_mquota_hour_track == 60) {
@@ -209,6 +223,11 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 		hash = __mod_mquota_hour_hash;
 		__mod_mquota_hour_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 		axl_hash_free (hash);
+
+		/* reset hash (domain) */
+		hash = __mod_mquota_domain_hour_hash;
+		__mod_mquota_domain_hour_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+		axl_hash_free (hash);
 	} /* end if */
 
 	/* now check if global period have changed */
@@ -217,16 +236,15 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 
 		/* get old reference */
 		old_reference = __mod_mquota_current_period;
-
-		/* update reference */
 		__mod_mquota_current_period = mod_mquota_get_current_period ();
-
-		/* release hash values */
 		axl_hash_free (old_reference->accounting);
+		axl_hash_free (old_reference->domain_accounting);
 		old_reference->accounting = NULL;
 
 		/* init hash */
-		__mod_mquota_current_period->accounting = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+		__mod_mquota_current_period->accounting        = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+		__mod_mquota_current_period->domain_accounting = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+
 	} /* end if */
 
 	/* lock */
@@ -282,6 +300,11 @@ ModMquotaLimit * __mod_mquota_parse_node (axlNode * node) {
 	limit->hour_limit   = valvula_support_strtod (ATTR_VALUE (node, "hour-limit"), NULL);
 	limit->global_limit = valvula_support_strtod (ATTR_VALUE (node, "global-limit"), NULL);
 
+	/* get domain limits */
+	limit->domain_minute_limit = valvula_support_strtod (ATTR_VALUE (node, "domain-minute-limit"), NULL);
+	limit->domain_hour_limit   = valvula_support_strtod (ATTR_VALUE (node, "domain-hour-limit"), NULL);
+	limit->domain_global_limit = valvula_support_strtod (ATTR_VALUE (node, "domain-global-limit"), NULL);
+
 	/* get label if defined */
 	limit->label        = ATTR_VALUE (node, "label");
 
@@ -317,8 +340,10 @@ static int  mquota_init (ValvuladCtx * _ctx)
 		__mquota_mode = VALVULA_MOD_MQUOTA_FULL;
 
 	/* init tracking hashes */
-	__mod_mquota_minute_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
-	__mod_mquota_hour_hash   = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	__mod_mquota_minute_hash        = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	__mod_mquota_hour_hash          = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	__mod_mquota_domain_minute_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	__mod_mquota_domain_hour_hash   = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 
 	/* parse limits */
 	__mod_mquota_limits = axl_list_new (axl_list_always_return_1, axl_free);
@@ -367,7 +392,8 @@ static int  mquota_init (ValvuladCtx * _ctx)
 	} /* end if */
 
 	/* init accounting */
-	__mod_mquota_current_period->accounting = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	__mod_mquota_current_period->accounting        = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	__mod_mquota_current_period->domain_accounting = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 
 	/* install time handlers */
 	valvula_thread_pool_new_event (ctx->ctx, 60000000, __mod_mquota_minute_handler, NULL, NULL);
@@ -459,6 +485,128 @@ int __mod_mquota_get_next_minute_minute ()
 	return valvula_get_minute () + 1;
 }
 
+typedef enum {
+	MOD_MQUOTA_GLOBAL_CHECK = 1,
+	MOD_MQUOTA_HOUR_CHECK   = 2,
+	MOD_MQUOTA_MINUTE_CHECK = 3,
+} ModCheckType;
+
+axl_bool __mod_mquota_check_reject (const char * sasl_user, ValvulaRequest * request, int limit, int usage, ModCheckType check_type, axl_bool is_domain_limit)
+{
+
+	/* configure label */
+	const char * label = "User";
+	const char * info  = "account";
+	if (is_domain_limit) {
+		label = "Domain";
+		info  = "domain";
+	} /* end if */
+
+	/* if limit is defined (!= -1) and usage is equal or higher,
+	   then block operation */
+	if (limit > 0 && usage >= limit) {
+		/* release */
+		valvula_mutex_unlock (&hash_mutex);
+
+		valvulad_reject (ctx, request, "Quota reached");
+		switch (check_type) {
+		case MOD_MQUOTA_GLOBAL_CHECK:
+			/* report specific global check */
+			error ("REJECTED: quota reached for %s %s from (%s). %s global limit=%d reached, user will have to wait until %02d:%02d", 
+			       info, sasl_user, request->client_address, label,
+			       usage, __mod_mquota_get_next_global_hour (), __mod_mquota_get_next_global_minute ());
+			break;
+		case MOD_MQUOTA_HOUR_CHECK:
+			/* report specific hour check */
+			error ("REJECTED: quota reached for %s %s from (%s). %s hour limit=%d reached, user will have to wait until %02d:%02d", 
+			       info, sasl_user, request->client_address, label, 
+			       usage, __mod_mquota_get_next_hour_hour (), __mod_mquota_get_next_hour_minute ());
+			break;
+		case MOD_MQUOTA_MINUTE_CHECK:
+			/* report specific minute check */
+			error ("REJECTED: quota reached for %s %s from (%s). %s minute limit=%d reached, user will have to wait until %02d:%02d", 
+			       info, sasl_user, request->client_address, label,
+			       usage, __mod_mquota_get_next_minute_hour (), __mod_mquota_get_next_minute_minute ());
+			break;
+		default:
+			break; /* never reached */
+		} 
+		return axl_true;
+	} /* end if */
+
+	return axl_false;
+}
+
+axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest * request)
+{
+	long             minute_usage;
+	long             hour_usage;
+	long             global_usage;
+
+	/* check global limit */
+	global_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_current_period->accounting, (axlPointer) sasl_user));
+	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->global_limit, global_usage, MOD_MQUOTA_GLOBAL_CHECK, axl_false))
+		return axl_true;
+
+	/* check hour limit */
+	hour_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_hour_hash, (axlPointer) sasl_user));
+	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->hour_limit, hour_usage, MOD_MQUOTA_HOUR_CHECK, axl_false))
+		return axl_true;
+
+	/* check minute limit */
+	minute_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_minute_hash, (axlPointer) sasl_user));
+	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->minute_limit, minute_usage, MOD_MQUOTA_MINUTE_CHECK, axl_false))
+		return axl_true;
+
+	/* reached this point, update record */
+	global_usage += 1;
+	hour_usage += 1;
+	minute_usage += 1;
+
+	/* msg ("Saving limits %s -> global %d, hour %d, minute %d", sasl_user, global_usage, hour_usage, minute_usage); */
+
+	axl_hash_insert_full (__mod_mquota_current_period->accounting, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (global_usage), NULL);
+	axl_hash_insert_full (__mod_mquota_hour_hash, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (hour_usage), NULL);
+	axl_hash_insert_full (__mod_mquota_minute_hash, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (minute_usage), NULL);
+
+	return axl_false; /* not rejected, not limited */
+}
+
+axl_bool __mod_mquota_check_reject_domain (const char * sasl_domain, ValvulaRequest * request)
+{
+	long             minute_usage;
+	long             hour_usage;
+	long             global_usage;
+
+	/* check global limit */
+	global_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_current_period->domain_accounting, (axlPointer) sasl_domain));
+	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_global_limit, global_usage, MOD_MQUOTA_GLOBAL_CHECK, axl_true))
+		return axl_true;
+
+	/* check hour limit */
+	hour_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_domain_hour_hash, (axlPointer) sasl_domain));
+	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_hour_limit, hour_usage, MOD_MQUOTA_HOUR_CHECK, axl_true))
+		return axl_true;
+
+	/* check minute limit */
+	minute_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_domain_minute_hash, (axlPointer) sasl_domain));
+	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_minute_limit, minute_usage, MOD_MQUOTA_MINUTE_CHECK, axl_true))
+		return axl_true;
+
+	/* reached this point, update record */
+	global_usage += 1;
+	hour_usage += 1;
+	minute_usage += 1;
+
+	msg ("Saving limits %s -> global %d, hour %d, minute %d", sasl_domain, global_usage, hour_usage, minute_usage); 
+
+	axl_hash_insert_full (__mod_mquota_current_period->domain_accounting, (axlPointer) axl_strdup (sasl_domain), axl_free, INT_TO_PTR (global_usage), NULL);
+	axl_hash_insert_full (__mod_mquota_domain_hour_hash, (axlPointer) axl_strdup (sasl_domain), axl_free, INT_TO_PTR (hour_usage), NULL);
+	axl_hash_insert_full (__mod_mquota_domain_minute_hash, (axlPointer) axl_strdup (sasl_domain), axl_free, INT_TO_PTR (minute_usage), NULL);
+
+	return axl_false; /* not rejected, not limited */
+}
+
 
 /** 
  * @brief Process request for the module.
@@ -469,10 +617,8 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 				     axlPointer          request_data,
 				     char             ** message)
 {
-	long             minute_limit;
-	long             hour_limit;
-	long             global_limit;
 	const char     * sasl_user;
+	const char     * sasl_domain;
 
 	/* do nothing if module is disabled */
 	if (__mquota_mode == VALVULA_MOD_MQUOTA_DISABLED)
@@ -499,55 +645,20 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 
 	/* get the limit */
 	valvula_mutex_lock (&hash_mutex);
-	global_limit = PTR_TO_INT (axl_hash_get (__mod_mquota_current_period->accounting, (axlPointer) sasl_user));
-	/* msg ("Checking sasl username=%s (global limit %d, %p, %p)", sasl_user, global_limit, __mod_mquota_current_period, __mod_mquota_current_period->accounting); */
-	/* check global limit */
-	if (global_limit >= __mod_mquota_current_period->global_limit) {
-		/* release */
-		valvula_mutex_unlock (&hash_mutex);
 
-		valvulad_reject (ctx, request, "Quota reached");
-		error ("REJECTED: quota reached for %s from (%s). Global limit=%d reached, user will have to wait until %02d:%02d)", sasl_user, request->client_address, 
-		       global_limit, __mod_mquota_get_next_global_hour (), __mod_mquota_get_next_global_minute ());
+	if (__mod_mquota_check_reject_user (sasl_user, request))
 		return VALVULA_STATE_REJECT;
-	} /* end if */
 
-	/* check hour limit */
-	hour_limit = PTR_TO_INT (axl_hash_get (__mod_mquota_hour_hash, (axlPointer) sasl_user));
-	/* msg ("Checking sasl username=%s (hour limit %d, %p, %p)", sasl_user, hour_limit, __mod_mquota_current_period, __mod_mquota_current_period->accounting); */
-	if (hour_limit >= __mod_mquota_current_period->hour_limit) {
-		/* release */
-		valvula_mutex_unlock (&hash_mutex);
+	/* check domain limits */
+	if (strstr (sasl_user, "@")) {
+		/* found posible domain limit */
+		sasl_domain = valvula_get_domain (sasl_user);
 
-		valvulad_reject (ctx, request, "Quota reached");
-		error ("REJECTED: quota reached for %s from (%s). Hour limit=%d reached, user will have to wait until %02d:%02d)", sasl_user, request->client_address, 
-		       hour_limit, __mod_mquota_get_next_hour_hour (), __mod_mquota_get_next_hour_minute ());
-		return VALVULA_STATE_REJECT;
-	} /* end if */
-
-	/* check minute limit */
-	minute_limit = PTR_TO_INT (axl_hash_get (__mod_mquota_minute_hash, (axlPointer) sasl_user));
-	/* msg ("Checking sasl username=%s (minute limit %d, %p, %p)", sasl_user, minute_limit, __mod_mquota_current_period, __mod_mquota_current_period->accounting); */
-	if (minute_limit >= __mod_mquota_current_period->minute_limit) {
-		/* release */
-		valvula_mutex_unlock (&hash_mutex);
-
-		valvulad_reject (ctx, request, "Quota reached");
-		error ("REJECTED: quota reached for %s from (%s). Minute limit=%d reached, user will have to wait until %02d:%02d)", sasl_user, request->client_address, 
-		       minute_limit, __mod_mquota_get_next_minute_hour (), __mod_mquota_get_next_minute_minute ());
-		return VALVULA_STATE_REJECT;
-	} /* end if */
-
-	/* reached this point, update record */
-	global_limit += 1;
-	hour_limit += 1;
-	minute_limit += 1;
-
-	/* msg ("Saving limits %s -> global %d, hour %d, minute %d", sasl_user, global_limit, hour_limit, minute_limit); */
-
-	axl_hash_insert_full (__mod_mquota_current_period->accounting, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (global_limit), NULL);
-	axl_hash_insert_full (__mod_mquota_hour_hash, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (hour_limit), NULL);
-	axl_hash_insert_full (__mod_mquota_minute_hash, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (minute_limit), NULL);
+		/* check and reject if required */
+		if (__mod_mquota_check_reject_domain (sasl_domain, request))
+			return VALVULA_STATE_REJECT;
+	} /* endi f */
+	
 
 	/* release */
 	valvula_mutex_unlock (&hash_mutex);
@@ -568,9 +679,12 @@ void mquota_close (ValvuladCtx * ctx)
 	/* release hash */
 	axl_hash_free (__mod_mquota_minute_hash);
 	axl_hash_free (__mod_mquota_hour_hash);
+	axl_hash_free (__mod_mquota_domain_minute_hash);
+	axl_hash_free (__mod_mquota_domain_hour_hash);
 
 	/* release accounting */
 	axl_hash_free (__mod_mquota_current_period->accounting);
+	axl_hash_free (__mod_mquota_current_period->domain_accounting);
 
 	/* release the list */
 	axl_list_free (__mod_mquota_limits);
