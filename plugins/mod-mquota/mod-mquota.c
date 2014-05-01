@@ -395,6 +395,20 @@ static int  mquota_init (ValvuladCtx * _ctx)
 	__mod_mquota_current_period->accounting        = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 	__mod_mquota_current_period->domain_accounting = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 
+	/* create databases to be used by the module */
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "mquota_exception", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  /* rule status */
+				  "is_active", "int",
+				  /* sasl user */
+				  "sasl_user", "varchar(1024)",
+				  /* rule description */
+				  "description", "varchar(500)",
+				  NULL);
+
 	/* install time handlers */
 	valvula_thread_pool_new_event (ctx->ctx, 60000000, __mod_mquota_minute_handler, NULL, NULL);
 
@@ -607,6 +621,16 @@ axl_bool __mod_mquota_check_reject_domain (const char * sasl_domain, ValvulaRequ
 	return axl_false; /* not rejected, not limited */
 }
 
+axl_bool __mod_mquota_has_exception (const char * sasl_user, const char * sasl_domain)
+{
+	/* check if has an exception */
+	if (valvulad_db_boolean_query (ctx, "SELECT * FROM mquota_exception WHERE sasl_user = '%s' OR sasl_user = '%s'", sasl_user, sasl_domain)) {
+		return axl_true; /* report we have an exception */
+	} /* end if */
+
+	/* no exception found */
+	return axl_false;
+}
 
 /** 
  * @brief Process request for the module.
@@ -629,12 +653,13 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 		return VALVULA_STATE_DUNNO;
 
 	/* get sasl user */
-	sasl_user = valvula_get_sasl_user (request);
+	sasl_user   = valvula_get_sasl_user (request);
+	sasl_domain = valvula_get_domain (sasl_user);
 	msg ("Checking sasl user: %s", sasl_user);
 
 	/* check user exceptions to avoid applying quotas to him */
-
-	/* check if the user has a particular plan defined in SQL tables */
+	if (__mod_mquota_has_exception (sasl_user, sasl_domain))
+		return VALVULA_STATE_DUNNO;
 
 	/* apply limits found, first global */
 	if (__mod_mquota_current_period == NULL) {
@@ -651,9 +676,6 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 
 	/* check domain limits */
 	if (strstr (sasl_user, "@")) {
-		/* found posible domain limit */
-		sasl_domain = valvula_get_domain (sasl_user);
-
 		/* check and reject if required */
 		if (__mod_mquota_check_reject_domain (sasl_domain, request))
 			return VALVULA_STATE_REJECT;
