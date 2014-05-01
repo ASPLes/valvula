@@ -1791,19 +1791,22 @@ axl_bool test_07 (void) {
 
 	/** DOMAIN TEST ***/
 
+	/*** TEST exceptions ***/
+	valvulad_db_run_non_query (ctx, "DELETE FROM mquota_exception");
+
 	printf ("Test 07: test limits BY DOMAIN (limited2.com)..\n");
 	if (! test_sending_limit_and_final_reject ("test@limited2.com", 3, axl_false))
 		return axl_false;
 
-	printf ("Test 07: sending another 3 (test1@limited2.com).....\n");
+	printf ("Test 07: (1) sending another 3 (test1@limited2.com).....\n");
 	if (! test_sending_limit_and_final_reject ("test1@limited2.com", 3, axl_false))
 		return axl_false;
 
-	printf ("Test 07: sending another 2 (test2@limited2.com).....\n");
+	printf ("Test 07: (2) sending another 2 (test2@limited2.com).....\n");
 	if (! test_sending_limit_and_final_reject ("test2@limited2.com", 2, axl_false))
 		return axl_false;
 
-	printf ("Test 07: sending another 2 (test4@limited2.com).....\n");
+	printf ("Test 07: (3) sending another 2 (test4@limited2.com).....\n");
 	if (! test_sending_limit_and_final_reject ("test4@limited2.com", 2, axl_true))
 		return axl_false;
 
