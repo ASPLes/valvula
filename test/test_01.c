@@ -1806,6 +1806,22 @@ axl_bool test_07 (void) {
 	printf ("Test 07: sending another 2 (test4@limited2.com).....\n");
 	if (! test_sending_limit_and_final_reject ("test4@limited2.com", 2, axl_true))
 		return axl_false;
+
+	/*** TEST exceptions ***/
+	valvulad_db_run_non_query (ctx, "INSERT INTO mquota_exception (is_active, sasl_user) VALUES ('1', 'test4@limited2.com')");
+
+	printf ("Test 07: check again sending with test4@limited2.com with exception..\n");
+	/* check again */
+	if (! test_sending_limit_and_final_reject ("test4@limited2.com", 1, axl_false))
+		return axl_false;
+
+	/* but it should fail for another domain */
+	if (! test_sending_limit_and_final_reject ("test2@limited2.com", 0, axl_true))
+		return axl_false;
+
+	/* check again */
+	if (! test_sending_limit_and_final_reject ("test4@limited2.com", 1, axl_false))
+		return axl_false;
 	
 	/* finish test */
 	common_finish (ctx);
