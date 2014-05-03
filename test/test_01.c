@@ -1646,7 +1646,7 @@ axl_bool test_06 (void) {
 	/* test exception */
 	printf ("Test 06: checking exceptions..\n");
 	valvulad_db_run_non_query (ctx, "DELETE FROM slm_exception");
-	valvulad_db_run_non_query (ctx, "INSERT INTO slm_exception (mail_from, sasl_username) VALUES ('different13@test4.com', 'hyper3@test4.com')");
+	valvulad_db_run_non_query (ctx, "INSERT INTO slm_exception (mail_from, sasl_username, is_active) VALUES ('different13@test4.com', 'hyper3@test4.com', '1')");
 
 	/* SHOULD WORK */
 	state = test_valvula_request (/* policy server location */
@@ -1790,6 +1790,7 @@ axl_bool test_07 (void) {
 		return axl_false;
 
 	/** DOMAIN TEST ***/
+	valvulad_db_run_non_query (ctx, "DELETE FROM mquota_exception");
 
 	/*** TEST exceptions ***/
 	valvulad_db_run_non_query (ctx, "DELETE FROM mquota_exception");

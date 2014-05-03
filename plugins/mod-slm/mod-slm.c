@@ -80,7 +80,9 @@ static int  slm_init (ValvuladCtx * _ctx)
 		__slm_mode = VALVULA_MOD_SLM_VALID_MAIL_FROM;
 
 	/* ensure tables */
-	if (! valvulad_db_ensure_table (ctx, "slm_exception", 
+	if (! valvulad_db_ensure_table (ctx, "slm_exception",
+					"is_active", "int",  
+					"description", "text",  
 					"mail_from", "text", 
 					"sasl_username", "text", NULL)) {
 		printf ("ERROR: unable to create slm_exception table..\n");
@@ -93,7 +95,7 @@ static int  slm_init (ValvuladCtx * _ctx)
 axl_bool slm_has_exception (ValvuladCtx * ctx, ValvulaRequest * request)
 {
 	/* request is authenticated, check exceptions */
-	if (valvulad_db_boolean_query (ctx, "SELECT mail_from, sasl_username FROM slm_exception WHERE sasl_username = '%s' AND mail_from = '%s'",
+	if (valvulad_db_boolean_query (ctx, "SELECT mail_from, sasl_username FROM slm_exception WHERE sasl_username = '%s' AND mail_from = '%s' AND is_active = '1'",
 				       request->sasl_username, request->sender))
 		return axl_true;
 
