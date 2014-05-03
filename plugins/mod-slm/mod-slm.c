@@ -81,6 +81,8 @@ static int  slm_init (ValvuladCtx * _ctx)
 
 	/* ensure tables */
 	if (! valvulad_db_ensure_table (ctx, "slm_exception",
+					/* attributes */
+					"id", "autoincrement int", 
 					"is_active", "int",  
 					"description", "text",  
 					"mail_from", "text", 
