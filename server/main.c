@@ -164,6 +164,10 @@ void install_arguments (int argc, char ** argv)
 	exarg_install_arg ("check-db", "b", EXARG_NONE, 
 			   "Ask valvulad server to check current database connection.");
 
+	/* install exarg options */
+	exarg_install_arg ("is-local-destination", "l", EXARG_STRING, 
+			   "Ask valvula to check if the provided domain or account is a local destination for this server. Please note this option only works when valvula is able to detect local postfix configuration to the right query. If it does not work, please check valvula's server documentation.");
+
 	/* call to parse arguments */
 	exarg_parse (argc, argv);
 
@@ -250,6 +254,26 @@ int main (int argc, char ** argv)
 		}
 
 		printf ("ERROR: Database connection isn't working. Please check database server and/or credentials\n");
+		exit (-1);
+	} /* end if */
+
+	if (exarg_is_defined ("is-local-destination")) {
+		if (! valvulad_db_init (ctx)) {
+			printf ("ERROR: Database connection NOT wokring\n");
+			exit (-1);
+		} /* end if */
+
+		if (valvulad_run_is_local_domain (ctx, exarg_get_string ("is-local-destination"))) {
+			printf ("INFO: %s is a local domain\n", exarg_get_string ("is-local-destination"));
+			exit (0);
+		} /* end if */
+
+		if (valvulad_run_is_local_address (ctx, exarg_get_string ("is-local-destination"))) {
+			printf ("INFO: %s is a local address\n", exarg_get_string ("is-local-destination"));
+			exit (0);
+		} /* end if */
+		
+		printf ("ERROR: %s is not a local domain nor a local address\n", exarg_get_string ("is-local-destination"));
 		exit (-1);
 	} /* end if */
 

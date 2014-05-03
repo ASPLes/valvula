@@ -438,7 +438,7 @@ END_C_DECLS
  *   the destination is defined it must be an account or domain that
  *   is handled by the server (local domains). Rules that tries to
  *   accept traffic for domains that aren't handled by this server are
- *   ignored.
+ *   ignored (because otherwise it will create an open relay rule).
  * 
  * 
  *
