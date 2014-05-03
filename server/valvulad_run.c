@@ -804,8 +804,6 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 		break;
 	} /* end if */
 
-	msg ("Checking %s to be (%d): %s", item_name, request_type, query);
-
 	if (query) {
 
 		/* mysql mode */

@@ -75,7 +75,8 @@ void valvulad_config_load_expand_nodes (ValvuladCtx * ctx)
 	/* create the list and iterate over all nodes */
 	include_nodes = axl_list_new (axl_list_always_return_1, NULL);
 	axl_doc_iterate (ctx->config, DEEP_ITERATION, valvulad_config_find_include_nodes, include_nodes);
-	msg ("Found include nodes %d, expanding..", axl_list_length (include_nodes));
+	if (axl_list_length (include_nodes) > 0)
+		msg ("Found include nodes %d, expanding..", axl_list_length (include_nodes));
 
 	/* next position */
 	iterator = 0;
