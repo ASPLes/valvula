@@ -78,6 +78,8 @@ static int  slm_init (ValvuladCtx * _ctx)
 		__slm_mode = VALVULA_MOD_SLM_SAME_DOMAIN;
 	else if (axl_cmp (mode, "valid-mail-from"))
 		__slm_mode = VALVULA_MOD_SLM_VALID_MAIL_FROM;
+	else if (axl_cmp (mode, "disabled"))
+		__slm_mode = VALVULA_MOD_SLM_DISABLED;
 
 	/* ensure tables */
 	if (! valvulad_db_ensure_table (ctx, "slm_exception",
