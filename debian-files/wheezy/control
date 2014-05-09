@@ -54,6 +54,33 @@ Description: mod-ticket support for valvulad-server
   preconfigured plans, limitting sendings by day, month, total amount
   or period.
 
+Package: valvulad-mod-slm
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${Source-Version})
+Description: mod-slm support for valvulad-server
+  mod-slm is a module that implements flexible sender login mismatch
+  detection and blocking. It implements several automatic policies and 
+  provides support for exceptions.
+
+Package: valvulad-mod-bwl
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${Source-Version})
+Description: mod-bwl support for valvulad-server
+  mod-bwl is a module that provides extended blacklist and whilte lists
+  support to valvula, help the server to define different level of rules
+  that applies globally, at domain level and at account level.
+
+Package: valvulad-mod-mquota
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${Source-Version})
+Description: mod-mquota support for valvulad-server
+  mod-mquota is a module that provides sending quotas to valvula. It allows 
+  to control sending rate by minute, hour, and globally within administrator 
+  defined periods.
+
 Package: valvula-doc
 Section: libs
 Architecture: any
