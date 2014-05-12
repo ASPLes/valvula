@@ -81,9 +81,9 @@ axl_bool valvula_thread_pool_remove_event        (ValvulaCtx              * ctx,
 						 int                      event_id);
 
 void valvula_thread_pool_stats               (ValvulaCtx        * ctx,
-					     int              * running_threads,
-					     int              * waiting_threads,
-					     int              * pending_tasks);
+					      int              * running_threads,
+					      int              * waiting_threads,
+					      int              * pending_tasks);
 
 void valvula_thread_pool_event_stats         (ValvulaCtx        * ctx,
 					     int              * events_installed);

@@ -91,6 +91,15 @@ void        valvula_ctx_set_request_line_limit    (ValvulaCtx       * ctx,
 	return;
 }
 
+void __valvula_ctx_free_registry (axlPointer _ptr) {
+	ValvulaRequestRegistry * reg = _ptr;
+
+	axl_free (reg->identifier);
+	axl_free (reg);
+	
+	return;
+}
+
 /** 
  * @brief Allows to register a new process handler with the provided priority under the given port.
  *
@@ -115,6 +124,11 @@ void        valvula_ctx_set_request_line_limit    (ValvulaCtx       * ctx,
  *
  * @param ctx The context where the operation takes place.
  *
+ * @param identifier This is a textual string that identifies this
+ * handler and provides information about its source. This info is
+ * used by the system to now what module or what does this handler
+ * (when you use valvulad -s to show stats).
+ *
  * @param process_handler The handler that is going to be registered.
  *
  * @param priority The priority to give to the handler (between 1 and 32768).
@@ -132,6 +146,7 @@ void        valvula_ctx_set_request_line_limit    (ValvulaCtx       * ctx,
  * 
  */
 ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx             * ctx, 
+								 const char             * identifier,
 								 ValvulaProcessRequest    process_handler, 
 								 int                      priority, 
 								 int                      port,
@@ -151,6 +166,7 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
 
 	/* set all parameters */
 	registry->ctx             = ctx;
+	registry->identifier      = axl_strdup (identifier);
 	registry->process_handler = process_handler;
 	registry->priority        = priority;
 	registry->port            = port;
@@ -163,7 +179,7 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
 		ctx->process_handler_registry = valvula_hash_new (axl_hash_int, axl_hash_equal_int);
 	
 	/* register */
-	valvula_hash_replace_full (ctx->process_handler_registry, registry, axl_free, registry, NULL);
+	valvula_hash_replace_full (ctx->process_handler_registry, registry, __valvula_ctx_free_registry, registry, NULL);
 
 	valvula_mutex_unlock (&ctx->ref_mutex);
 

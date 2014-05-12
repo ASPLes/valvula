@@ -176,7 +176,7 @@ void valvulad_run_register_handlers (ValvuladCtx * ctx)
 			if (module && module->def->process_request) {
 				/* call to register the function on the provided port */
 				msg ("Registering module: %s, on port %d (prio: %d)", ATTR_VALUE (node2, "module"), port, prio);
-				valvula_ctx_register_request_handler (ctx->ctx, module->def->process_request, prio, port, NULL);
+				valvula_ctx_register_request_handler (ctx->ctx, ATTR_VALUE (node2, "module"), module->def->process_request, prio, port, NULL);
 			} /* end if */
 
 			/* next node */

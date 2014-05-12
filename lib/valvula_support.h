@@ -88,8 +88,8 @@ int      valvula_support_itoa                       (unsigned int   value,
 						    int            buffer_size);
 
 int      valvula_timeval_substract                  (struct timeval * a, 
-						    struct timeval * b,
-						    struct timeval * result);
+						     struct timeval * b,
+						     struct timeval * result);
 
 char   * valvula_support_inet_ntoa                  (ValvulaCtx          * ctx, 
  						    struct sockaddr_in * sin);
