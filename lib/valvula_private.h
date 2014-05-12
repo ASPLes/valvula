@@ -60,7 +60,7 @@ struct _ValvulaCtx {
 	int          ref_count;
 	ValvulaMutex inet_ntoa_mutex;
 
-	ValvulaHash            * process_handler_registry;
+	ValvulaHash  * process_handler_registry;
 
 	ValvulaMutex         listener_unlock;
 	ValvulaAsyncQueue  * listener_wait_lock;
@@ -105,6 +105,11 @@ struct _ValvulaCtx {
 	ValvulaHash             * data;
 
 	int                       request_line_limit;
+
+	/*** processing stats ***/
+	long                      avg_processing;
+	long                      max_processing;
+	long                      min_processing;
 
 };
 
@@ -158,10 +163,16 @@ struct _ValvulaHash {
 
 struct _ValvulaRequestRegistry {
 	ValvulaCtx              * ctx;
+	char                    * identifier;
 	ValvulaProcessRequest     process_handler;
 	int                       priority;
 	int                       port;
 	axlPointer                user_data;
+
+	/*** processing stats ***/
+	long                      avg_processing;
+	long                      max_processing;
+	long                      min_processing;
 };
 
 #endif

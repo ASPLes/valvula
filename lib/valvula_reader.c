@@ -309,6 +309,16 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	ValvulaRequestRegistry  * registry = NULL;
 	axlHashCursor           * cursor;
 
+	/* global operation */
+	struct timeval            start;
+	struct timeval            stop;
+	struct timeval            diff;
+
+	/* module operation */
+	struct timeval            start_m;
+	struct timeval            stop_m;
+	long                      total_microsecs;
+
 	if (ctx->process_handler_registry && valvula_hash_size (ctx->process_handler_registry) > 0) {
 		/* get first element from the registry */
 		cursor = valvula_hash_get_cursor (ctx->process_handler_registry);
@@ -326,6 +336,8 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			return NULL;
 		} /* end if */
 
+		/* start tracking */
+		gettimeofday (&start, NULL);
 		do {
 			valvula_log (VALVULA_LEVEL_DEBUG, "Checking registry handler: %p", registry);
 
@@ -333,9 +345,29 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			handler   = registry->process_handler;
 			user_data = registry->user_data;
 
+			/* start tracking */
+			gettimeofday (&start_m, NULL);
+
 			/* call to notify request and get a response */
 			message = NULL;
 			state   = handler (ctx, connection, connection->request, user_data, &message);
+
+			/* start tracking */
+			gettimeofday (&stop_m, NULL);
+
+			valvula_timeval_substract (&stop_m, &start_m, &diff);
+			total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
+
+			/* update processing stats */
+			if (total_microsecs > registry->max_processing) 
+				registry->max_processing = total_microsecs;
+			if (total_microsecs < registry->min_processing || registry->min_processing == 0)
+				registry->min_processing = total_microsecs;
+			if (registry->avg_processing == 0)
+				registry->avg_processing = total_microsecs;
+			else 
+				registry->avg_processing = (registry->avg_processing + total_microsecs) / 2;
+			
 
 			/* check if the error code is disntict from DUNNO */
 			if (state != VALVULA_STATE_DUNNO)
@@ -349,6 +381,22 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 
 		valvula_log (VALVULA_LEVEL_DEBUG, "Reply to request %p was state=%d, message=%s",
 			     registry, state, message ? message : "");
+
+		/* finish time tracking */
+		gettimeofday (&stop, NULL);
+
+		valvula_timeval_substract (&stop, &start, &diff);
+		total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
+
+		/* update processing stats */
+		if (total_microsecs > ctx->max_processing) 
+			ctx->max_processing = total_microsecs;
+		if (total_microsecs < ctx->min_processing || ctx->min_processing == 0)
+			ctx->min_processing = total_microsecs;
+		if (ctx->avg_processing == 0)
+			ctx->avg_processing = total_microsecs;
+		else 
+			ctx->avg_processing = (ctx->avg_processing + total_microsecs) / 2;
 		
 		/* send reply */
 		__valvula_reader_send_reply (ctx, connection, connection->request, state, message);

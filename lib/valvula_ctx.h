@@ -43,6 +43,7 @@ BEGIN_C_DECLS
 ValvulaCtx * valvula_ctx_new                       (void);
 
 ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx             * ctx, 
+								 const char             * identifier,
 								 ValvulaProcessRequest    process_handler, 
 								 int                      priority, 
 								 int                      port,
