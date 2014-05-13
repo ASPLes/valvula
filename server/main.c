@@ -243,7 +243,7 @@ void valvulad_show_current_server_status (void)
 		exit (-1);
 	} /* end if */
 
-	/* printf ("INFO: found pid %d, sending signal..\n", pid); */
+	printf ("--== Found pid %d, sending signal..==--\n", pid); 
 	kill (pid, SIGUSR1);
 	
 	sleep (1);
@@ -271,7 +271,6 @@ void valvulad_show_current_server_status (void)
 		node = axl_node_get_next (node);
 	}
 	printf ("\n");
-	
 
 	exit (0);
 
@@ -359,6 +358,7 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 	if (valvula_support_file_test (pid_file_path, FILE_EXISTS)) {
 	        abort_error ("Unable to start server, found pid file in place %s. There is a valvula server running. If not, remove file %s",
 			     pid_file_path, pid_file_path);
+		exit (-1);
 	        return;
 	} /* end if */
 
