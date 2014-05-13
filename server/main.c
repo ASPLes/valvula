@@ -78,6 +78,7 @@ void valvulad_report_status (void) {
 	int                 running_threads = 0;
 	int                 waiting_threads = 0;
 	int                 pending_tasks = 0;
+	struct timeval  now;
 
 	/* open valvula status */
 	fstatus = fopen (valvula_status, "w");
@@ -86,12 +87,16 @@ void valvulad_report_status (void) {
 		return;
 	} /* end if */
 
+
 	fprintf (fstatus, "<valvula-state>\n");
 	fprintf (fstatus, "  <section title='General stats' />\n");
 	fprintf (fstatus, "  <attr name='valvula pid' value='%d' />\n", getpid ());
 	fprintf (fstatus, "  <attr name='operation stamp' value='%ld' />\n", (long) time (NULL));
 	fprintf (fstatus, "  <attr name='pending in reader queue' value='%d' />\n", valvula_async_queue_items (ctx->ctx->reader_queue));
 	fprintf (fstatus, "  <attr name='handlers registered' value='%d' />\n", valvula_hash_size (ctx->ctx->process_handler_registry));
+
+	gettimeofday (&now, NULL);
+	fprintf (fstatus, "  <attr name='seconds_running' value='%ld' />\n", now.tv_sec - ctx->started_at );
 
 	fprintf (fstatus, "  <section title='TCP stats' />\n");
 	fprintf (fstatus, "  <attr name='current listeners' value='%d' />\n", axl_list_length (ctx->ctx->srv_list));
@@ -107,7 +112,7 @@ void valvulad_report_status (void) {
 
 	/* processing stats */
 	fprintf (fstatus, "  <section title='Processing stats (in ms)' />\n");
-	fprintf (fstatus, "  <attr name='avg request processing time)' value='%ld' />\n", ctx->ctx->avg_processing / 1000);
+	fprintf (fstatus, "  <attr name='avg request processing time' value='%ld' />\n", ctx->ctx->avg_processing / 1000);
 	fprintf (fstatus, "  <attr name='min request processing time' value='%ld' />\n", ctx->ctx->min_processing / 1000);
 	fprintf (fstatus, "  <attr name='max request processing time' value='%ld' />\n", ctx->ctx->max_processing / 1000);
 
