@@ -379,8 +379,8 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			
 		} while (registry);
 
-		valvula_log (VALVULA_LEVEL_DEBUG, "Reply to request %p was state=%d, message=%s",
-			     registry, state, message ? message : "");
+		valvula_log (VALVULA_LEVEL_DEBUG, "Reply to request %p was state=%d (%s), message=%s",
+			     connection->request, state, valvula_support_state_str (state), message ? message : "");
 
 		/* finish time tracking */
 		gettimeofday (&stop, NULL);
