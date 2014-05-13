@@ -355,6 +355,13 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 	axlNode * node;
 	int       gid, uid;
 
+	/* check if pid file exists */
+	if (valvula_support_file_test (pid_file_path, FILE_EXISTS)) {
+	        abort_error ("Unable to start server, found pid file in place %s. There is a valvula server running. If not, remove file %s",
+			     pid_file_path, pid_file_path);
+	        return;
+	} /* end if */
+
 	/* open pid file or create it to place the pid file */
 	pid_file = fopen (pid_file_path, "w");
 	if (pid_file == NULL) {
