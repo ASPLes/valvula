@@ -267,18 +267,33 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 	return;
 }
 
-ValvulaRequestRegistry * __valvula_reader_find_next_handler (axlHashCursor * cursor, int listener_port )
+axl_bool __valvula_reader_find_next_handler_in_list (axlPointer _element, axlPointer data)
+{
+        return _element == data;
+}
+
+ValvulaRequestRegistry * __valvula_reader_find_next_handler (ValvulaCtx * ctx, axlHashCursor * cursor, int listener_port, axlList * selected )
 {
 
 	ValvulaRequestRegistry * next;
 	ValvulaRequestRegistry * registry = NULL;
 
+	/* reset cursor */
+	axl_hash_cursor_first (cursor);
 	while (axl_hash_cursor_has_item (cursor)) {
 		/* get value */
 		next = axl_hash_cursor_get_value (cursor);
 		if (next == NULL)
 			break;
-		
+
+		/* ensure next is not already selected */
+		if (axl_list_lookup (selected, __valvula_reader_find_next_handler_in_list, next)) {
+		        /* go to the next position */
+		        axl_hash_cursor_next (cursor);
+
+		        continue;
+		} /* end if */
+
 		/* check port to match current request */
 		if (next->port == listener_port) {
 			if (registry == NULL || next->priority < registry->priority)
@@ -288,6 +303,9 @@ ValvulaRequestRegistry * __valvula_reader_find_next_handler (axlHashCursor * cur
 		/* go to the next position */
 		axl_hash_cursor_next (cursor);
 	} /* end while */
+
+	if (registry)
+	        axl_list_append (selected, registry);
 
 	return registry;
 }
@@ -302,6 +320,9 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	ValvulaCtx        * ctx = connection->ctx;
 	char              * message = NULL;
 	ValvulaState        state;
+
+	/* list of selected handlers this time */
+	axlList           * selected;
 
 	/* handler reference */
 	ValvulaProcessRequest     handler;
@@ -318,18 +339,21 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	struct timeval            start_m;
 	struct timeval            stop_m;
 	long                      total_microsecs;
+	
 
 	if (ctx->process_handler_registry && valvula_hash_size (ctx->process_handler_registry) > 0) {
 		/* get first element from the registry */
-		cursor = valvula_hash_get_cursor (ctx->process_handler_registry);
+	        selected = axl_list_new (axl_list_always_return_1, NULL);
+		cursor   = valvula_hash_get_cursor (ctx->process_handler_registry);
 
 		/* iterate over all items to find the lowest on this port */
 		axl_hash_cursor_first (cursor);
-		registry = __valvula_reader_find_next_handler (cursor, listener_port);
+		registry = __valvula_reader_find_next_handler (ctx, cursor, listener_port, selected);
 
 		if (registry == NULL) {
 			/* free cursor */
 			axl_hash_cursor_free (cursor);
+			axl_list_free (selected);
 
 			/* no handlers defined so no policy can be delegated, replying default */
 			__valvula_reader_send_reply (ctx, connection, connection->request, ctx->default_state, NULL);
@@ -352,6 +376,8 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			message = NULL;
 			state   = handler (ctx, connection, connection->request, user_data, &message);
 
+			valvula_log (VALVULA_LEVEL_DEBUG, "Handler %p reported state (%d) %s", registry, state, valvula_support_state_str (state));
+
 			/* start tracking */
 			gettimeofday (&stop_m, NULL);
 
@@ -372,15 +398,17 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			/* check if the error code is disntict from DUNNO */
 			if (state != VALVULA_STATE_DUNNO)
 				break;
+
 			axl_free (message);
 
 			/* get next registry */
-			registry = __valvula_reader_find_next_handler (cursor, listener_port);
-			
+			registry = __valvula_reader_find_next_handler (ctx, cursor, listener_port, selected);
+
 		} while (registry);
 
 		valvula_log (VALVULA_LEVEL_DEBUG, "Reply to request %p was state=%d (%s), message=%s",
 			     connection->request, state, valvula_support_state_str (state), message ? message : "");
+		axl_list_free (selected);
 
 		/* finish time tracking */
 		gettimeofday (&stop, NULL);

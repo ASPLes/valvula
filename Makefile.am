@@ -1,4 +1,8 @@
-SUBDIRS = lib server plugins test doc
+if ENABLE_VALVULA_DOC
+VALVULA_DOC_DIR = doc
+endif
+
+SUBDIRS = lib server plugins test $(ENABLE_VALVULA_DOC)
 EXTRA_DIST = VERSION 
 
 all-local: update-defs
