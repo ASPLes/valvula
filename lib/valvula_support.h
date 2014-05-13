@@ -96,6 +96,8 @@ char   * valvula_support_inet_ntoa                  (ValvulaCtx          * ctx,
 
 int      valvula_support_pipe                       (ValvulaCtx * ctx, int descf[2]);
 
+const char * valvula_support_state_str              (ValvulaState state);
+
 /* @} */
 
 #endif

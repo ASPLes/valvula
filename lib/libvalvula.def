@@ -162,6 +162,7 @@ valvula_support_inet_ntoa
 valvula_support_itoa
 valvula_support_pipe
 valvula_support_setenv
+valvula_support_state_str
 valvula_support_strtod
 valvula_support_unsetenv
 valvula_thread_create

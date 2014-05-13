@@ -602,4 +602,48 @@ axl_bool    valvula_support_file_test (const char * path, ValvulaFileTest test)
 	return result;
 }
 
+/** 
+ * @brief Allows to convert the provided state into a string that
+ * represents its state.
+ *
+ * @param state The state to be translated into an string.
+ *
+ * @return A reference to the string that represents the provided
+ * state or the string "UNKNOWN" when no match for that state was
+ * found.
+ */
+const char * valvula_support_state_str              (ValvulaState state)
+{
+	switch (state) {
+	case VALVULA_STATE_OK:
+		return "OK";
+	case VALVULA_STATE_DUNNO:
+		return "DUNNO";
+	case VALVULA_STATE_REJECT:
+		return "REJECT";
+	case VALVULA_STATE_DEFER_IF_PERMIT:
+		return "DEFER_IF_PERMIT";
+	case VALVULA_STATE_DEFER_IF_REJECT:
+		return "DEFER_IF_REJECT";
+	case VALVULA_STATE_DEFER:
+		return "DEFER";
+	case VALVULA_STATE_BCC:
+		return "BCC";
+	case VALVULA_STATE_DISCARD:
+		return "DISCARD";
+	case VALVULA_STATE_HOLD:
+		return "HOLD";
+	case VALVULA_STATE_PREPEND:
+		return "PREPEND";
+	case VALVULA_STATE_REDIRECT:
+		return "REDIRECT";
+	case VALVULA_STATE_GENERIC_ERROR:
+		return "GENERIC_ERROR";
+	default:
+		break;
+	}
+
+	return "UNKNOWN";
+}
+
 /* @} */
