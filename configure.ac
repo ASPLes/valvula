@@ -257,6 +257,16 @@ if test "x$mysql_devel_found" = "xno"; then
 fi
 AM_CONDITIONAL(ENABLE_MYSQL_SUPPORT, test "x$mysql_devel_found" = "xyes")
 
+##########################
+# Check for doxygen tool #
+##########################
+dnl check for doxygen documentation
+AC_ARG_ENABLE(valvula-doc, [  --enable-valvula-doc     Enable building valvula documentation (doxygen required) [default=yes]], enable_valvula_doc="$enableval", enable_valvula_doc=yes)
+if test x$enable_valvula_doc = xyes ; then
+        AC_CHECK_PROG(DOXYGEN, doxygen, "yes", "no")
+fi
+AM_CONDITIONAL(ENABLE_VALVULA_DOC, test "x$DOXYGEN" = "xyes")
+
 AC_OUTPUT([
 Makefile
 lib/Makefile
