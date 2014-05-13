@@ -483,6 +483,8 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
  */
 axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
 
+	struct timeval start;
+
 	/* create library context */
 	ctx->ctx = valvula_ctx_new ();
 	if (ctx->ctx == NULL)
@@ -502,6 +504,10 @@ axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
 
 	/* init modules */
 	valvulad_module_init (ctx);
+
+	/* flag context initialization */
+	gettimeofday (&start, NULL);
+	ctx->started_at = start.tv_sec;
 
 	return axl_true;
 }

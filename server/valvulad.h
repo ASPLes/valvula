@@ -126,6 +126,10 @@ typedef struct _ValvuladCtx {
 	 */
 	axlHash        * ls_hash;
 
+	/** 
+	 * @brief When this context was started */
+	int              started_at;
+
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {
