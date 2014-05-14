@@ -94,6 +94,7 @@ void valvulad_report_status (void) {
 	fprintf (fstatus, "  <attr name='operation stamp' value='%ld' />\n", (long) time (NULL));
 	fprintf (fstatus, "  <attr name='pending in reader queue' value='%d' />\n", valvula_async_queue_items (ctx->ctx->reader_queue));
 	fprintf (fstatus, "  <attr name='handlers registered' value='%d' />\n", valvula_hash_size (ctx->ctx->process_handler_registry));
+	fprintf (fstatus, "  <attr name='requests handled' value='%d' />\n", ctx->ctx->requests_handled);
 
 	gettimeofday (&now, NULL);
 	fprintf (fstatus, "  <attr name='seconds_running' value='%ld' />\n", now.tv_sec - ctx->started_at );
