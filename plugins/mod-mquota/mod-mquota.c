@@ -655,7 +655,7 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 	/* get sasl user */
 	sasl_user   = valvula_get_sasl_user (request);
 	sasl_domain = valvula_get_domain (sasl_user);
-	msg ("Checking sasl user: %s", sasl_user);
+	/* msg ("Checking sasl user: %s", sasl_user); */
 
 	/* check user exceptions to avoid applying quotas to him */
 	if (__mod_mquota_has_exception (sasl_user, sasl_domain))
