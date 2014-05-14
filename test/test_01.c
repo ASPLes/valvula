@@ -811,9 +811,16 @@ axl_bool  test_02d (void)
 	printf ("Test --: now test alias support\n");
 	valvulad_db_run_non_query (ctx, "DELETE FROM alias");
 	valvulad_db_run_non_query (ctx, "INSERT INTO alias (address, goto, active, domain) VALUES ('test@limited.com', 'aspl@asplhosting.com', '1', 'limited.com')");
+	valvulad_db_run_non_query (ctx, "INSERT INTO alias (address, goto, active, domain) VALUES ('test2@limited.com', 'acinom', '1', 'limited.com')");
 
 	/* now check if these values are detected as local domains */
 	if (valvulad_run_is_local_address (ctx, "aspl@asplhosting.com")) {
+		printf ("ERROR (1.7): expected aspl@asplhosting.com to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_address (ctx, "test2@limited.com")) {
 		printf ("ERROR (1.7): expected aspl@asplhosting.com to be reported as local address...\n");
 		return axl_false;
 	} /* end if */
