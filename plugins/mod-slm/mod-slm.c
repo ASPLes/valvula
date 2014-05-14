@@ -116,6 +116,7 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 				  axlPointer          request_data,
 				  char             ** message)
 {
+	axl_bool reject = axl_false;
 
 	/* do nothing if module is disabled */
 	if (__slm_mode == VALVULA_MOD_SLM_DISABLED)
@@ -130,8 +131,17 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 		return VALVULA_STATE_DUNNO;
 
 	if (__slm_mode == VALVULA_MOD_SLM_FULL) {
-		/* apply same domain restriction */
-		if (! axl_cmp (request->sasl_username, request->sender)) {
+		/* check if sender and sasl username look like a mail account */
+		if (strstr (request->sasl_username, "@") && strstr (request->sender, "@")) {
+			/* do case insensitive comparison */
+			reject = ! axl_casecmp (request->sasl_username, request->sender);
+		} else if (! axl_cmp (request->sasl_username, request->sender)) {
+			/* plain comparison */
+			reject = axl_true;
+		} /* end if */
+
+		/* check and reject */
+		if (reject) {
 			valvulad_reject (ctx, request, "Rejecting because SASL username <%s> do not match mail from <%s> (mod-slm=full)", request->sasl_username, request->sender);
 			return VALVULA_STATE_REJECT;
 		} /* end if */
@@ -139,8 +149,16 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 		/* full mode enabled and it passes the test */
 		return VALVULA_STATE_DUNNO;
 	} else if (__slm_mode == VALVULA_MOD_SLM_SAME_DOMAIN) {
-		/* ensure at domain matches */
-		if (! axl_cmp (valvula_get_domain (request->sasl_username), valvula_get_domain (request->sender))) {
+		if (strstr (request->sasl_username, "@") && strstr (request->sender, "@")) {
+			/* do case insensitive comparison */
+			reject = ! axl_casecmp (valvula_get_domain (request->sasl_username), valvula_get_domain (request->sender));
+		} else if (! axl_cmp (valvula_get_domain (request->sasl_username), valvula_get_domain (request->sender))) {
+			/* plain comparison */
+			reject = axl_true;
+		} /* end if */
+
+		/* check if we have to reject */
+		if (reject) {
 			valvulad_reject (ctx, request, "Rejecting because SASL username domain <%s> do not match mail from domain <%s> (mod-slm=same-domain)", 
 					 valvula_get_domain (request->sasl_username), valvula_get_domain (request->sender));
 			return VALVULA_STATE_REJECT;
@@ -152,6 +170,7 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 					 request->sasl_username, request->sender);
 			return VALVULA_STATE_REJECT;
 		} /* end if */
+
 	} else if (__slm_mode == VALVULA_MOD_SLM_VALID_MAIL_FROM) {
 		/* and now ensure the mail from account is valid */
 		if (! valvulad_run_is_local_address (ctx, request->sender)) {

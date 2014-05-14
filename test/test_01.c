@@ -1512,9 +1512,9 @@ axl_bool test_06 (void) {
 		return axl_false;
 	}
 
-	/* SHOULD NOT WORK: now try to run some requests. The
-	 * following should work by allowing unlimited users to pass
-	 * through the module */
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
 	state = test_valvula_request (/* policy server location */
 		"127.0.0.1", "3579", 
 		/* state */
@@ -1528,6 +1528,25 @@ axl_bool test_06 (void) {
 
 	if (state != VALVULA_STATE_DUNNO) {
 		printf ("ERROR (1.1): expected OK operation for authenticated operation that do match..\n");
+		return axl_false;
+	}
+
+	/* SHOULD WORK: now try to run some requests. The following
+	 * should work by allowing unlimited users to pass through the
+	 * module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"ANYTHING@TEST4.COM", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "anything@test4.com", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (1.1.1): expected OK operation for authenticated operation that do match (capitalized)..\n");
 		return axl_false;
 	}
 
