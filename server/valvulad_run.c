@@ -391,7 +391,7 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 					__valvulad_run_get_key_decl (line, &key, &decl);
 
 					if (key && decl) {
-						msg ("Declaration found: [%s] -> [%s]", key, decl);
+						msg ("Declaration found: (%s) [%s] -> [%s]", section, key, decl);
 						if (axl_cmp (section, "virtual_mailbox_domains")) {
 							if (axl_cmp (key, "user"))
 								ctx->ld_user = axl_strdup (decl);
@@ -414,17 +414,28 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 								ctx->ls_dbname = axl_strdup (decl);
 							else if (axl_cmp (key, "query"))
 								ctx->ls_query  = axl_strdup (decl);
-						} else if (axl_cmp (section, "virtual_mailbox_maps")) {
-							if (axl_cmp (key, "user"))
+						} else if (axl_cmp (section, "virtual_mailbox_maps") || axl_cmp (section, "local_recipient_maps")) {
+							if (axl_cmp (key, "user")) {
+								if (ctx->la_user)
+									axl_free (ctx->la_user);
 								ctx->la_user = axl_strdup (decl);
-							else if (axl_cmp (key, "password"))
+							} else if (axl_cmp (key, "password")) {
+								if (ctx->la_pass)
+									axl_free (ctx->la_pass);
 								ctx->la_pass = axl_strdup (decl);
-							else if (axl_cmp (key, "hosts"))
+							} else if (axl_cmp (key, "hosts")) {
+								if (ctx->la_host)
+									axl_free (ctx->la_host);
 								ctx->la_host = axl_strdup (decl);
-							else if (axl_cmp (key, "dbname"))
+							} else if (axl_cmp (key, "dbname")) {
+								if (ctx->la_dbname)
+									axl_free (ctx->la_dbname);
 								ctx->la_dbname = axl_strdup (decl);
-							else if (axl_cmp (key, "query"))
+							} else if (axl_cmp (key, "query")) {
+								if (ctx->la_query)
+									axl_free (ctx->la_query);
 								ctx->la_query  = axl_strdup (decl);
+							} /* end if */
 						}
 					} /* end if */
 
@@ -445,7 +456,8 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 			result = axl_false;
 		} /* end if */
 
-		fclose (_file);
+		if (_file)
+			fclose (_file);
 
 	} /* end if */
 
@@ -482,6 +494,9 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 		} else if (line[0] != '#' && strstr (line, "virtual_mailbox_maps") != NULL) {
 			/* found virtual mailbox declaration */
 			valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, line, "virtual_mailbox_maps");
+		} else if (line[0] != '#' && strstr (line, "local_recipient_maps") != NULL) {
+			/* found local mailbox declaration */
+			valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, line, "local_recipient_maps");
 		} /* end if */
 
 		/* get next line */
@@ -616,6 +631,8 @@ axl_bool valvulad_run_load_static_names (ValvuladCtx * ctx)
 axl_bool valvulad_run_check_local_domains_config (ValvuladCtx * ctx) {
 	axlNode    * node;
 	const char * config;
+
+	msg ("Loading local domains configuration..");
 
 	node = axl_doc_get (ctx->config, "/valvula/enviroment/local-domains");
 	if (node == NULL) 
@@ -810,6 +827,9 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 		query = axl_strdup (query);
 		axl_replace (query, "%s", item_name);
 		axl_replace (query, "%d", valvula_get_domain (item_name));
+
+		if (ctx->debug_queries)
+			msg ("%s: running query (non-query=%d): %s", __AXL_PRETTY_FUNCTION__, axl_true, query);
 
 		/* create a mysql connection */
 		dbconn = mysql_init (NULL);

@@ -1,0 +1,146 @@
+# Configuración principal de postfix
+# Copyright (C) 2008 Advanced Software Production Line, S.L.
+
+# banner
+smtpd_banner = $myhostname ESMTP ASPL MailServer XP#1
+
+# no biff notification (this is never used)
+biff = no
+
+# do not append server domains to local users withtout domain
+append_dot_mydomain = no
+
+# The coment to be used for recipients not defined
+undisclosed_recipients_header = To: Destinatarios Ocultos:;
+
+# Make all uncomplete address to be completed with domain.invalid to avoid
+# mixing with local address.
+# http://www.postfix.com/postconf.5.html#remote_header_rewrite_domain
+remote_header_rewrite_domain = domain.invalid
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+# main host name 
+myhostname = mail.aspl.es
+
+# aliases configuration
+alias_maps = hash:/etc/aliases
+virtual_alias_maps = mysql:test-02d-mysql-aliases.cf
+
+# Domain used to complete local users (not activated)
+myorigin = aspl.es
+# mydomain = aspl.es
+
+# Set of domains that are considered local
+mydestination = $myhostname, localhost.localdomain, localhost, mysql:/etc/postfix/mysql-domains.cf
+
+# List of hosts that are allowed to relay
+relayhost = 
+
+#erdk3l2d0# External domains that are allowed to perform relay operations
+# mailman configuration
+relay_domains = lists.aspl.es, dolphin.aspl.es
+
+# destination addressess that are allowed to relay
+# relay_recipient_maps = hash:/etc/postfix/relayrecipients
+
+# local accounts
+local_recipient_maps = mysql:test-02d-mysql-accounts.cf
+
+# A configuration that allows to configure how is externally delivered a mail 
+# domain
+# transport_maps = hash:/etc/postfix/transports, hash:/etc/postfix/transports.especial
+transport_maps = hash:/etc/postfix/vacation, hash:/etc/postfix/mailman, hash:/etc/postfix/transports
+
+# mailman configuration
+mailman_destination_recipient_limit = 1
+
+# local network hosts (local machines that are trusted)
+mynetworks = 127.0.0.1/32, 10.0.0.2, 10.0.0.4, 10.0.0.1, 192.168.0.0/23, 194.140.166.76
+
+# message size limit (100M)
+message_size_limit = 104857600
+mailbox_size_limit = 0
+
+maximal_queue_lifetime = 1d
+bounce_queue_lifetime = 1d
+recipient_delimiter = +
+
+# do not slow down on errors
+smtpd_error_sleep_time = 0
+
+# report permanent error on unknown accounts
+unknown_local_recipient_reject_code = 550
+
+# cyrus server connection
+mailbox_transport = lmtp:unix:/var/run/cyrus/socket/lmtp
+
+## Access control configuration
+smtpd_recipient_restrictions = 
+   check_policy_service inet:127.0.0.1:3579,
+# lista de dominios y cuentas directamente rechazadas
+  check_recipient_access hash:/etc/postfix/domains.rejected,
+#  check_policy_service inet:127.0.0.1:10031,
+  permit_mynetworks,
+  permit_sasl_authenticated,
+  check_sender_access hash:/etc/postfix/sender.allowed,
+  reject_non_fqdn_hostname,
+# # reject_non_fqdn_sender,
+# # reject_non_fqdn_recipient,
+  reject_unauth_destination,
+  reject_unauth_pipelining,
+  reject_invalid_hostname,
+  reject_unlisted_recipient,
+  check_policy_service inet:127.0.0.1:2525
+
+# reject_unverified_recipient,
+# reject_rbl_client sbl-xbl.spamhaus.org
+
+
+# smtpd_end_of_data_restrictions = 
+#   check_policy_service inet:127.0.0.1:10031
+
+
+## Control de acceso de correo recibido por 
+## remitente.
+## --------------------------
+smtpd_sender_restrictions = 
+        check_sender_access hash:/etc/postfix/sender.prohibited,
+        permit
+
+# SASL activation
+smtpd_sasl_path = smtpd
+smtpd_reject_unlisted_recipient = yes
+smtpd_sasl_auth_enable = yes
+broken_sasl_auth_clients = yes
+smtpd_sasl_local_domain = 
+smtpd_sasl_security_options = noanonymous
+smtpd_hard_error_limit = 50
+smtpd_sasl_authenticated_header = yes
+
+# do not request authenticate to my network
+smtpd_sasl_exceptions_networks = $mynetworks
+
+# con copias ocultas automaticas
+recipient_bcc_maps = hash:/etc/postfix/recipient_bcc
+sender_bcc_maps = hash:/etc/postfix/recipient_bcc
+
+
+## Amavis
+## ------
+content_filter=smtp-amavis:[localhost]:10024
+
+# temporal soft bounce
+soft_bounce = no
+
+readme_directory = /usr/share/doc/postfix
+html_directory = /usr/share/doc/postfix/html
+
+# Default user when requested low privileges
+# default_privs = 6553
+
+# TLS
+smtpd_tls_cert_file = /etc/ssl/certs/dolphin.aspl.es.crt
+smtpd_tls_key_file = /etc/ssl/private/dolphin.aspl.es.key
+smtpd_use_tls = yes

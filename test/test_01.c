@@ -754,6 +754,77 @@ axl_bool  test_02c (void)
 	return axl_true;
 }
 
+axl_bool  test_02d (void)
+{
+	ValvuladCtx    * ctx = axl_new (ValvuladCtx, 1);
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 02-d", "test_02b.conf", axl_true, ctx, "test_02d.postfix.cf");
+
+	/* create some tables */
+	if (! valvulad_db_ensure_table (ctx, "mailbox", "username", "text", "active", "int", "domain", "text", NULL)) {
+		printf ("ERROR (1.1): unable to create local domain table..\n");
+		return axl_false;
+	} /* end if */
+
+	/* create some tables */
+	if (! valvulad_db_ensure_table (ctx, "alias", "goto", "text", "active", "int", "domain", "text", "address", "text", NULL)) {
+		printf ("ERROR (1.2): unable to create local domain table..\n");
+		return axl_false;
+	} /* end if */
+
+	/* insert some values */
+	valvulad_db_run_non_query (ctx, "DELETE FROM mailbox");
+	valvulad_db_run_non_query (ctx, "INSERT INTO mailbox (username, active, domain) VALUES ('francis@aspl.es', '1', 'aspl.es')");
+	valvulad_db_run_non_query (ctx, "INSERT INTO mailbox (username, active, domain) VALUES ('test@limited.com', '1', 'limited.com')");
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_address (ctx, "francis@aspl.es")) {
+		printf ("ERROR (1.3): expected francis@aspl.es to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (! valvulad_run_is_local_address (ctx, "test@limited.com")) {
+		printf ("ERROR (1.4): expected test@limited.com to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_address (ctx, "test@asplhosting2.es")) {
+		printf ("ERROR (1.5): expected test@asplhosting2.es NOT to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_domain (ctx, "'; SELECT 1 --")) {
+		printf ("ERROR (1.6): expected aspl2.es NOT to be reported as local domain...\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: now test alias support\n");
+	valvulad_db_run_non_query (ctx, "DELETE FROM alias");
+	valvulad_db_run_non_query (ctx, "INSERT INTO alias (address, goto, active, domain) VALUES ('test@limited.com', 'aspl@asplhosting.com', '1', 'limited.com')");
+
+	/* now check if these values are detected as local domains */
+	if (valvulad_run_is_local_address (ctx, "aspl@asplhosting.com")) {
+		printf ("ERROR (1.7): expected aspl@asplhosting.com to be reported as local address...\n");
+		return axl_false;
+	} /* end if */
+
+	/* finish library */
+	common_finish (ctx);
+
+
+	return axl_true;
+}
+
 axl_bool test_sending_limit_and_final_reject (const char * auth_user, int allowed_sending_item, axl_bool check_final_error) {
 	int            iterator;
 	ValvulaState   state;
@@ -1890,7 +1961,7 @@ int main (int argc, char ** argv)
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
-	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_03, test_04, test_05,\n");
+	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_03, test_04, test_05,\n");
 	printf ("**                  test_06\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
@@ -1939,6 +2010,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_02c")
 	run_test (test_02c, "Test 02-c: test local accounts detection support");
+
+	/* run tests */
+	CHECK_TEST("test_02d")
+	run_test (test_02d, "Test 02-d: more test local accounts detection support");
 
 	/* run tests */
 	CHECK_TEST("test_03")
