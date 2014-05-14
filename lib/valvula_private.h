@@ -110,6 +110,8 @@ struct _ValvulaCtx {
 	long                      avg_processing;
 	long                      max_processing;
 	long                      min_processing;
+	int                       requests_handled;
+	ValvulaMutex              stats_mutex;
 
 };
 
@@ -173,6 +175,8 @@ struct _ValvulaRequestRegistry {
 	long                      avg_processing;
 	long                      max_processing;
 	long                      min_processing;
+	int                       requests_handled;
+	ValvulaMutex              stats_mutex;
 };
 
 #endif

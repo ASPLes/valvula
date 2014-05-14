@@ -314,15 +314,15 @@ ValvulaRequestRegistry * __valvula_reader_find_next_handler (ValvulaCtx * ctx, a
 axlPointer valvula_reader_process_request (axlPointer _connection)
 {
 	/* get variables */
-	ValvulaConnection * connection    = _connection;
+	ValvulaConnection       * connection    = _connection;
 	/* get port where this request was received */
-	int                 listener_port = valvula_support_strtod (connection->listener->port, NULL);
-	ValvulaCtx        * ctx = connection->ctx;
-	char              * message = NULL;
-	ValvulaState        state;
+	int                       listener_port = valvula_support_strtod (connection->listener->port, NULL);
+	ValvulaCtx              * ctx = connection->ctx;
+	char                    * message = NULL;
+	ValvulaState              state;
 
 	/* list of selected handlers this time */
-	axlList           * selected;
+	axlList                 * selected;
 
 	/* handler reference */
 	ValvulaProcessRequest     handler;
@@ -384,6 +384,9 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			valvula_timeval_substract (&stop_m, &start_m, &diff);
 			total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
 
+			/* lock */
+			valvula_mutex_lock (&registry->stats_mutex);
+
 			/* update processing stats */
 			if (total_microsecs > registry->max_processing) 
 				registry->max_processing = total_microsecs;
@@ -393,6 +396,9 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 				registry->avg_processing = total_microsecs;
 			else 
 				registry->avg_processing = (registry->avg_processing + total_microsecs) / 2;
+
+			/* unlock */
+			valvula_mutex_unlock (&registry->stats_mutex);
 			
 
 			/* check if the error code is disntict from DUNNO */
@@ -416,6 +422,9 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 		valvula_timeval_substract (&stop, &start, &diff);
 		total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
 
+		/* lock */
+		valvula_mutex_lock (&ctx->stats_mutex);
+
 		/* update processing stats */
 		if (total_microsecs > ctx->max_processing) 
 			ctx->max_processing = total_microsecs;
@@ -425,6 +434,12 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			ctx->avg_processing = total_microsecs;
 		else 
 			ctx->avg_processing = (ctx->avg_processing + total_microsecs) / 2;
+
+		/* record requests handled */
+		ctx->requests_handled ++;
+
+		/* unlock */
+		valvula_mutex_unlock (&ctx->stats_mutex);
 		
 		/* send reply */
 		__valvula_reader_send_reply (ctx, connection, connection->request, state, message);
@@ -435,6 +450,15 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 
 		return NULL;
 	} /* end if */
+
+	/* lock */
+	valvula_mutex_lock (&ctx->stats_mutex);
+
+	/* record requests handled  */
+	ctx->requests_handled ++;
+
+	/* unlock */
+	valvula_mutex_unlock (&ctx->stats_mutex);
 
 	/* no handlers defined so no policy can be delegated, replying
 	   default */

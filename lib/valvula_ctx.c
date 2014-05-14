@@ -66,6 +66,9 @@ ValvulaCtx * valvula_ctx_new (void)
 	/* set default line limit request */
 	ctx->request_line_limit = 40;
 
+	/* init stats mutex */
+	valvula_mutex_create (&ctx->stats_mutex);
+
 	/* return context created */
 	return ctx;
 }
@@ -94,6 +97,7 @@ void        valvula_ctx_set_request_line_limit    (ValvulaCtx       * ctx,
 void __valvula_ctx_free_registry (axlPointer _ptr) {
 	ValvulaRequestRegistry * reg = _ptr;
 
+	valvula_mutex_destroy (&reg->stats_mutex);
 	axl_free (reg->identifier);
 	axl_free (reg);
 	
@@ -171,6 +175,9 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
 	registry->priority        = priority;
 	registry->port            = port;
 	registry->user_data       = user_data;
+
+	/* init stat mutex */
+	valvula_mutex_create (&registry->stats_mutex);
 	
 	valvula_mutex_lock (&ctx->ref_mutex);
 
@@ -457,6 +464,8 @@ void        valvula_ctx_free2 (ValvulaCtx * ctx, const char * who)
 	/* release and clean mutex */
 	valvula_mutex_unlock (&ctx->ref_mutex);
 	valvula_mutex_destroy (&ctx->ref_mutex);
+
+	valvula_mutex_destroy (&ctx->stats_mutex);
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "about.to.free ValvulaCtx %p", ctx);
 
