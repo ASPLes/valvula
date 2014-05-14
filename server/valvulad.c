@@ -426,13 +426,15 @@ void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char *
 	message = axl_stream_strdup_printfv (format, args);
 	va_end (args);
 
-	msg ("REJECT: %s -> %s%s%s%s%s: %s", request->sender, request->recipient, 
+	msg ("REJECT: %s -> %s%s%s%s%s, port %d, queue-id: %s: %s", request->sender, request->recipient, 
 	     /* drop SASL information */
 	     sasl_user ? " (" : "",
 	     sasl_user ? "sasl_user=" : "",
 	     sasl_user ? sasl_user : "",
 	     sasl_user ? ") " : "",
 	     /* include message */
+	     request->listener_port, 
+	     request->queue_id,
 	     message);
 
 	/* configure reject message into request to reply it in the

@@ -426,7 +426,9 @@ typedef struct _ValvulaRequest {
 
 	/* message reply to report */
 	char * message_reply;
-	
+
+	/* listener port */
+	int    listener_port;
 } ValvulaRequest;
 
 /** 
