@@ -885,7 +885,7 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 		} /* end if */
 
 		/* compare result */
-		f_result = axl_cmp (row[0], item_name);
+		f_result = (row[0]) && strlen (row[0]) > 0;
 
 		/* release result */
 		mysql_free_result (result);
