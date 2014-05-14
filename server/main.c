@@ -461,6 +461,12 @@ int main (int argc, char ** argv)
 			exit (-1);
 		} /* end if */
 
+		/* check local-domains configuration */
+		if (! valvulad_run_check_local_domains_config (ctx)) {
+			error ("Unable to startup local domains configuration");
+			return axl_false;
+		} /* end if */
+
 		if (valvulad_run_is_local_domain (ctx, exarg_get_string ("is-local-destination"))) {
 			printf ("INFO: %s is a local domain\n", exarg_get_string ("is-local-destination"));
 			exit (0);

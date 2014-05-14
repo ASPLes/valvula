@@ -48,4 +48,6 @@ axl_bool valvulad_run_is_local_delivery (ValvuladCtx * ctx, ValvulaRequest * req
 
 void     valvulad_run_add_local_domain (ValvuladCtx * ctx, const char * domain);
 
+axl_bool valvulad_run_check_local_domains_config (ValvuladCtx * ctx);
+
 #endif
