@@ -194,8 +194,8 @@ ValvulaState bwl_check_status_rules (ValvulaCtx         * _ctx,
 		} /* end if */
 			
 
-		msg ("BWL: checking status=%s, source=%s, destination=%s", status, source, destination);
-		msg ("BWL:        with request source=%s, destination=%s", request->sender, request->recipient);
+		/* msg ("BWL: checking status=%s, source=%s, destination=%s", status, source, destination);
+		   msg ("BWL:        with request source=%s, destination=%s", request->sender, request->recipient); */
 		
 		/* now check values */
 		if (axl_stream_casecmp (status, "ok", 2)) {
@@ -268,7 +268,7 @@ ValvulaState bwl_check_status (ValvulaCtx         * _ctx,
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
-	msg ("Checking request from %s -> %s", request->sender, request->recipient);
+	/* msg ("Checking request from %s -> %s", request->sender, request->recipient); */
 
 	/* first check specific rules */
 	state = bwl_check_status_rules (_ctx, request, level, level_label, result, /* specific */ axl_true);
