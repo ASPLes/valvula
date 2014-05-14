@@ -339,7 +339,9 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	struct timeval            start_m;
 	struct timeval            stop_m;
 	long                      total_microsecs;
-	
+
+	/* update port reported */
+	connection->request->listener_port = listener_port;
 
 	if (ctx->process_handler_registry && valvula_hash_size (ctx->process_handler_registry) > 0) {
 		/* get first element from the registry */
