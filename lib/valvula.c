@@ -682,7 +682,10 @@ const char * valvula_get_sender_domain (ValvulaRequest * request)
  */
 axl_bool     valvula_is_authenticated (ValvulaRequest * request)
 {
-	return valvula_get_sasl_user (request) != NULL;
+	const char * sasl_user = valvula_get_sasl_user (request);
+
+	/* check that is defined and has content */
+	return (sasl_user && strlen (sasl_user) > 0);
 }
 
 /** 
