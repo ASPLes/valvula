@@ -953,3 +953,35 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
 	/* nothing defined */
 	return -1;
 }
+
+/** 
+ * \mainpage 
+ *
+ * \section intro Valvulad: a high performance policy daemon for Postfix
+ *
+ * <b>Valvula server</b> is an Open Source, high performance Postfix policy daemon written in ANSI C that shines at:
+ *
+ * Some of its features are:
+ *
+ * - Component separation that provides more flexibility to implement several contexts or to embeed the product into another project. 
+ * - Highly threaded with port separation which allows providing Valvula services with different modules at different ports running everything with a single daemon
+ * - Automatic postfix database detation (so you current Postfix configuration will be parsed by Valvula so it can also know what domains and accounts are local to take better decisions).
+ * - Robust and well tested implementation checked by a strong regression test to ensure the library and core server keep on working as new features are added.
+ *
+ * Valvula is been developed by <b>Advanced Software Production Line,
+ * S.L. (ASPL) </b> (http://www.aspl.es). It is licensed under the GPL 2.0.
+ *
+ * This manual is separated into different sections targeting different users:
+ *
+ * - \ref valvulad_server_install
+ * - \ref valvulad_administration_manual
+ * - \ref valvulad_plugin_development_manual
+ *
+ * \section contact_aspl Contact Us
+ * 
+ * You can reach us at the <b>Valvula mailing list:</b> at <a href="http://lists.aspl.es/cgi-bin/mailman/listinfo/valvula">Valvula users</a>
+ * for any question you may find. 
+ *
+ * If you are interested on getting commercial support, you can also
+ * contact us at: info@aspl.es.
+ */
