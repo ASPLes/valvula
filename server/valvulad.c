@@ -985,3 +985,46 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * If you are interested on getting commercial support, you can also
  * contact us at: info@aspl.es.
  */
+
+/** 
+ * @page valvulad_server_install Valvula server installation
+ *
+ * \section valvulad_server_install_from_packges Installing Valvula server from packages
+ *
+ * Please, before continue, check the following page to see if there are valvula package already available for your os:
+ *
+ * http://www.aspl.es/valvula/downloads.html
+ *
+ * For example, for debian / ubuntu system you can install it by running:
+ *
+ * \code
+ * >> apt-get install valvulad-server
+ * \endcode
+ *
+ * After that, you must install those modules you want. For example:
+ *
+ * \code
+ * >> apt-get install valvulad-mod-ticket
+ * \endcode
+ * 
+ * \section valvula_server_install_from_sources Installing Valvula server from latest stable release
+ *
+ * To fully install Valvula server you must have the following packages installed in your system:
+ *
+ * - \ref MySQL client library (for example, in debian <b>libmysqlclient16</b>). Check your OS manual to install it.
+ * - \ref Axl Library for XML processing. Check http://www.aspl.es/xml to know if there are available packages for your OS.
+ *
+ * After that, get the latest Valvula release from http://www.aspl.es/valvula/downloads and then run:
+ *
+ * \code
+ * >> tar xzvf valvula-1.X.X.tar.gz
+ * >> cd valvula-1.X.X
+ * >> ./configure
+ * \endcode
+ *
+ * If everything went ok, compile valvula with the following to compile the project:
+ *
+ * \code
+ * >> make
+ * \endcode
+ */
