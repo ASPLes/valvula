@@ -64,6 +64,7 @@ valvula_ctx_register_request_handler
 valvula_ctx_set_data
 valvula_ctx_set_data_full
 valvula_ctx_set_default_reply_state
+valvula_ctx_set_final_state_handler
 valvula_ctx_set_request_line_limit
 valvula_ctx_unref
 valvula_ctx_unref2

@@ -194,6 +194,25 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
 }
 
 /** 
+ * @brief Allows to register a handler that will be called with the final.
+ *
+ * @param ctx The context where the handler will be configured.
+ *
+ * @param handler The handler to be called everytime a final state is found.
+ */
+void        valvula_ctx_set_final_state_handler   (ValvulaCtx              * ctx,
+						   ValvulaReportFinalState   handler,
+						   axlPointer                user_data)
+{
+	if (ctx == NULL)
+		return;
+	ctx->report_final_state = handler;
+	ctx->report_final_state_user_data = user_data;
+
+	return;
+}
+
+/** 
  * @brief Allows to set default reply state to be used in the case no
  * handler is configured or no handler is found for a given port.
  *

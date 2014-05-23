@@ -53,6 +53,8 @@ struct _ValvulaCtx {
 	axl_bool valvula_exit;
 
 	ValvulaState default_state;
+	ValvulaReportFinalState report_final_state;
+	axlPointer report_final_state_user_data;
 
 	/** mutexes **/
 	ValvulaMutex exit_mutex;

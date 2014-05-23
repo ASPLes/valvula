@@ -475,6 +475,39 @@ axl_bool valvulad_init (ValvuladCtx ** result) {
 	return axl_true;
 }
 
+void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
+				  ValvulaConnection * connection, 
+				  ValvulaRequest    * request, 
+				  ValvulaState        state, 
+				  const char        * message,
+				  axlPointer          _ctx)
+{
+	ValvuladCtx  * ctx = _ctx;
+	const char   * sasl_user = valvula_get_sasl_user (request);
+
+	/* do not report reject status because there where already reported */
+	if (VALVULA_STATE_REJECT == state)
+		return;
+
+	msg ("%s: %s -> %s%s%s%s%s, port %d, queue-id %s%s%s%s%s",
+	     valvula_support_state_str (state),
+	     request->sender, request->recipient, 
+	     /* drop SASL information */
+	     sasl_user ? " (" : "",
+	     sasl_user ? "sasl_user=" : "",
+	     sasl_user ? sasl_user : "",
+	     sasl_user ? ")" : "",
+	     /* include message */
+	     request->listener_port, 
+	     request->queue_id ? request->queue_id : "<undef>" ,
+	     request->client_address ? ", from " : "",
+	     request->client_address ? request->client_address : "",
+	     message ? ": " : "",
+	     message ? message : "");
+
+	return;
+}
+
 /** 
  * @brief Auxiliar initialization function that allows to provide the
  * \ref ValvuladCtx context.
@@ -511,6 +544,9 @@ axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
 	/* flag context initialization */
 	gettimeofday (&start, NULL);
 	ctx->started_at = start.tv_sec;
+
+	/* configure final state handler */
+	valvula_ctx_set_final_state_handler (ctx->ctx, valvulad_report_final_state, ctx);
 
 	return axl_true;
 }
