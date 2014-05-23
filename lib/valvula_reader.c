@@ -232,6 +232,11 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 				  ValvulaState        state, 
 				  const char        * message)
 {
+	
+	/* check if we have a handler for final notification */
+	if (ctx->report_final_state)
+		ctx->report_final_state (ctx, connection, request, state, message, ctx->report_final_state_user_data);
+
 	switch (state) {
 	case VALVULA_STATE_OK:
 		__valvula_reader_send (connection, "ok", message);

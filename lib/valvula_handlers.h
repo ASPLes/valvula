@@ -325,4 +325,25 @@ typedef ValvulaState (* ValvulaProcessRequest) (ValvulaCtx        * ctx,
  */
 typedef void         (* ValvulaThreadCleanup) (ValvulaCtx         * ctx);
 
+
+/** 
+ * @brief Set of handlers that valvula library uses to notify final
+ * state for a particular request.
+ *
+ * @param ctx The context where the operation takes place.
+ * @param connection The connection where the operation takes place.
+ *
+ * @param request The request that has a final state from valvula 
+ * 
+ * @param state The state that is the response to this request.
+ *
+ * @param message Optional message associated to the state.
+ */
+typedef void         (* ValvulaReportFinalState) (ValvulaCtx * ctx,
+						  ValvulaConnection * connection, 
+						  ValvulaRequest    * request, 
+						  ValvulaState        state, 
+						  const char        * message,
+						  axlPointer          user_data);
+
 #endif
