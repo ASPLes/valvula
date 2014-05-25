@@ -297,7 +297,7 @@ typedef axl_bool (* ValvulaThreadAsyncEvent)        (ValvulaCtx  * ctx,
  *
  * @param connection The connection where the operation/request was received.
  *
- * @param request The request that was received and is been asked to be resolved.
+ * @param request The request that was received and has been asked to be resolved.
  *
  * @param request_data User defined pointer passed to this handler.
  *

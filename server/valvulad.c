@@ -995,16 +995,15 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \section intro Valvulad: a high performance policy daemon for Postfix
  *
- * <b>Valvula server</b> is an Open Source, high performance Postfix policy daemon written in ANSI C that shines at:
- *
- * Some of its features are:
+ * <b>Valvula server</b> is an Open Source, high performance Postfix policy daemon written in ANSI C that provides very useful features that makes it suitable for commercial enviroments (massive mail servers, hosting providers and corporate mail servers). Some of its features are:
  *
  * - Component separation that provides more flexibility to implement several contexts or to embeed the product into another project. 
  * - Highly threaded with port separation which allows providing Valvula services with different modules at different ports running everything with a single daemon
- * - Automatic postfix database detation (so you current Postfix configuration will be parsed by Valvula so it can also know what domains and accounts are local to take better decisions).
+ * - Automatic postfix database detection (so you current Postfix configuration will be parsed by Valvula so it can also know what domains and accounts are local to take better decisions).
  * - Robust and well tested implementation checked by a strong regression test to ensure the library and core server keep on working as new features are added.
+ * - See \ref valvulad_features "complete Valvula server feature lists".
  *
- * Valvula is been developed by <b>Advanced Software Production Line,
+ * Valvula has been developed by <b>Advanced Software Production Line,
  * S.L. (ASPL) </b> (http://www.aspl.es). It is licensed under the GPL 2.0.
  *
  * This manual is separated into different sections targeting different users:
@@ -1063,4 +1062,114 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * \code
  * >> make
  * \endcode
+ */
+
+/** 
+ * \page valvulad_features Valvula server features
+ *
+ * \section valvulad_features_component_separation Server component separation
+ *
+ * Valvula server is composed by several components which are a base
+ * library (<b>libValvula</b>), a run time server (<b>Valvulad</b>)
+ * and extension modules that provides the final end user features required by system administrators.
+ *
+ * <b>libValvula</b> allows to encapsulate all low functions that
+ * interacts with postfix server to parse and reply requests. This
+ * library allows to embed all functions into a different application
+ * and/or creating different context where different handlers can be
+ * configured to process incoming requests.
+ *
+ * <b>Valvulad</b> server is built on top of <b>libValvula</b>
+ * providing all system administrator functions like port
+ * configuration, modules to load, system user to run the server. This
+ * server allows a system administrator to enable/disable Valvula
+ * features, control its limits and receive logging about what's done
+ * by the server.
+ *
+ * The, the administrator can enable different modules/plugins ready
+ * available to provide support for different features like Sender
+ * Login Mismatch handling, mail sending quotas, global/domain/account
+ * whitelists and blacklists, ...
+ *
+ * \section valvulad_features_threaded_design Threaded design
+ *
+ * Valvula is highly threaded allow to handle thousand of requests per
+ * minute with a single process. It also includes an internal queue
+ * design to avoid overflooding the server when there are a high
+ * number of requests.
+ *
+ * \section valvulad_features_port_separation Port separation with different policies
+ *
+ * Valvula has the hability to provide different policies (groups of
+ * modules that applies in a particular order) on different
+ * ports. This way you can have the same Valvula server process
+ * applying different policies at the different postfix sections you
+ * require.
+ *
+ * Because you can have different combination of modules at different
+ * ports, you are able to connect Valvula through postfix's
+ * <b>check_policy_service</b> in really flexible manner.
+ *
+ * \section valvulad_features_automatic_postfix Automatic postfix configuration detection
+ *
+ * Valvula comes with a built-in postfix configuration parser that
+ * allows automatic postfix database detection.  This way Valvula will
+ * detect which domains and accounts are considered local by your
+ * Postfix server, allowing valvula to make better decisions.
+ *
+ * This includes skipping some modules when the requests talks about a
+ * local delivery or to skip a wrong white list rule that otherwise
+ * will imply that your mail server becomes an open relay.
+ *
+ * This feature is provided through an API (\ref
+ * valvulad_run_is_local_domain, \ref valvulad_run_is_local_address,
+ * \ref valvulad_run_is_local_delivery) that modules can leverage to
+ * create powerful plugins.
+ *
+ * \section valvulad_server_features_well_testes Robust and well tested implementation
+ *
+ * Valvula suite is an ANSI implementation checked with valgrind
+ * (http://www.valgrind.org) and supervised by a strong regression
+ * test to ensure the library, core server and modules keep on working
+ * without any failure as the project moves forward.
+ *
+ * Currently it is being used intensively at many hosting providers
+ * and in-house mail server solutions with high SMTP traffic.
+ *
+ * \section valvulad_server_features_real_time_stats Real time internal stats support
+ *
+ * Valvula comes with support to provide system administrators with
+ * real time process status and stats. This way it is possible to get
+ * up to date information about requests being handled, pending tasks
+ * or how long is taking Valvula server to process each requests (and
+ * how much time each module takes to process requests).
+ * 
+ * To get stats, just run the following in a server where valvula server is running:
+ * \code
+ * >> valvulad -s
+ * \endcode
+ *
+ */
+
+/** 
+ * \page valvulad_plugin_development_manual Valvulad plugin development manual
+ *
+ * While creating a Valvulad server plugin you need to keep at hand \ref valvula_api.
+ * 
+ */
+
+/** 
+ * \page valvula_api Valvula API
+ *
+ * The following is a reference manual for the API provides by
+ * <b>libValvula</b> and <b>Valvula server</b>. These functions are
+ * only required in the case you want to create new Valvula server
+ * plugins/modules.
+ *
+ * \section valvula_api_libvalvula libValvula API
+ *
+ * - \ref valvula
+ *
+ * 
+ *
  */
