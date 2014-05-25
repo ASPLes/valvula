@@ -34,6 +34,11 @@
  *         info@aspl.es - http://www.aspl.es/valvula
  */
 
+/** 
+ * \addtogroup valvula
+ * @{
+ */
+
 /* global includes */
 #include <valvula.h>
 #include <signal.h>
