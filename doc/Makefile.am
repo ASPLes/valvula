@@ -29,6 +29,15 @@ build_doc: prepare_xmls
 	cp $(top_srcdir)/doc/aspl-logo-header.png html
 	cp $(top_srcdir)/doc/valvula.css html
 	cp $(top_srcdir)/doc/body_back.gif html
+	cp $(top_srcdir)/doc/component-separation.png html
+	cp $(top_srcdir)/doc/threaded-design.png html
+	cp $(top_srcdir)/doc/port-separation.png html
+	cp $(top_srcdir)/doc/automatic-conf.png html
+	cp $(top_srcdir)/doc/robust-implementation.png html
+	cp $(top_srcdir)/doc/stats-support.png html
+	cp $(top_srcdir)/doc/administrator-friendly.png html
+	cp $(top_srcdir)/doc/adding-modules.png html
+	cp $(top_srcdir)/doc/valvulad-open-source.png html
 
 prepare_xmls:
 	axl-knife -i ../server/valvula.example.conf -o valvula.example.conf.xml -e -p fragment
