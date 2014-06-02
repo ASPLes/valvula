@@ -23,8 +23,9 @@ a:visited {
 
 .af-arch-header { 
   width: 100%;
-  background: #193141;
-  margin: 0;
+/*  background: #193141; */
+  margin: 5px;
+  
 }
 
 .separator { 

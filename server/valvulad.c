@@ -998,19 +998,21 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * <b>Valvula server</b> is an Open Source, high performance Postfix policy daemon written in ANSI C that provides very useful features that makes it suitable for commercial enviroments (massive mail servers, hosting providers and corporate mail servers). Some of its features are:
  *
  * - Component separation that provides more flexibility to implement several contexts or to embeed the product into another project. 
- * - Highly threaded with port separation which allows providing Valvula services with different modules at different ports running everything with a single daemon
- * - Automatic postfix database detection (so you current Postfix configuration will be parsed by Valvula so it can also know what domains and accounts are local to take better decisions).
- * - Robust and well tested implementation checked by a strong regression test to ensure the library and core server keep on working as new features are added.
+ * - Highly threaded design with port separation which allows providing Valvula services with different modules at different ports running everything with a single daemon
+ * - Automatic postfix database detection (so your current Postfix configuration will be parsed by Valvula so it can also know what domains and accounts are local to make better decisions).
+ * - Robust and well tested implementation checked by a strong regression test to ensure that the library and core server keep on working as new features are added across releases.
  * - See \ref valvulad_features "complete Valvula server feature lists".
  *
  * Valvula has been developed by <b>Advanced Software Production Line,
  * S.L. (ASPL) </b> (http://www.aspl.es). It is licensed under the GPL 2.0.
  *
+ * \section valvulad_manuals Valvulad: manuals and documentation
+ *
  * This manual is separated into different sections targeting different users:
  *
- * - \ref valvulad_server_install
- * - \ref valvulad_administration_manual
- * - \ref valvulad_plugin_development_manual
+ * - For system administrators and developers: \ref valvulad_server_install
+ * - For system administrators: \ref valvulad_administration_manual
+ * - for developers: \ref valvulad_plugin_development_manual
  *
  * \section contact_aspl Contact Us
  * 
@@ -1024,7 +1026,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
 /** 
  * @page valvulad_server_install Valvula server installation
  *
- * \section valvulad_server_install_from_packges Installing Valvula server from packages
+ * \section valvulad_server_install_from_packges 1. Installing Valvula server from packages
  *
  * Please, before continue, check the following page to see if there are valvula package already available for your os:
  *
@@ -1041,8 +1043,10 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * \code
  * >> apt-get install valvulad-mod-ticket
  * \endcode
+ *
+ * Now, follow valvula administration manual to configure the server: \ref valvulad_administration_manual
  * 
- * \section valvula_server_install_from_sources Installing Valvula server from latest stable release
+ * \section valvula_server_install_from_sources 2. Installing Valvula server from latest stable source code release
  *
  * To fully install Valvula server you must have the following packages installed in your system:
  *
@@ -1062,6 +1066,17 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * \code
  * >> make
  * \endcode
+ *
+ * If everything went ok, install binaries and additional files by running:
+ *
+ * \code
+ * >> make install
+ * \endcode
+ *
+ * Now see next section to know how to setup valvula to get it up and running.
+ *
+ * - \ref valvulad_administration_manual
+ *
  */
 
 /** 
@@ -1069,12 +1084,13 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \section valvulad_features_component_separation Server component separation
  *
- * Valvula server is composed by several components which are a base
+ * 
+ * <img src='component-separation.png' style='float: left; padding: 6px'> Valvula server is composed by several components which are a base
  * library (<b>libValvula</b>), a run time server (<b>Valvulad</b>)
  * and extension modules that provides the final end user features required by system administrators.
  *
- * <b>libValvula</b> allows to encapsulate all low functions that
- * interacts with postfix server to parse and reply requests. This
+ * <b>libValvula</b> allows to encapsulate all low level functions that
+ * interacts with the postfix server to parse and reply requests. This
  * library allows to embed all functions into a different application
  * and/or creating different context where different handlers can be
  * configured to process incoming requests.
@@ -1086,22 +1102,27 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * features, control its limits and receive logging about what's done
  * by the server.
  *
- * The, the administrator can enable different modules/plugins ready
- * available to provide support for different features like Sender
+ * The administrator can enable different modules/plugins ready
+ * available to provide support to different features like Sender
  * Login Mismatch handling, mail sending quotas, global/domain/account
  * whitelists and blacklists, ...
  *
  * \section valvulad_features_threaded_design Threaded design
  *
- * Valvula is highly threaded allow to handle thousand of requests per
- * minute with a single process. It also includes an internal queue
- * design to avoid overflooding the server when there are a high
- * number of requests.
+ * <img src='threaded-design.png' style='float: left; padding: 6px'> Valvula is highly threaded server that allows to handle thousand of
+ * requests per minute with a single process. It also includes an
+ * internal queue design to avoid overflooding the server when there
+ * are a high number of requests.
+ *
+ * Even though there is a threading design in place, writing modules
+ * is really easy because ValvulaD server takes cares of many details
+ * so plugin writer only has to pay attention on the core features
+ * their module has.
  *
  * \section valvulad_features_port_separation Port separation with different policies
  *
- * Valvula has the hability to provide different policies (groups of
- * modules that applies in a particular order) on different
+ * <img src='port-separation.png' style='float: left; padding: 6px'> Valvula has the hability to provide different policies (groups of
+ * modules that are applied in a particular order) on different
  * ports. This way you can have the same Valvula server process
  * applying different policies at the different postfix sections you
  * require.
@@ -1112,7 +1133,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \section valvulad_features_automatic_postfix Automatic postfix configuration detection
  *
- * Valvula comes with a built-in postfix configuration parser that
+ * <img src='automatic-conf.png' style='float: left; padding: 6px'> Valvula comes with a built-in postfix configuration parser that
  * allows automatic postfix database detection.  This way Valvula will
  * detect which domains and accounts are considered local by your
  * Postfix server, allowing valvula to make better decisions.
@@ -1128,7 +1149,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \section valvulad_server_features_well_testes Robust and well tested implementation
  *
- * Valvula suite is an ANSI implementation checked with valgrind
+ * <img src='robust-implementation.png' style='float: left; padding: 6px'> Valvula suite is an ANSI C implementation checked with valgrind
  * (http://www.valgrind.org) and supervised by a strong regression
  * test to ensure the library, core server and modules keep on working
  * without any failure as the project moves forward.
@@ -1138,7 +1159,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \section valvulad_server_features_real_time_stats Real time internal stats support
  *
- * Valvula comes with support to provide system administrators with
+ * <img src='stats-support.png' style='float: left; padding: 6px'>Valvula comes with support to provide system administrators with
  * real time process status and stats. This way it is possible to get
  * up to date information about requests being handled, pending tasks
  * or how long is taking Valvula server to process each requests (and
@@ -1149,6 +1170,34 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * >> valvulad -s
  * \endcode
  *
+ * \section valvulad_server_features_administrator_friendly Valvula is administrator friendly
+ *
+ * <img src='administrator-friendly.png' style='float: left; padding: 6px'>We are system administrators too and we like it easy. Valvula has
+ * various automatic processes that frees you from the database
+ * burden, module activation and many other details.
+ *
+ * For example, you only have to create a MySQL database along with a
+ * MySQL user, and after configuring it into valvula's conf, then
+ * valvula will create for you all database tables, attributes, etc. It even will handle
+ * database updates across releases automatically for you.
+ *
+ * \section valvulad_server_features_easy_module_design Easy module design
+ *
+ * <img src='adding-modules.png' style='float: left; padding: 6px'> Adding new valvula modules is really easy. You only have to
+ * implement a set of handlers that let you process requestes received. 
+ *
+ * Along with this handlers you have a featureful API that includes
+ * many functions to help you write concise modules quickly and
+ * easily.
+ *
+ * Take a look at the valvula mod-test implementation to get a first glance: https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.c
+ *
+ * \section valvulad_server_features_open_source And don't forget, Valvula is open source!
+ *
+ * <img src='valvulad-open-source.png' style='float: left; padding: 6px'> Valvula is provided to the world with an open source license (GPL)
+ * that allows integrating it into any enviroment without any cost. 
+ *
+ * 
  */
 
 /** 
@@ -1170,6 +1219,146 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * - \ref valvula
  *
+ * 
+ *
+ */
+
+/** 
+ * \page valvulad_administration_manual Valvulad server administration manual
+ *
+ * \section valvulad_server_install_index Index
+ *
+ * - \ref valvulad_server_configuration
+ * - \ref valvulad_server_configuring_modules
+ * - \ref valvulad_server_dont_panic
+ *
+ * \section valvulad_server_configuration 1. Valvulad server configuration
+ *
+ * Assuming you already have Valvulad server binaries installed in your system you must create a valvula.conf file at /etc/valvula
+ *
+ * 1) In general you can use as example the template bundled. For that run:
+ *
+ * \code
+ * >> cp /etc/valvula/valvula.example.conf /etc/valvula/valvula.conf
+ * \endcode
+ *
+ * 2) After that, create a mysql database and a user associated to
+ * it. Check your OS documentation on how to do this. <i>Please, do not
+ * use system administrator MySQL account directly with valvula. </i>
+ *
+ * 3) Now with you MySQL credentails, set them inside valvula.conf inside database section:
+ *
+ * \code
+ *  <database>
+ *    <!-- default mysql configuration -->
+ *    <config driver="mysql" dbname="valvula" user="valvula" password="valvula" host="localhost" port="" />
+ *  </database>
+ * \endcode
+ *
+ * 4) After this, you can check if valvula is able to use your MySQL account by running the following. It should output that everything is working.
+ *
+ * \code
+ * >> valvulad -b 
+ * INFO: Database connection working OK
+ * \endcode
+ *
+ * Now you have base Valvulad installed. Now you have to enable modules and connect them to postfix configuration. See next.
+ *
+ * \section valvulad_server_configuring_modules 2. Enabling Valvulad server modules
+ *
+ * Please, read each module documentation to know more about them and
+ * their features. Assuming you know what modules you want you have to:
+ *
+ * 1) Run the following command to list all modules available:
+ *
+ * \code
+ * >> valvulad-mgr.py  -o
+ * Module: mod-slm
+ * Module: mod-mquota
+ * Module: mod-bwl
+ * \endcode
+ *
+ * 2) Now, you have to now what listeners/ports are already declared
+ * by Valvula where you can run modules. These listeners are just
+ * Valvulad server entry points where postfix can delegate policy. If
+ * you don't undestand it, don't worry too much. Keep on reading and
+ * you'll understand by example.
+ *
+ * \code
+ * >> valvulad-mgr.py -l
+ * \endcode
+ *
+ * 3) If there are not listeners added, you must add at least one. Do
+ * it by running the following (that adds, for example, a valvulad listener at 3080 TCP/port):
+ *
+ * \code
+ * >> valvulad-mgr.py -a 3080
+ * \endcode
+ *
+ * NOTE: this will update /etc/valvula/valvula.conf file. Please, have a look at it to know what's going on.
+ *
+ * Now, this listener/port is an eligible place to run modules that will control/modify postfix decisions about mail passing through it.
+ *
+ * 4) Now, assuming you want to enable <b>mod-slm</b>, you enable it at a particular listener
+ * by running the following command. 
+ *
+ * \code
+ * >> valvulad-mgr.py -m mod-slm 3080
+ * \endcode
+ *
+ * NOTE: this will update /etc/valvula/valvula.conf file. Please, have a look at it to know what's going on.
+ *
+ * 5) After that, restart valvula by running something like:
+ *
+ * \code
+ * >> service valvulad restart
+ * \endcode
+ *
+ * 6) Now, you must connect this module to postfix in a particular
+ * section. The point here is that postfix will call valvula server,
+ * at a particular listener, where you have configured a set of
+ * modules. Also, the place where postfix is connect to valvula is
+ * important. In general, it is recommended to connect valvulad server
+ * at smtpd_recipient_restrictions section. If you want to know what
+ * are the postfix section and a description run:
+ *
+ * \code
+ * >> valvulad-mgr.py -s
+ * \endcode
+ *
+ * 7) Assuming we want to connect postfix to delegate decisions to valvula at smtpd_recipient_restrictions on the port/listener 3080, just run:
+ *
+ * \code
+ * >> valvulad-mgr.py -c smtpd_recipient_restrictions 3080 first
+ * \endcode
+ *
+ * This command means that you are connecting valvula listener located
+ * at 3080, at the postfix's section called
+ * smtpd_recipient_restrictions. The <b>first</b> is telling
+ * valvulad-mgr.py to make that connection to be <b>first</b> policy
+ * executed by postfix on that section. You can also use <b>last</b>
+ * to change the place accordingly.
+ *
+ * 8) Now you are done. Just reload postfix and watch postfix+valvula function by running:
+ *
+ * \code
+ * >> service postfix reload
+ * >> tail -f /var/log/mail.log
+ * \endcode
+ *
+ * \section valvulad_server_dont_panic 3. Hey, it isn't working, what should I do!
+ *
+ * Don't panic. It depends on the error you are having but if it's
+ * fatal, please, just comment out "check_policy_service" declaration
+ * at /etc/postfix/main.cf that is conecting postfix to valvula so your server can keep going as it was
+ * configured. After commeting that declaration reload postfix:
+ *
+ * \code
+ * >> service postfix reload
+ * \endcode
+ *
+ * Then, you can count on us at the mailing list to get some help: http://lists.aspl.es/cgi-bin/mailman/listinfo/valvula
+ * 
  * 
  *
  */
