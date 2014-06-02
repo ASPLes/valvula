@@ -1012,7 +1012,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * - For system administrators and developers: \ref valvulad_server_install
  * - For system administrators: \ref valvulad_administration_manual
- * - for developers: \ref valvulad_plugin_development_manual
+ * - For developers: \ref valvulad_plugin_development_manual
  *
  * \section contact_aspl Contact Us
  * 
