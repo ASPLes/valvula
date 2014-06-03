@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1008.3551"
+   height="1008.3551"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="valvula-logo.svg"
+   inkscape:export-filename="/home/acinom/valvula/doc/valvulad-open-source.png"
+   inkscape:export-xdpi="5.71"
+   inkscape:export-ydpi="5.71">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.33443409"
+     inkscape:cx="916.95467"
+     inkscape:cy="937.48097"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1280"
+     inkscape:window-height="949"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     showborder="true" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-130.76183,1885.4149)">
+    <g
+       id="g4059"
+       inkscape:export-filename="/home/acinom/valvula/doc/threaded-design.png"
+       inkscape:export-xdpi="8.5699997"
+       inkscape:export-ydpi="8.5699997">
+      <path
+         transform="matrix(0.91906242,0,0,0.91906242,277.38101,-1660.5318)"
+         d="m 917.62277,303.88644 c 0,291.92918 -236.65535,528.58454 -528.58453,528.58454 -291.929178,0 -528.58454,-236.65536 -528.58454,-528.58454 0,-291.929173 236.655362,-528.58453 528.58454,-528.58453 291.92918,0 528.58453,236.655357 528.58453,528.58453 z"
+         sodipodi:ry="528.58453"
+         sodipodi:rx="528.58453"
+         sodipodi:cy="303.88644"
+         sodipodi:cx="389.03824"
+         id="path4249"
+         style="fill:none;stroke:#204a87;stroke-width:40;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:320, 40;stroke-dashoffset:400"
+         sodipodi:type="arc" />
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path4254"
+         d="m 932.52453,-1764.9935 c 78.94097,56.9081 139.98897,150.2491 165.97557,237.863"
+         style="fill:none;stroke:#73d216;stroke-width:39.59999847;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path4254-0"
+         d="M 446.99183,-932.6219 C 355.97966,-967.0745 272.7839,-1041.3569 224.93388,-1119.215"
+         style="fill:none;stroke:#cc0000;stroke-width:39.59999847;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path4254-1"
+         d="m 1034.0266,-1105.1736 c -52.88923,81.688 -143.0606,147.32744 -229.26534,177.66295"
+         style="fill:none;stroke:#fce94f;stroke-width:39.59999847;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path4254-0-2"
+         d="m 157.83977,-1471.9653 c 14.62223,-96.2102 69.82792,-193.1211 135.93446,-256.2197"
+         style="fill:none;stroke:#ad7fa8;stroke-width:39.59999847;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    </g>
+    <path
+       style="fill:#eeeeec;stroke:#ffffff;stroke-width:30;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 290.78974,406.59228 c 19.00195,-40.33848 42.20688,-78.83817 92.6939,-105.40193"
+       id="path4389"
+       inkscape:connector-curvature="0"
+       transform="translate(130.76183,-1885.4149)"
+       sodipodi:nodetypes="cc" />
+    <g
+       id="g4435"
+       transform="matrix(1.3394856,0,0,1.3394856,-107.46744,571.4386)">
+      <g
+         style="fill:#ffffff;fill-opacity:1"
+         transform="matrix(0.58817112,0,0,0.58817112,137.62305,-704.09233)"
+         id="g4391">
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:#204a87;stroke-width:41.41270828;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="m 354.88167,-1494.4465 0,359.4375 515.71435,0 0,-553.9567 -362.61164,0 z"
+           id="path4356"
+           inkscape:connector-curvature="0" />
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:#204a87;stroke-width:41.41270828;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="m 354.88167,-1490.2179 161.16073,0 0,-198.7478"
+           id="path4358"
+           inkscape:connector-curvature="0" />
+      </g>
+      <g
+         style="fill:#ffffff;fill-opacity:1"
+         transform="matrix(0.58817112,0,0,0.58817112,248.78667,-569.84163)"
+         id="g4391-4">
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:#204a87;stroke-width:41.41270828;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="m 354.88167,-1494.4465 0,359.4375 515.71435,0 0,-553.9567 -362.61164,0 z"
+           id="path4356-9"
+           inkscape:connector-curvature="0" />
+        <path
+           style="fill:#ffffff;fill-opacity:1;stroke:#204a87;stroke-width:41.41270828;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+           d="m 354.88167,-1490.2179 161.16073,0 0,-198.7478"
+           id="path4358-3"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+  </g>
+</svg>
