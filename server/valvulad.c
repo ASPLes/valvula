@@ -1203,7 +1203,40 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
 /** 
  * \page valvulad_plugin_development_manual Valvulad plugin development manual
  *
- * While creating a Valvulad server plugin you need to keep at hand \ref valvula_api.
+ * \section valvulad_plugin_intro Introduction to valvula plugin developement
+ *
+ * Writing a Valvulad server plugin consists of creating a C module
+ * that is loaded at run time by the server. To write that module
+ * you'll have to use \ref valvula_api. 
+ *
+ * The recommended way to start is to take mod-test.c as a base
+ * example to extend upon. To that end, grab a copy from https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.c
+ *
+ * Also, grab a copy of the Makefile.am (https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.c) to bootstrap 
+ * your module compilation. On that Makefile.am you'll see the essentials about getting that module compiled. 
+ *
+ * Finally, you'll need a module pointer, which is a small xml file,
+ * which is installed at /etc/valvula/mods-available, that allows
+ * valvula server to locate your compiled plugin. Take a look at
+ * https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.xml
+ * to have a copy too.
+ *
+ * So, to summarize, you'll need the following files:
+ *
+ * - The module itself (mod-test.c) : https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.c
+ * - A makefile to get it compiled : https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/Makefile.am
+ * - A module pointer : https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.xml
+ *
+ * Of course, you don't want your module to be called mod-test right? Change that into something meaningful to the module's function.
+ *
+ * \section valvulad_plugin_activation Plugin run-time activation
+ *
+ * Before getting into the details about each handler inside a module let's consider how the code will flow.
+ * 
+ * -# Assumin
+ *
+ * 
+ * 
  * 
  */
 

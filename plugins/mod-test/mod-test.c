@@ -71,6 +71,22 @@ void test_close (ValvuladCtx * ctx)
 }
 
 /** 
+ * @brief Process request for the module. This is the function that
+ * will be called every time postfix needs to module's opinion about
+ * certain request.
+ */
+ValvulaState test_process_request (ValvulaCtx        * _ctx, 
+				   ValvulaConnection * connection, 
+				   ValvulaRequest    * request,
+				   axlPointer          request_data,
+				   char             ** message)
+{
+	/* by default report return dunno */
+	return VALVULA_STATE_DUNNO;
+}
+
+
+/** 
  * @brief The reconf function is used by valvulad to notify to all
  * its modules loaded that a reconfiguration signal was received and
  * modules that could have configuration and run time change support,
@@ -91,8 +107,7 @@ ValvuladModDef module_def = {
 	"Valvulad test module",
 	test_init,
 	test_close,
-	/* process */
-	NULL,
+	test_process_request,
 	test_reconf,
 	NULL
 };
