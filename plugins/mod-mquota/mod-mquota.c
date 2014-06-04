@@ -749,10 +749,59 @@ END_C_DECLS
  *
  * \section mquota_intro Introduction to mquota
  *
- * mod Mquota applies to sending mail operations when they are
+ * Mod-Mquota applies to sending mail operations when they are
  * authenticated. It is mainly designed for shared hosting solutions
  * where it is required to limit user sending rate and to control and
  * minimize the impact of compromised accounts.
+ *
+ * The plugin has a straightforward operation method were you configure
+ * different time periods inside which you limit the amount of mails
+ * that can be sent by minute, by hour and inside the total
+ * period. 
+ *
+ * Those limits apply to account level and whole domain level (so
+ * "smart" users cannot use user1@yourdomain.com,
+ * user2@yourdomani.com..and so on to bypass limits).
+ *
+ * \section mquota_configuration_example mod-mquota Configuration examples
+ *
+ * Take a look inside &lt;default-sending-quota> node inside /etc/valvula/valvula.conf and you'll find something like this:
+ * \code
+ *    <!-- sending and receiving quotas: used by mod-mquota  -->
+ *    <default-sending-quota status="full" if-no-match="first">
+ *      <!-- account limit: 50/minute,  250/hour  and  750/global from 09:00 to 21:00 
+ *           domain limit:  100/minute, 375/hour  and 1100/global 
+ *
+ *           note: use -1 to disable any of the limits.  
+ *           For example, to disable global limit, use globa-limit="-1" 
+ *      -->
+ *      <limit label='day quota' from="9:00" to="21:00"  status="full" 
+ *	     minute-limit="50" hour-limit="250" global-limit="750" 
+ *	     domain-minute-limit="100" domain-hour-limit="375" domain-global-limit="1100" />
+ *
+ *      <!-- limit 15/minute, 50/hour  and 150/global from 21:00 to 09:00 -->
+ *      <limit label='night quota' from="21:00" to="9:00"  status="full" 
+ *	     minute-limit="15" hour-limit="50" global-limit="150" 
+ *	     domain-minute-limit="15" domain-hour-limit="50" domain-global-limit="150" />
+ *    </default-sending-quota>
+ * \endcode
+ *
+ * Taking as a reference previous example, operation mode is applied following next rules:
+ *
+ * - 1. First it is found what period applies at this time by looking into <b>from</b> and <b>to</b> attribute on every <b>&lt;limit></b> node. 
+ *
+ * - 2. If no period matches, <b>&lt;if-no-match></b> attribute comes into play (we will talk about this later). 
+ *
+ * - 3. Once the period is selected, accounting is done to the user account and domain looking at the self-explaining limits. For example, if the user sends more that 50 mails by minute at 11:00 am, then valvula will reject accepting sending more.
+ *
+ * - 4. Again, if the total amount sent by a domain (including all accounts involved in previous send operations) reached provided limits (for example, domain-minute-limit) then valvula will reject accepting sending more. 
+ *
+ * - 5. Finally, if the minute limit is reached, then a minute after it will be restarted so the user only have to wait that time. The same applies to the hour limit and to the global limit. 
+ *
+ * \section mquota_if_no_match_period mod-mquota Selecting a default period when no match is found (&lt;if-no-match>)
+ *
+ * 
+ * 
  *
  * \section mquota_default_conf mod-mquota default configuration
  *

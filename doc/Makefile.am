@@ -38,6 +38,7 @@ build_doc: prepare_xmls
 	cp $(top_srcdir)/doc/administrator-friendly.png html
 	cp $(top_srcdir)/doc/adding-modules.png html
 	cp $(top_srcdir)/doc/valvulad-open-source.png html
+	cp $(top_srcdir)/web/images/hacha-100x171.png html
 
 prepare_xmls:
 	axl-knife -i ../server/valvula.example.conf -o valvula.example.conf.xml -e -p fragment
