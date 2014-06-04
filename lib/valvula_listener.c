@@ -40,6 +40,15 @@
 
 #define LOG_DOMAIN "valvula-listener"
 
+/** 
+ * \defgroup valvula_listener ValvulaListener: API to create libValvula listeners.
+ */
+
+/** 
+ * \addtogroup valvula_listener
+ * @{
+ */
+
 typedef struct _ValvulaListenerData {
 	char                     * host;
 	int                        port;
@@ -289,7 +298,7 @@ ValvulaConnection * __valvula_listener_new_common  (ValvulaCtx              * ct
 
 
 /** 
- * @brief Creates a new Valvula Listener accepting incoming connections
+ * @internal Creates a new Valvula Listener accepting incoming connections
  * on the given <b>host:port</b> configuration.
  *
  * If user provides an \ref ValvulaListenerReady "on_ready" callback,
@@ -490,9 +499,8 @@ ValvulaConnection * valvula_listener_new (ValvulaCtx          * ctx,
 }
 
 /** 
- * @brief Creates a new listener, allowing to get the connection that
- * represents the listener created with the optional handler (\ref
- * ValvulaListenerReadyFull).
+ * @internal Creates a new listener, allowing to get the connection that
+ * represents the listener created with the optional handler.
  *
  * This function provides the same functionality than \ref
  * valvula_listener_new and \ref valvula_listener_new2 but allowing to
@@ -539,7 +547,7 @@ ValvulaConnection * valvula_listener_new_full  (ValvulaCtx  * ctx,
 }
 
 /** 
- * @brief Allows to create a BEEP listener optionally not registering
+ * @internal Allows to create a BEEP listener optionally not registering
  * it on valvula reader. See \ref valvula_listener_new_full for more
  * details.
  *
@@ -579,7 +587,7 @@ ValvulaConnection * valvula_listener_new_full2       (ValvulaCtx             * c
 }
 
 /** 
- * @brief Creates a new Valvula Listener accepting incoming connections
+ * @internal Creates a new Valvula Listener accepting incoming connections
  * on the given <b>host:port</b> configuration, receiving the port
  * configuration as an integer value.
  *
@@ -625,7 +633,7 @@ ValvulaConnection * valvula_listener_new2    (ValvulaCtx   * ctx,
 
 
 /** 
- * @brief Blocks a listener (or listeners) launched until valvula finish.
+ * @internal Blocks a listener (or listeners) launched until valvula finish.
  * 
  * This function should be called after creating a listener (o
  * listeners) calling to \ref valvula_listener_new to block current
@@ -687,7 +695,7 @@ void valvula_listener_wait (ValvulaCtx * ctx)
 }
 
 /** 
- * @brief Unlock the thread blocked at the \ref valvula_listener_wait.
+ * @internal Unlock the thread blocked at the \ref valvula_listener_wait.
  * 
  * @param ctx The context where the operation will be performed.
  **/

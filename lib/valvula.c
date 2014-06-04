@@ -416,16 +416,6 @@ void _valvula_log2 (ValvulaCtx        * ctx,
 #endif
 }
 
-/**
- * \defgroup valvula Valvula: Main Valvula Library Module (initialization and exit stuff)
- */
-
-/**
- * \addtogroup valvula
- * @{
- */
-
-
 /** 
  * @brief Context based valvula library init. Allows to init the valvula
  * library status on the provided context object (\ref ValvulaCtx).
@@ -545,9 +535,6 @@ axl_bool valvula_init_check (ValvulaCtx * ctx)
  * <b>Notes about calling to terminate valvula from inside its handlers:</b>
  *
  * Currently this is allowed and supported only in the following handlers:
- *
- * - \ref ValvulaOnFrameReceived (\ref valvula_channel_set_received_handler)
- * - \ref ValvulaConnectionOnCloseFull (\ref valvula_connection_set_on_close_full)
  *
  * The rest of handlers has being not tested.
  */

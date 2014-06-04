@@ -745,7 +745,9 @@ END_C_DECLS
 
 
 /** 
- * \page mquota_intro mod-mquota Introduction
+ * \page valvulad_mod_mquota mod-mquota: Valvulad sending control quota module
+ *
+ * \section mquota_intro Introduction to mquota
  *
  * mod Mquota applies to sending mail operations when they are
  * authenticated. It is mainly designed for shared hosting solutions

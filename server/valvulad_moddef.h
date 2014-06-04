@@ -88,8 +88,7 @@ typedef void (*ModUnloadFunc) (ValvuladCtx * ctx);
 /** 
  * @brief Public definition for the reconfiguration function that must
  * be implemented to receive notification if the valvulad server
- * configuration is reloaded (either because a signal was received or
- * because some module has called \ref valvulad_reload_config).
+ * configuration is reloaded.
  *
  * @param ctx The valvulad context where the reconf operation is
  * taking place.

@@ -37,6 +37,15 @@
 #define __VALVULA_HANDLERS_H__
 
 /** 
+ * \defgroup valvula_handlers ValvulaHandlers: Handler functions used by the librar, server and plugins
+ */
+
+/** 
+ * \addtogroup valvula_handlers
+ * @{
+ */
+
+/** 
  * @brief IO handler definition to allow defining the method to be
  * invoked while createing a new fd set.
  *
@@ -347,3 +356,7 @@ typedef void         (* ValvulaReportFinalState) (ValvulaCtx * ctx,
 						  axlPointer          user_data);
 
 #endif
+
+/** 
+ * @}
+ */

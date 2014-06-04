@@ -40,6 +40,15 @@
 /* private include */
 #include <valvula_private.h>
 
+/** 
+ * \defgroup valvula_ctx ValvulaCtx: libValvula context object, the object used to store/represent a single libValvula instance.
+ */
+
+/** 
+ * \addtogroup valvula_ctx
+ * @{
+ */
+
 ValvulaCtx * valvula_ctx_new (void)
 {
 	ValvulaCtx * ctx;
@@ -199,6 +208,8 @@ ValvulaRequestRegistry *   valvula_ctx_register_request_handler (ValvulaCtx     
  * @param ctx The context where the handler will be configured.
  *
  * @param handler The handler to be called everytime a final state is found.
+ *
+ * @param user_data User defined pointer thatwill be passed to the handler configured at the time it is called.
  */
 void        valvula_ctx_set_final_state_handler   (ValvulaCtx              * ctx,
 						   ValvulaReportFinalState   handler,

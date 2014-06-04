@@ -51,9 +51,13 @@
 #define VALVULA_CONNECTION_BUFFER_SIZE 32768
 
 /** 
- * \defgroup valvula_connection_opts Valvula Connection Options: connection create options
+ * \defgroup valvula_connection ValvulaConnection: API to handle a single connection received on Valvula server or the process using libValvula
  */
 
+/** 
+ * \addtogroup valvula_connection
+ * @{
+ */
 
 /** 
  * \brief Allows to change connection semantic to blocking.
@@ -161,7 +165,7 @@ axl_bool      valvula_connection_set_nonblocking_socket (ValvulaConnection * con
 
 
 /** 
- * @brief Allows to create a socket connection with the remote server.
+ * @internal Allows to create a socket connection with the remote server.
  *
  * @param ctx The context where the operation takes place.
  *
@@ -420,7 +424,7 @@ ValvulaConnection  * valvula_connection_new_empty              (ValvulaCtx      
 	return conn;
 }
 /** 
- * @brief Increase internal valvula connection reference counting.
+ * @internal Increase internal valvula connection reference counting.
  * 
  * Because Valvula Library design, several on going threads shares
  * references to the same connection for several purposes. 
@@ -497,7 +501,7 @@ axl_bool               valvula_connection_uncheck_ref           (ValvulaConnecti
 }
 
 /** 
- * @brief Decrease valvula connection reference counting.
+ * @internal Decrease valvula connection reference counting.
  *
  * Allows to decrease connection reference counting. If this reference
  * counting goes under 0 the connection resources will be deallocated. 
@@ -537,7 +541,7 @@ void               valvula_connection_unref                  (ValvulaConnection 
 
 
 /** 
- * @brief Allows to get current reference count for the provided connection.
+ * @internal Allows to get current reference count for the provided connection.
  *
  * See also the following functions:
  *  - \ref valvula_connection_ref
@@ -579,9 +583,6 @@ int                 valvula_connection_ref_count              (ValvulaConnection
  * 
  * @param connection the connection to get current status.
  *
- * @param free_on_fail if axl_true the connection will be closed using
- * valvula_connection_close on not connected status.
- * 
  * @return current connection status for the given connection
  */
 axl_bool                valvula_connection_is_ok (ValvulaConnection * connection)
@@ -694,15 +695,6 @@ VALVULA_SOCKET    valvula_connection_get_socket           (ValvulaConnection * c
 /** 
  * @brief Returns the actual host this connection is connected to.
  *
- * In the case the connection you have provided have the \ref
- * ValvulaRoleMasterListener role (\ref valvula_connection_get_role),
- * that is, listener connections that are waiting for connections, the
- * function will return the actual host used by the listener.
- *
- * You must not free returned value.  If you do so, you will get
- * unexpected behaviors.
- * 
- * 
  * @param connection the connection to get host value.
  * 
  * @return the host the given connection is connected to or NULL if something fail.
@@ -784,11 +776,6 @@ const char        * valvula_connection_get_host_ip            (ValvulaConnection
 /** 
  * @brief Returns the actual port this connection is connected to.
  *
- * In the case the connection you have provided have the \ref
- * ValvulaRoleMasterListener role (\ref valvula_connection_get_role),
- * that is, a listener that is waiting for connections, the
- * function will return the actual port used by the listener.
- *
  * @param connection the connection to get the port value.
  * 
  * @return the port or NULL if something fails.
@@ -838,9 +825,8 @@ const char        * valvula_connection_get_local_port         (ValvulaConnection
  * 
  * @param connection The ValvulaConnection to get the current role from.
  * 
- * @return Current role represented by \ref ValvulaPeerRole. If the
- * function receives a NULL reference it will return \ref
- * ValvulaRoleUnknown.
+ * @return Current role represented by  \ref ValvulaPeerRole. If the
+ * function receives a NULL reference it will return  \ref ValvulaRoleUnknown.
  */
 ValvulaPeerRole      valvula_connection_get_role               (ValvulaConnection * connection)
 {
@@ -851,7 +837,7 @@ ValvulaPeerRole      valvula_connection_get_role               (ValvulaConnectio
 }
 
 /** 
- * @brief In the case the connection was automatically created at the
+ * @internal In the case the connection was automatically created at the
  * listener BEEP side, the connection was accepted under an especific
  * listener started with \ref valvula_listener_new (and its associated
  * functions).
@@ -860,9 +846,8 @@ ValvulaPeerRole      valvula_connection_get_role               (ValvulaConnectio
  * accepted and created the current connection. In the case this
  * function is called over a client connection NULL, will be returned.
  * 
- * @param connection The connection that is requried to return the
- * master connection associated (the master connection will have the
- * role: \ref ValvulaRoleMasterListener).
+ * @param connection The connection that is required to return the
+ * master connection associated.
  * 
  * @return The reference or NULL if it fails. 
  */

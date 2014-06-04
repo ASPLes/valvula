@@ -38,6 +38,16 @@
 
 #include <dirent.h>
 
+/** 
+ * \defgroup valvulad_run Valvulad Run: run-time functions provided by valvulad server.
+ */
+
+/** 
+ * \addtogroup valvulad_run
+ * @{
+ */
+
+
 void valvulad_run_load_modules_from_path (ValvuladCtx * ctx, const char * path, DIR * dirHandle)
 {
 	struct dirent    * entry;
@@ -997,3 +1007,6 @@ void     valvulad_run_add_local_domain (ValvuladCtx * ctx, const char * domain)
 }
 
 
+/** 
+ * @}
+ */
