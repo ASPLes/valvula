@@ -35,6 +35,15 @@
  */
 #include <valvulad.h>
 
+/** 
+ * \defgroup valvulad_mod_test mod-test: test module and skeleton for valvula project
+ */
+
+/** 
+ * \addtogroup valvulad_mod_test
+ * @{
+ */
+
 /* use this declarations to avoid c++ compilers to mangle exported
  * names. */
 BEGIN_C_DECLS
@@ -113,3 +122,7 @@ ValvuladModDef module_def = {
 };
 
 END_C_DECLS
+
+/** 
+ * @}
+ */

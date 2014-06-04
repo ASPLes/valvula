@@ -1014,6 +1014,11 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * - For system administrators: \ref valvulad_administration_manual
  * - For developers: \ref valvulad_plugin_development_manual
  *
+ * Documentation from modules:
+ *
+ * - \ref valvulad_mod_slm
+ * - \ref valvulad_mod_mquota
+ *
  * \section contact_aspl Contact Us
  * 
  * You can reach us at the <b>Valvula mailing list:</b> at <a href="http://lists.aspl.es/cgi-bin/mailman/listinfo/valvula">Valvula users</a>
@@ -1050,8 +1055,8 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * To fully install Valvula server you must have the following packages installed in your system:
  *
- * - \ref MySQL client library (for example, in debian <b>libmysqlclient16</b>). Check your OS manual to install it.
- * - \ref Axl Library for XML processing. Check http://www.aspl.es/xml to know if there are available packages for your OS.
+ * - MySQL client library (for example, in debian <b>libmysqlclient16</b>). Check your OS manual to install it.
+ * - Axl Library for XML processing. Check http://www.aspl.es/xml to know if there are available packages for your OS.
  *
  * After that, get the latest Valvula release from http://www.aspl.es/valvula/downloads and then run:
  *
@@ -1201,6 +1206,38 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  */
 
 /** 
+ * \page valvula_api Valvula API
+ *
+ * The following is a reference manual for the API provides by
+ * <b>libValvula</b> and <b>Valvula server</b>. These functions are
+ * only required in the case you want to create new Valvula server
+ * plugins/modules. 
+ *
+ * From a module writer's point of view both apis are used the same
+ * way as if they come from the same source. The only point to know is
+ * that part of the API is provided by the base library and part of
+ * the API is provided by the server it self.
+ *
+ * \section valvula_api_libvalvula libValvula API
+ *
+ * - \ref valvula
+ * - \ref valvula_handlers
+ * - \ref valvula_types
+ * - \ref valvula_ctx
+ * - \ref valvula_connection
+ * - \ref valvula_listener
+ *
+ * \section valvula_api_valvulad ValvulaD API
+ *
+ * - \ref valvulad_moddef
+ * - \ref valvulad_run
+ *
+ * 
+ *
+ */
+
+
+/** 
  * \page valvulad_plugin_development_manual Valvulad plugin development manual
  *
  * \section valvulad_plugin_intro Introduction to valvula plugin developement
@@ -1212,7 +1249,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * The recommended way to start is to take mod-test.c as a base
  * example to extend upon. To that end, grab a copy from https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.c
  *
- * Also, grab a copy of the Makefile.am (https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/mod-test.c) to bootstrap 
+ * Also, grab a copy of the Makefile.am (https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-test/Makefile.am) to bootstrap 
  * your module compilation. On that Makefile.am you'll see the essentials about getting that module compiled. 
  *
  * Finally, you'll need a module pointer, which is a small xml file,
@@ -1231,29 +1268,81 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \section valvulad_plugin_activation Plugin run-time activation
  *
- * Before getting into the details about each handler inside a module let's consider how the code will flow.
+ * Before getting into the details about each handler inside a module
+ * let's consider how the code will flow. Assuming you have everything
+ * compiled and activated, your module will be called like this:
  * 
- * -# Assumin
+ * - 1. First, the \ref ModInitFunc (in our case test_init) function will be called first at valvula startup. There, you'll have to place all initialization code you need to make the module work. This function is only called once.
+ *
+ * - 2. Then, for every request postfix passes to Valvula, and in the case your module is connected to the listener port (see \ref valvulad_server_configuration), then your module will be called at \ref ValvulaProcessRequest (in our case \ref test_process_request). That function will have to make a decision about that request by returning any of the available values found at: \ref ValvulaState. Optionally you can also return a message to postfix so he can report that message to the user (and record it into the log). We will get into more details about this function later.
+ *
+ * - 3. At the end, in the case valvula is closing/stoping, \ref ModCloseFunc (in our case test_close) will be called. There you'll have to release resources and save state for later recovery (if any).
+ *
+ * That's the very basic function. Then, your module can receive a call to \ref ModReconfFunc requesting to reload configuration (a kind of run-time init function). This is received when the user/administrator sends a SIGHUP signal to reload the process. This handler is optional but recommended.
+ *
+ * Finally, your module may receive a call to \ref ModUnloadFunc indicating the module is going to be unloaded (a kind of run-time close function). There, you'll have to implement all resource release code.
+ *
+ *
+ * \section valvulad_plugin_installation Plugin installation notes
+ *
+ * Now, before getting into details about how modules are created, a few notes about installing new modules. This is as easy as:
+ *
+ * - 1. Copy the compiled module into (mod-your-mod.so), for example, /usr/lib/valvulad/modules.
+ *
+ * - 2. Then, copy your updated module pointer (mod-your-mod.xml) into /etc/valvula/mod-available. Make your the content of that file actually points to the full path of your .so
+ * - 3. After that, you shoul be able to run the following command to check if the module is detected (at least), by the configuration:
+ *
+ * \code
+ * >> valvulad-mgr.py -o
+ * \endcode
+ *
+ * - 4. After that, to test the module, you must connect it to a valvula listener. See (see \ref valvulad_server_configuration).
+ *
+ * - 5. Finally, don't forget restart valvula to have it load your new brand module:
+ *
+ * \code
+ * >> service valvulad restart
+ * \endcode
+ *
+ * \section valvulad_plugin_testing Plugin testing notes (checking Valvula without having postfix running)
+ *
+ * To test your new module or any other modules, you can do the obvious
+ * operation which is sending a test to postfix to see what happens.
+ *
+ * However, it is also possible to test valvula server directly without having postfix running. Use the following command to configure a 
+ * request as if it were sent by the postfix server:
+ *
+ * \code
+ * >> valvulad-mgr.py -t
+ * \endcode
+ *
+ * That will ask for the required details and will connect to the port
+ * indicated by the user, producing a network interation exactly the
+ * same as if it were done by postfix.
+ *
+ * This command can also be used to check valvula is working (for a checker/monitor).
+ *
+ * \section valvulad_plugin_development_notes Plugin developement notes
+ *
+ * The following are general notes that you can use to solve common questions while using valvula API ( \ref valvula_api) :
+ *
+ * <b>How do I check if a user was autenticated?</b>
+ *
+ * Use \ref valvula_is_authenticated
+ *
+ * <b>How do I check if the sending user is a local user?</b>
+ *
+ * Use \ref valvulad_run_is_local_address
+ *
+ * <b>And a local domain?</b>
+ *
+ * Use \ref valvulad_run_is_local_domain
+ * 
+ *  
  *
  * 
  * 
  * 
- */
-
-/** 
- * \page valvula_api Valvula API
- *
- * The following is a reference manual for the API provides by
- * <b>libValvula</b> and <b>Valvula server</b>. These functions are
- * only required in the case you want to create new Valvula server
- * plugins/modules.
- *
- * \section valvula_api_libvalvula libValvula API
- *
- * - \ref valvula
- *
- * 
- *
  */
 
 /** 

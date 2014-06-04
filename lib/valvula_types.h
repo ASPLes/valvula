@@ -37,6 +37,15 @@
 #define __VALVULA_TYPES_H__
 
 /** 
+ * \defgroup valvula_types ValvulaTypes: Common types used by libValvula API
+ */
+
+/** 
+ * \addtogroup valvula_types
+ * @{
+ */
+
+/** 
  * @internal Definitions to accomodate the underlaying thread
  * interface to the Valvula thread API.
  */
@@ -211,7 +220,7 @@ typedef enum  {
 
 
 /** 
- * @brief Valvula Operation Status.
+ * @internal Valvula Operation Status.
  * 
  * This enum is used to represent different Valvula Library status,
  * especially while operating with \ref ValvulaConnection
@@ -220,14 +229,14 @@ typedef enum  {
  */
 typedef enum {
 	/** 
-	 * @brief Represents an Error while Valvula Library was operating.
+	 * @internal Represents an Error while Valvula Library was operating.
 	 *
 	 * The operation asked to be done by Valvula Library could be
 	 * completed.
 	 */
 	ValvulaError                  = 1,
 	/** 
-	 * @brief Represents the operation have been successfully completed.
+	 * @internal Represents the operation have been successfully completed.
 	 *
 	 * The operation asked to be done by Valvula Library have been
 	 * completed.
@@ -268,20 +277,20 @@ typedef enum {
 } ValvulaDebugLevel;
 
 /** 
- * @brief Allows to specify which type of operation should be
+ * @internal Allows to specify which type of operation should be
  * implemented while calling to Valvula Library internal IO blocking
  * abstraction.
  */
 typedef enum {
 	/** 
-	 * @brief A read watching operation is requested. If this
+	 * @internal A read watching operation is requested. If this
 	 * value is received, the fd set containins a set of socket
 	 * descriptors which should be watched for incoming data to be
 	 * received.
 	 */
 	READ_OPERATIONS  = 1 << 0, 
 	/** 
-	 * @brief A write watching operation is requested. If this
+	 * @internal A write watching operation is requested. If this
 	 * value is received, the fd set contains a set of socket that
 	 * is being requested for its availability to perform a write
 	 * operation on them.
@@ -289,9 +298,12 @@ typedef enum {
 	WRITE_OPERATIONS = 1 << 1
 } ValvulaIoWaitingFor;
 
+/** 
+ * @internal
+ */
 typedef enum {
 	/**
-	 * @brief Allows to configure the select(2) system call based
+	 * @internal Allows to configure the select(2) system call based
 	 * mechanism. It is known to be available on any platform,
 	 * however it has some limitations while handling big set of
 	 * sockets, and it is limited to a maximum number of sockets,
@@ -304,7 +316,7 @@ typedef enum {
 	 */
 	VALVULA_IO_WAIT_SELECT = 1,
 	/**
-	 * @brief Allows to configure the poll(2) system call based
+	 * @internal Allows to configure the poll(2) system call based
 	 * mechanism. 
 	 * 
 	 * It is also a widely available mechanism on POSIX
@@ -331,7 +343,7 @@ typedef enum {
 	 */
 	VALVULA_IO_WAIT_POLL   = 2,
 	/**
-	 * @brief Allows to configure the epoll(2) system call based
+	 * @internal Allows to configure the epoll(2) system call based
 	 * mechanism.
 	 * 
 	 * It is a mechanism available on GNU/Linux starting from
@@ -352,6 +364,9 @@ typedef enum {
 	VALVULA_IO_WAIT_EPOLL  = 3,
 } ValvulaIoWaitingType;
 
+/** 
+ * @brief Connection role inside libValvula and ValvulaD server.
+ */
 typedef enum {
 	/** 
 	 * @brief This value is used to represent an unknown role state.
@@ -372,13 +387,6 @@ typedef enum {
 	 * @brief This especial value for the this enumeration allows
 	 * to know that the connection is a listener connection
 	 * accepting connections. 
-	 *
-	 * Connections reference that were received with the following
-	 * functions are the only ones that can have this value:
-	 *
-	 * - \ref valvula_listener_new
-	 * - \ref valvula_listener_new2
-	 * - \ref valvula_listener_new_full
 	 */
 	ValvulaRoleMasterListener
 	
@@ -510,3 +518,7 @@ typedef struct _ValvulaRequestRegistry ValvulaRequestRegistry;
 
 
 #endif
+
+/** 
+ * @}
+ */

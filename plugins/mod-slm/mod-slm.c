@@ -52,7 +52,7 @@ typedef enum {
 ValvulaModSlmMode __slm_mode = VALVULA_MOD_SLM_DISABLED;
 
 /** 
- * @brief Init function, perform all the necessary code to register
+ * @internal Init function, perform all the necessary code to register
  * profiles, configure Vortex, and any other init task. The function
  * must return true to signal that the module was properly initialized
  * Otherwise, false must be returned.
@@ -108,7 +108,7 @@ axl_bool slm_has_exception (ValvuladCtx * ctx, ValvulaRequest * request)
 }
 
 /** 
- * @brief Process request for the module.
+ * @internal Process request for the module.
  */
 ValvulaState slm_process_request (ValvulaCtx        * _ctx, 
 				  ValvulaConnection * connection, 
@@ -185,7 +185,7 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 }
 
 /** 
- * @brief Close function called once the valvulad server wants to
+ * @internal Close function called once the valvulad server wants to
  * unload the module or it is being closed. All resource deallocation
  * and stop operation required must be done here.
  */
@@ -196,7 +196,7 @@ void slm_close (ValvuladCtx * ctx)
 }
 
 /** 
- * @brief The reconf function is used by valvulad to notify to all
+ * @internal The reconf function is used by valvulad to notify to all
  * its modules loaded that a reconfiguration signal was received and
  * modules that could have configuration and run time change support,
  * should reread its files. It is an optional handler.
@@ -207,7 +207,7 @@ void slm_reconf (ValvuladCtx * ctx) {
 }
 
 /** 
- * @brief Public entry point for the module to be loaded. This is the
+ * @internal Public entry point for the module to be loaded. This is the
  * symbol the valvulad will lookup to load the rest of items.
  */
 ValvuladModDef module_def = {
@@ -224,38 +224,32 @@ END_C_DECLS
 
 
 /** 
- * \page slm_intro mod-slm Introduction
+ * \page valvulad_mod_slm mod-slm: Valvula sender login mismatch module
  *
  * mod-slm allows to implement sender login mismatch restrictions
- * which allows limiting mail-from's spoofing.
+ * which allows limiting mail-from's spoofing. Postfix currently has
+ * support for this but you need to declare some a full mapping which
+ * in many cases is not possible, hard to implement and more over, it
+ * may require exceptions that are also possible, but again, difficult
+ * to maintain.
  *
- * The module, in full mode, provides same function as postfix
- * restrictions reject_authenticated_sender_login_mismatch and
- * reject_sender_login_mismatch. 
+ * At the same time, the module provides different operation modes
+ * that can better adapt to different scenarios, providing full mode,
+ * same-domain mode, valid-mail-from and disabled.
  *
- * However, the module implements an adaptative approach allow to
- * provide different enforce levels that makes it suitable to more
- * situations.
+ * Current modes are:
  *
- * Along this, mod-slm provides support for restrictions which allows
- * convering those situations where most accounts must be limited
- * though some of them shouldn't (for example, because they are relay
- * accounts).
+ * - 1) <b>full</b> : mail from and sasl auth must match or request will be rejected.
  *
- * The module has different general modes with exceptions that can be
- * handled by updating the database. Current modes are:
- *
- * - full : mail from and sasl auth must match or request will be rejected.
- *
- * - same-domain : sasl auth user and mail from's domain must match
- *     and sender address (mail from) must be a valid account.
+ * - 2) <b>same-domain</b> : sasl auth user and mail from's domain must match and sender address (mail from) must be a valid account (considered local by postfix server).
  * 
- * - valid-mail-from : mail from and sasl auth user can mismatch but
- * mail from should be a valid account at current mail server.
+ * - 3) <b>valid-mail-from</b> : mail from and sasl auth user can mismatch but mail from should be a valid account at current mail server. This will stop those situations where compromised accounts are used to send/relay content to recipients using source addresses that do not belong to the server.
  *
- * - disabled : disables mod-slm application. Removing <sender-login-mismatch /> node also disables mod-slm module.
+ * - 4) <b>disabled</b> : disables mod-slm application. Removing <sender-login-mismatch /> node also disables mod-slm module.
+ *
+ * \section valvulad_mod_slm_how_to_configure How to configure mod-slm
  * 
- * These values are configured inside <enviroment> node like follows:
+ * These values are configured inside &lt;enviroment> node like follows, inside /etc/valvula/valvula.conf file:
  *
  * \code
  * <enviroment>
@@ -265,4 +259,17 @@ END_C_DECLS
  * </enviroment>
  * \endcode
  *
+ * \section valvulad_mod_slm_handling_restrictions mod-slm Handling restrictions
+ *
+ * mod-slm also provides a way to not apply restrictions to certain
+ * combinations. For that, you must insert that exception inside the
+ * SQL database. Get into database declared for valvula (take a look
+ * at /etc/valvula/valvula.conf) and run the following query:
+ *
+ * \code
+ * INSERT INTO slm_exception (is_active, description, mail_from, sasl_username) 
+          VALUES ('1', 'Some descripcion', 'mail@from.to.accept.com', 'sasl_user_to_accept');
+ * \endcode
+ *
  */
+
