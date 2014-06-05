@@ -1,0 +1,60 @@
+                     --\\ Valvula //--
+                        Radioactive
+                           1.0.3
+
+Advanced Software Production Line is proud to announce a new stable
+release of the Valvula.
+
+Valvula is a OpenSource high performance mail policy daemon for
+Postfix, written in ANSI C, that provides out of the box support for
+sender login mismatch, mail quotas, per user and per domain blacklists
+and whitelists and much more.
+
+Valvula is fully extensible through plugins and it is composed by a
+base library (libValvula) that integrates into a ready to use server
+(valvulad) that is able to run different ports with different modules
+so you can connect same valvula process at different points inside
+Postfix policy restriction sections.
+
+
+Resources
+~~~~~~~~~
+
+   Valvula homepage
+   [ http://www.aspl.es/valvula ]
+
+   Commercial support
+   [ http://www.aspl.es/valvula/commercial.html ]
+
+   Advanced Software Production Line, S.L.
+   [ http://www.aspl.es ]
+
+   Featured project: Core-Admin
+   [ http://www.core-admin.com ]
+
+This release in short
+~~~~~~~~~~~~~~~~~~~~~
+
+  First public release of the policy server, library and management
+  tools.
+
+
+About Advanced Software Production Line, S.L. (ASPL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Advanced Software Production Line (ASPL) provides GNU/Linux support
+  and consulting services to enable organization to introduce
+  GNU/Linux into their processes, making other platforms to properly
+  interact with it.
+
+  You can contact us, using English or Spanish, at:
+
+       http://www.aspl.es - info@aspl.es
+
+  We hope Valvula may be useful you. Enjoy Valvula!
+
+--
+Francis Brosnan Blázquez           - francis@aspl.es
+Advanced Software Production Line  - http://www.aspl.es
+5th Jun 2014, Madrid (Spain)
+
