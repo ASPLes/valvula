@@ -723,6 +723,15 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	/* install event to track day and month change */
 	valvula_thread_pool_new_event (ctx->ctx, 2000000, __valvulad_run_time_tracking, ctx, NULL);
 
+	/* check local-domains configuration */
+	if (! valvulad_run_check_local_domains_config (ctx)) {
+		error ("Unable to startup local domains configuration");
+		return axl_false;
+	} /* end if */
+
+	/*** NOTE: before this line valvula will change its user/group
+	 * so any root operation won't be possible */
+
 	/* check for running user */
 	node = axl_doc_get (ctx->config, "/valvula/global-settings/running");
 	if (node && ATTR_VALUE (node, "user") && ATTR_VALUE (node, "group") && HAS_ATTR_VALUE (node, "enabled", "yes")) {
@@ -764,12 +773,6 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 		} /* end if */
 	} /* end if */
 
-	/* check local-domains configuration */
-	if (! valvulad_run_check_local_domains_config (ctx)) {
-		error ("Unable to startup local domains configuration");
-		return axl_false;
-	} /* end if */
-		
 
 	return axl_true; 
 }
