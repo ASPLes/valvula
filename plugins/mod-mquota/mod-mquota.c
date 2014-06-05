@@ -798,21 +798,33 @@ END_C_DECLS
  *
  * - 5. Finally, if the minute limit is reached, then a minute after it will be restarted so the user only have to wait that time. The same applies to the hour limit and to the global limit. 
  *
- * \section mquota_if_no_match_period mod-mquota Selecting a default period when no match is found (&lt;if-no-match>)
- *
- * 
- * 
- *
- * \section mquota_default_conf mod-mquota default configuration
- *
- * \section mquota_if_no_match_conf mod-mquota default action when no period applies.
+ * \section mquota_if_no_match_period mod-mquota Selecting a default period when no match is found (<if-no-match>)
  *
  * When no period is found to apply, if-no-match attribute is used (at
- * <default-sending-quota>). Allowed values are:
+ * <default-sending-quota>). This allows to define a particular period
+ * where limits applies and then, outside that limit, a default
+ * period, no limit or just reject is applied.
  *
- * - first : if no period matches, then the first period is used.
+ * Allowed values are:
  *
- * - no-limit : if no period matches, then, apply no limit and let the user to send without limit.
+ * - 1) first : if no period matches, then the first period in the definition list is used.
  *
- * - reject : if no period matches, then just reject the send operation.
+ * - 2) no-limit : if no period matches, then, apply no limit and let the user to send without limit. This is quite useful to define night limits. That is, you only have to define a period to cover nights period and then, during the day no limit is applied where you can have a better supervision.
+ *
+ * - 3) reject : if no period matches, then just reject the send operation.
+ * 
+ *
+ * \section mquota_exceptions mod-mquota Configuring exceptions to certain users
+ *
+ * In the case you want to apply quotas in a general manner but need a
+ * way to avoid applying these quotas to certain users, then connect
+ * to the valvula database (take a look what's defined at
+ * <b>/etc/valvula/valvula.conf</b>) and then run the following query:
+ *
+ * \code
+ * INSERT INTO mquota_exception (is_active, sasl_user) VALUES ('1', 'test4@unlimited2.com');
+ * \endcode
+ *
+ * This will allow sasl user test4@unlimited2.com to send without any restriction.
+ *
  */

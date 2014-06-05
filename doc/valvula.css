@@ -11,6 +11,7 @@ h1, h2, h3, a {
 }
 
 h1, h2, h3 {
+   padding-bottom: 5px;
    border-bottom: 1px solid #00568d;
 }
 
@@ -193,22 +194,22 @@ pre.fragment {
 }
 
 .sponsored-content { 
-  background: #3465a4;
+  background: #193141;
   color: white; 
   text-align: left;
   border-bottom: 1px dotted #3465a4;
   margin-bottom: 10px;
-  border-left: 1px dotted #729fcf;
-  border-right: 1px dotted #729fcf;
+/*  border-left: 1px dotted #729fcf;
+  border-right: 1px dotted #729fcf; */
   
 }
 
 .sponsored-content .dotted { 
-  border-right: 1px dotted #729fcf;
+/*  border-right: 1px dotted #729fcf; */
 }
 
 .sponsored-content a { 
-   background: #3465a4;
+   background: #193141;
    color: white; 
 }
 
@@ -219,8 +220,10 @@ pre.fragment {
 .sponsored-content h1 { 
   padding-top: 0px;
   margin-top: 0px;
-  background: #3465a4;
+  background: #193141;
   color: white;  
+  padding-bottom: 5px;
+  border-bottom: 1px dotted #729fcf;
 }
 
 .sponsored-content td { 
@@ -233,5 +236,5 @@ pre.fragment {
 }
 
 .sponsored-content li { 
-  list-style: none;
+  list-style: square;
 }

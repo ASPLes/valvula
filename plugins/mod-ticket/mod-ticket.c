@@ -541,3 +541,19 @@ ValvuladModDef module_def = {
 };
 
 END_C_DECLS
+
+/** 
+ * \page valvulad_mod_ticket mod-ticket : A valvula module to control massive mail deliveries by tickets
+ *
+ * \section valvulad_mod_ticket_intro Introduction
+ *
+ * <b>mod-ticket</b> is a handy module that allows to implement
+ * massive mail services controlled by tickets. This tickets acts like
+ * quotas where user consume them every time a send operation is done until ticket limit is reached.
+ *
+ * At the same time, these tickets allows to define a time limit to be
+ * consumed, day limit, month limit and global limits. 
+ * 
+ * 
+ * 
+ */
