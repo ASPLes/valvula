@@ -384,7 +384,7 @@ void bwl_reconf (ValvuladCtx * ctx) {
  */
 ValvuladModDef module_def = {
 	"mod-bwl",
-	"Valvulad Black and white lists module",
+	"Valvulad Blacklists and whitelists module",
 	bwl_init,
 	bwl_close,
 	bwl_process_request,
@@ -397,48 +397,104 @@ END_C_DECLS
 
 
 /** 
- * \section how_bwl_module_works How mod-bwl works
+ * \page valvulad_mod_bwl mod-bwl : Valvula blacklisting module
  *
- * The module install three tables to handle different levels of black
- * and white lists. They are applied in the following order and each
- * one takes precedence:
+ * \section valvulad_mod_bwl Introduction
  *
- * - bwl_global : server level table that includes white lists and
- *     black lists. If there is a rule here that matches, the rest of
- *     the tables do not applies.
+ * mod-bwl is a handy module that allows implementing blacklisting
+ * rules that are based on source and destination at the same time. As
+ * opposed postfix which implements only source OR destination rules,
+ * this allow implementing rules that accept (whitelist) or blocks
+ * (blacklist) traffic for certain domains or even certain accounts.
  *
- * - bwl_domain : domain level table that includes white lists and
- *     black lists that applies to a particular domain. Because it
+ * This way, domain administrators and end users can administrate
+ * their own set of rules without affecting other domain and accounts.
+ *
+ * The module also uses valvula support to detect local users and
+ * local domains to make better decisions while handling requests
+ * received. These includes:
+ *
+ * - Avoiding a whitelist rule converting the mail server into an open relay. A whitelist can only work in the case it is configured with a local domain or local account as destination (that is whitelist to receive content). In the case the whitelist is for an external domain/account, that rule is skipped.
+ *
+ * - When you configure account or domain level rules they do not
+ *     apply, no matter they are whitelist or blacklist, in the case
+ *     the destination is not a local domain or address. This ensure that any user interface provided to the user account owner or
+ *     domain administration to create rules will not led to have rules that may open
+ *     the mail server or block/allow other's traffic in the server without their autorization.
+ *
+ * The module also support blocking SASL users. This allows to have a working account but temporally/permanently blocked.
+ *
+ * \section valvulad_mod_bwl_how_it_works How mod-bwl works
+ *
+ * The module install three tables to handle different levels of
+ * blacklists and whitelists. They are applied in the following order
+ * and each one takes precedence:
+ *
+ * - <b>bwl_global</b> : server level table that includes whitelists
+ *     and blacklists. If there is a rule here that matches, the rest
+ *     of the tables do not applies. 
+ *
+ *  <span style='text-decoration: underline'>This is how this table is checked: </span><br>
+ *    1) <b>This is the first table</b> that is checked before checking next tables (bwl_domain and bwl_account). <br>
+ *    2) While checking this table, first <b>specific rules</b> are checked first before <b>general rules</b>. <br>
+ *    3) This means that a rule with a source and a destination defined (<b>specific rule</b>) is checked before a rule that only has source or destination defined (<b>general rules</b>). <br>
+ *    <b>NOTE:</b> This allows, for example, to block all traffic from certain domain, let's say gmail.com, <b>with a general rule</b>, that only has has source defined, and then accept traffic from certain.user@gmail.com to certain.local.user@loca-domain.com <b>with a specific rule</b> because it has both source and destination defined.
+ *
+ * - <b>bwl_domain</b> : domain level table that includes whitelists and
+ *     blacklists that applies to a particular domain. Because it
  *     applies to a domain, the rule must have as source or
  *     destination an account of that domain or the domain
  *     itself. Rules applied at this level can only accept traffic
  *     received (delivered to its domain).
  *
- * - bwl_account : account level table that includes white lists and
- *     black lists that applies to a particular account. Because it
+ *  <span style='text-decoration: underline'>This is how this table is checked: </span><br>
+ *    1) This table is checked before checking next tables bwl_account. <br>
+ *    2) While checking this table, first <b>specific rules</b> are checked first before <b>general rules</b>. <br>
+ *  
+ *
+ * - <b>bwl_account</b> : account level table that includes whitelists and
+ *     blacklists that applies to a particular account. Because it
  *     applies to an account, the rule must have as source or as
  *     destination the provided account. Rules applied at this level
  *     can only accept traffic received on the account (not outgoing
  *     traffic).
  *
- * Now, white lists and black lists are differenciated through the status field:
+ *  <span style='text-decoration: underline'>This is how this table is checked: </span><br>
+ *    1) This is the last table checked before checking next tables bwl_account. <br>
+ *    2) While checking this table, first <b>specific rules</b> are checked first before <b>general rules</b>. <br>
  *
- * - A white list rule includes a "ok" indication in the status field.
+ * \section valvulad_mod_bwl_how_rules_are_differenciated mod-bwl How rules are differenciated (whitelists and blacklists)
  *
- * - A Black list rule includes a "reject" or "discard" indication at the status field.
+ * Now, whitelists and blacklists are differenciated through the status field in every table (we will see examples later):
  *
- * Now, there is a difference on how an white list or a black list
- * rule is applied. 
+ * - A whitelist rule includes a "ok" indication in the status field.
  *
- * - For a black list, there is no especial operation. The rule is
- *   applied at the provided level in the given order (server, then
- *   domain, then account table).
+ * - A Blacklist rule includes a "reject" or "discard" indication at the status field.
+ *
+ * \section valvulad_mod_bwl_how_to_block_sasl_user mod-bwl How to block SASL users
+ *
+ * To block an account, use the following SQL to update valvula database:
+ *
+ * \code
+ * INSERT INTO bwl_global_sasl (is_active, sasl_user) VALUES ('1', 'certain.user@domain.com');
+ * \endcode
+ *
+ * \section valvulad_mod_bwl_how_rules mod-bwl Rules examples
+ *
+ * To block a certain user from receiving any traffic (outgoing) globally run use the following SQL:
+ * \code
+ * -- Block  * -> certain.user@domain.com
+ * INSERT INTO bwl_global (is_active, destination, status) VALUES ('1', 'certain.user@domain.com', 'reject')
+ * \endcode
+ *
+ * To block a certain user from receiving traffic from a particular user globally run use the following SQL:
+ * \code
+ * -- Block  anotheruser@anotherdomanin.com -> certain.user@domain.com
+ * INSERT INTO bwl_global (is_active, source, destination, status) VALUES ('1', 'anotheruser@anotherdomain.com', 'certain.user@domain.com', 'reject')
+ * \endcode
+ *
+ *
  * 
- * - For a white list it changes. When adding a whitelist rule, if it
- *   the destination is defined it must be an account or domain that
- *   is handled by the server (local domains). Rules that tries to
- *   accept traffic for domains that aren't handled by this server are
- *   ignored (because otherwise it will create an open relay rule).
  * 
  * 
  *
