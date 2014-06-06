@@ -612,7 +612,7 @@ axl_bool __mod_mquota_check_reject_domain (const char * sasl_domain, ValvulaRequ
 	hour_usage += 1;
 	minute_usage += 1;
 
-	msg ("Saving limits %s -> global %d, hour %d, minute %d", sasl_domain, global_usage, hour_usage, minute_usage); 
+	/* msg ("Saving limits %s -> global %d, hour %d, minute %d", sasl_domain, global_usage, hour_usage, minute_usage);  */
 
 	axl_hash_insert_full (__mod_mquota_current_period->domain_accounting, (axlPointer) axl_strdup (sasl_domain), axl_free, INT_TO_PTR (global_usage), NULL);
 	axl_hash_insert_full (__mod_mquota_domain_hour_hash, (axlPointer) axl_strdup (sasl_domain), axl_free, INT_TO_PTR (hour_usage), NULL);
