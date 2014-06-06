@@ -1536,7 +1536,11 @@ axl_bool test_05 (void) {
 		"plain", "francis@aspl.es", NULL);
 
 	if (state != VALVULA_STATE_REJECT) {
-		printf ("ERROR (4.11): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		/* check state to better configure the state */
+		if (state == VALVULA_STATE_DUNNO) 
+			printf ("ERROR (4.11): expected valvula state %d but found %d (should have received REJECT but received DUNNO)\n", VALVULA_STATE_REJECT, state);
+		else
+			printf ("ERROR (4.11): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
 		return axl_false;
 	} /* end if */
 
