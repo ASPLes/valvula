@@ -514,8 +514,8 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	
 	/* by default report return dunno */
-	printf ("..12 (current_month_usage=%ld > month_limit=%ld, current_day_usage=%ld > day_limit=%ld) ..\n",
-		current_month_usage, month_limit, current_day_usage, day_limit);
+	printf ("..12 (current_month_usage=%ld > month_limit=%ld, current_day_usage=%ld > day_limit=%ld) %s ..\n",
+		current_month_usage, month_limit, current_day_usage, day_limit, descriptive_user);
 	return VALVULA_STATE_DUNNO;
 }
 
