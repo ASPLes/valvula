@@ -122,9 +122,9 @@ axl_bool mod_mquota_time_is_before (long hour_a, long minute_a,
 
 ModMquotaLimit * mod_mquota_report_limit_select (ModMquotaLimit * limit)
 {
-	if (limit && limit->label)
-		msg ("Selecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label, 
-		     limit->global_limit, limit->hour_limit, limit->minute_limit);
+/*	if (limit && limit->label)
+		msg ("Selecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label,  
+		limit->global_limit, limit->hour_limit, limit->minute_limit); */
 	if (limit == NULL)
 		wrn ("No sending mquota period was found.."); 
 	return limit;
@@ -200,7 +200,7 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	axlHash         * hash;
 	ModMquotaLimit  * old_reference;
 
-	msg ("mod-quota: updating accounting info");
+	/* msg ("mod-quota: updating accounting info"); */
 
 	/* lock */
 	valvula_mutex_lock (&hash_mutex);
