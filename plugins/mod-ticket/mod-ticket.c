@@ -346,7 +346,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	/* skip if the domain or the sasl user in the request is not
 	 * limited by the domain request */
 	if (! domain_in_tickets && ! sasl_user_in_tickets) {
-		printf ("..1..\n");
 		return VALVULA_STATE_DUNNO;
 	}
 
@@ -379,14 +378,12 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		valvula_mutex_unlock (&work_mutex);
 
 		/* maybe the database configurat was removed before checking previous request, no problem */
-		printf ("..2..\n");
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
 	/* get the values we are interesting in */
 	row = __ticket_get_row_or_fail (ctx, result);
 	if (row == NULL) {
-		printf ("..3..\n");
 		return VALVULA_STATE_DUNNO;
 	}
 
@@ -402,7 +399,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* not accepted */
 		valvulad_reject (ctx, request, "Rejecting operation because tickets are expired (valid_until %d < %d)",
 				 valid_until, valvula_now ());
-		printf ("..4..\n");
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
@@ -424,7 +420,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		valvulad_reject (ctx, request, "Rejecting operation because ticket (%d) is blocked(%d) for user (%s)",
 				 ticket_plan_id, block_ticket, descriptive_user);
 			
-		printf ("..5..\n");	 
 		return VALVULA_STATE_REJECT;
 	}
 
@@ -442,14 +437,12 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		printf ("..6..\n");
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
 	/* get row from result */
 	row = __ticket_get_row_or_fail (ctx, result);
 	if (row == NULL) {
-		printf ("..7..\n");
 		return VALVULA_STATE_DUNNO;
 	}
 
@@ -477,7 +470,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 		valvulad_reject (ctx, request, "Rejecting operation because total plan limit's reached (%d)", total_used);
 
-		printf ("..8..\n");
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
@@ -488,7 +480,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 		valvulad_reject (ctx, request, "Rejecting operation because day limit reached (%d)", day_limit);
 
-		printf ("..9..\n");
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
@@ -498,7 +489,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		valvula_mutex_unlock (&work_mutex);
 
 		valvulad_reject (ctx, request, "Rejecting operation because month limit reached (%d)", month_limit);
-		printf ("..10..\n");
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
@@ -506,7 +496,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	if (! valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET current_day_usage = %d, current_month_usage = %d, total_used = %d WHERE id = %d",
 					 current_day_usage, current_month_usage, total_used, record_id)) {
 		error ("Failed to update record on mod-ticket");
-		printf ("..11..\n");
 	} /* end if */
 
 	/* unlock */
@@ -514,8 +503,6 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	
 	/* by default report return dunno */
-	printf ("..12 (current_month_usage=%ld > month_limit=%ld, current_day_usage=%ld > day_limit=%ld) %s ..\n",
-		current_month_usage, month_limit, current_day_usage, day_limit, descriptive_user);
 	return VALVULA_STATE_DUNNO;
 }
 
