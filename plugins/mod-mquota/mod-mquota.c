@@ -528,7 +528,6 @@ axl_bool __mod_mquota_check_reject (const char     * sasl_user,
 		/* release */
 		valvula_mutex_unlock (&hash_mutex);
 
-		valvulad_reject (ctx, request, "Quota reached");
 		switch (check_type) {
 		case MOD_MQUOTA_GLOBAL_CHECK:
 			/* report specific global check */
