@@ -544,7 +544,7 @@ axl_bool __mod_mquota_check_reject (const char     * sasl_user,
 			break;
 		case MOD_MQUOTA_MINUTE_CHECK:
 			/* report specific minute check */
-			valvulad_reject (ctx, request, "REJECTED: sneding mquota reached for %s %s from (%s). %s minute limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
+			valvulad_reject (ctx, request, "REJECTED: sending mquota reached for %s %s from (%s). %s minute limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
 					 info, sasl_user, request->client_address, label,
 					 usage, __mod_mquota_get_next_minute_hour (), __mod_mquota_get_next_minute_minute (), label_period);
 			break;
