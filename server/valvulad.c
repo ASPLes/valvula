@@ -438,6 +438,8 @@ void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char *
 	     request->client_address,
 	     message);
 
+	
+
 	/* configure reject message into request to reply it in the
 	 * case nothing is configured */
 	if (! request->message_reply) {

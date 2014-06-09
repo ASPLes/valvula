@@ -929,6 +929,9 @@ axl_bool test_03 (void) {
 		return axl_false;
 	} /* end if */
 
+	/* notify day change before continue to avoid confusing it */
+	valvulad_notify_date_change (ctx, valvula_get_day (), VALVULAD_DATE_ITEM_DAY);
+
 	/* now add some ticke plans */
 	query = "INSERT INTO ticket_plan (name, description, total_limit, day_limit, month_limit) VALUES ('test 03', 'description', 20, 4, 10)";
 	if (! valvulad_db_run_non_query (ctx, query)) {
