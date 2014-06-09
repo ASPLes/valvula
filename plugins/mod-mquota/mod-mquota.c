@@ -200,6 +200,8 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	axlHash         * hash;
 	ModMquotaLimit  * old_reference;
 
+	msg ("mod-quota: updating accounting info");
+
 	/* lock */
 	valvula_mutex_lock (&hash_mutex);
 
@@ -250,7 +252,7 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	/* lock */
 	valvula_mutex_unlock (&hash_mutex);
 			
-	return axl_true; /* signal the system to receive a call again */
+	return axl_false; /* signal the system to receive a call again */
 }
 
 
