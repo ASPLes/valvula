@@ -505,7 +505,13 @@ typedef enum {
 	MOD_MQUOTA_MINUTE_CHECK = 3,
 } ModCheckType;
 
-axl_bool __mod_mquota_check_reject (const char * sasl_user, ValvulaRequest * request, int limit, int usage, ModCheckType check_type, axl_bool is_domain_limit)
+axl_bool __mod_mquota_check_reject (const char     * sasl_user, 
+				    ValvulaRequest * request, 
+				    int              limit, 
+				    const char     * label_period, 
+				    int              usage, 
+				    ModCheckType     check_type, 
+				    axl_bool         is_domain_limit)
 {
 
 	/* configure label */
@@ -526,21 +532,21 @@ axl_bool __mod_mquota_check_reject (const char * sasl_user, ValvulaRequest * req
 		switch (check_type) {
 		case MOD_MQUOTA_GLOBAL_CHECK:
 			/* report specific global check */
-			error ("REJECTED: quota reached for %s %s from (%s). %s global limit=%d reached, user will have to wait until %02d:%02d", 
-			       info, sasl_user, request->client_address, label,
-			       usage, __mod_mquota_get_next_global_hour (), __mod_mquota_get_next_global_minute ());
+			valvulad_reject (ctx, request, "REJECTED: sending mquota reached for %s %s from (%s). %s global limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
+					 info, sasl_user, request->client_address, label,
+					 usage, __mod_mquota_get_next_global_hour (), __mod_mquota_get_next_global_minute (), label_period);
 			break;
 		case MOD_MQUOTA_HOUR_CHECK:
 			/* report specific hour check */
-			error ("REJECTED: quota reached for %s %s from (%s). %s hour limit=%d reached, user will have to wait until %02d:%02d", 
-			       info, sasl_user, request->client_address, label, 
-			       usage, __mod_mquota_get_next_hour_hour (), __mod_mquota_get_next_hour_minute ());
+			valvulad_reject (ctx, request, "REJECTED: sending mquota reached for %s %s from (%s). %s hour limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
+					 info, sasl_user, request->client_address, label, 
+					 usage, __mod_mquota_get_next_hour_hour (), __mod_mquota_get_next_hour_minute (), label_period);
 			break;
 		case MOD_MQUOTA_MINUTE_CHECK:
 			/* report specific minute check */
-			error ("REJECTED: quota reached for %s %s from (%s). %s minute limit=%d reached, user will have to wait until %02d:%02d", 
-			       info, sasl_user, request->client_address, label,
-			       usage, __mod_mquota_get_next_minute_hour (), __mod_mquota_get_next_minute_minute ());
+			valvulad_reject (ctx, request, "REJECTED: sneding mquota reached for %s %s from (%s). %s minute limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
+					 info, sasl_user, request->client_address, label,
+					 usage, __mod_mquota_get_next_minute_hour (), __mod_mquota_get_next_minute_minute (), label_period);
 			break;
 		default:
 			break; /* never reached */
@@ -559,22 +565,28 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 
 	/* check global limit */
 	global_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_current_period->accounting, (axlPointer) sasl_user));
-	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->global_limit, global_usage, MOD_MQUOTA_GLOBAL_CHECK, axl_false))
+	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->global_limit, 
+				       __mod_mquota_current_period->label,
+				       global_usage, MOD_MQUOTA_GLOBAL_CHECK, axl_false))
 		return axl_true;
 
 	/* check hour limit */
 	hour_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_hour_hash, (axlPointer) sasl_user));
-	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->hour_limit, hour_usage, MOD_MQUOTA_HOUR_CHECK, axl_false))
+	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->hour_limit, 
+				       __mod_mquota_current_period->label,
+				       hour_usage, MOD_MQUOTA_HOUR_CHECK, axl_false))
 		return axl_true;
 
 	/* check minute limit */
 	minute_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_minute_hash, (axlPointer) sasl_user));
-	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->minute_limit, minute_usage, MOD_MQUOTA_MINUTE_CHECK, axl_false))
+	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->minute_limit, 
+				       __mod_mquota_current_period->label,
+				       minute_usage, MOD_MQUOTA_MINUTE_CHECK, axl_false))
 		return axl_true;
 
 	/* reached this point, update record */
 	global_usage += 1;
-	hour_usage += 1;
+	hour_usage   += 1;
 	minute_usage += 1;
 
 	/* msg ("Saving limits %s -> global %d, hour %d, minute %d", sasl_user, global_usage, hour_usage, minute_usage); */
@@ -594,17 +606,23 @@ axl_bool __mod_mquota_check_reject_domain (const char * sasl_domain, ValvulaRequ
 
 	/* check global limit */
 	global_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_current_period->domain_accounting, (axlPointer) sasl_domain));
-	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_global_limit, global_usage, MOD_MQUOTA_GLOBAL_CHECK, axl_true))
+	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_global_limit, 
+				       __mod_mquota_current_period->label,
+				       global_usage, MOD_MQUOTA_GLOBAL_CHECK, axl_true))
 		return axl_true;
 
 	/* check hour limit */
 	hour_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_domain_hour_hash, (axlPointer) sasl_domain));
-	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_hour_limit, hour_usage, MOD_MQUOTA_HOUR_CHECK, axl_true))
+	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_hour_limit, 
+				       __mod_mquota_current_period->label,
+				       hour_usage, MOD_MQUOTA_HOUR_CHECK, axl_true))
 		return axl_true;
 
 	/* check minute limit */
 	minute_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_domain_minute_hash, (axlPointer) sasl_domain));
-	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_minute_limit, minute_usage, MOD_MQUOTA_MINUTE_CHECK, axl_true))
+	if (__mod_mquota_check_reject (sasl_domain, request, __mod_mquota_current_period->domain_minute_limit, 
+				       __mod_mquota_current_period->label,
+				       minute_usage, MOD_MQUOTA_MINUTE_CHECK, axl_true))
 		return axl_true;
 
 	/* reached this point, update record */
@@ -671,7 +689,7 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 	/* get the limit */
 	valvula_mutex_lock (&hash_mutex);
 
-	if (__mod_mquota_check_reject_user (sasl_user, request))
+	if (__mod_mquota_check_reject_user (sasl_user, request)) 
 		return VALVULA_STATE_REJECT;
 
 	/* check domain limits */
@@ -680,7 +698,6 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 		if (__mod_mquota_check_reject_domain (sasl_domain, request))
 			return VALVULA_STATE_REJECT;
 	} /* endi f */
-	
 
 	/* release */
 	valvula_mutex_unlock (&hash_mutex);
