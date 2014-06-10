@@ -103,6 +103,11 @@ axl_bool slm_has_exception (ValvuladCtx * ctx, ValvulaRequest * request)
 				       request->sasl_username, request->sender))
 		return axl_true;
 
+	/* request is authenticated, check exceptions */
+	if (valvulad_db_boolean_query (ctx, "SELECT sasl_username FROM slm_exception WHERE sasl_username = '%s' AND (mail_from IS NULL || mail_from = '')  AND is_active = '1'",
+				       request->sasl_username))
+		return axl_true;
+
 	/* no exception found */
 	return axl_false;
 }

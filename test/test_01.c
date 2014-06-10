@@ -1769,6 +1769,27 @@ axl_bool test_06 (void) {
 		return axl_false;
 	}
 
+	/* exception a sasl user */
+	valvulad_db_run_non_query (ctx, "DELETE FROM slm_exception");
+	valvulad_db_run_non_query (ctx, "INSERT INTO slm_exception (sasl_username, is_active) VALUES ('kb', '1')");
+
+	/* SHOULD WORK */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"different13@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "kb", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (1.6): expected DUNNO operation for authenticated operation that do NOT match but exception is installed..\n");
+		return axl_false;
+	}
+
 	/* finish test */
 	common_finish (ctx);
 
