@@ -1693,6 +1693,61 @@ axl_bool test_06 (void) {
 		return axl_false;
 	}
 
+	/* SHOULD WORK */
+	printf ("Test 06: mod-slm testing accepting <> at the mail from (same-domain)..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "account2@test4.com", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (1.4.1): expected DUNNO operation for authenticated operation that do NOT match but exception is installed..\n");
+		return axl_false;
+	}
+
+	/* finish test */
+	common_finish (ctx);
+
+	/* init the library */
+	ctx = axl_new (ValvuladCtx, 1);
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load basic configuration */
+	/* load configuration */
+	printf ("Test 06: testing to block DSNs (mail from: <>)\n");
+	test_valvula_load_config_aux ("Test 06", "test_06.same-domain.02.conf", axl_true, ctx, "test_02b.postfix.cf");
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test_06.same-domain.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD WORK */
+	printf ("Test 06: mod-slm testing rejection of <> at the mail from (same-domain)..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "account2@test4.com", NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (1.4.2): expected REJECT operation but received: %d\n", state);
+		return axl_false;
+	}
+
 	/* finish test */
 	common_finish (ctx);
 
@@ -1787,6 +1842,24 @@ axl_bool test_06 (void) {
 
 	if (state != VALVULA_STATE_DUNNO) {
 		printf ("ERROR (1.6): expected DUNNO operation for authenticated operation that do NOT match but exception is installed..\n");
+		return axl_false;
+	}
+
+	/* SHOULD WORK */
+	printf ("Test 06: mod-slm testing accepting <> at the mail from..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"<>", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (1.7): expected DUNNO operation for authenticated operation that do NOT match but exception is installed..\n");
 		return axl_false;
 	}
 
