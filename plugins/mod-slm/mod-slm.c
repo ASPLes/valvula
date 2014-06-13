@@ -51,6 +51,10 @@ typedef enum {
 
 ValvulaModSlmMode __slm_mode = VALVULA_MOD_SLM_DISABLED;
 
+/* by default mail from:<> is allowed. See:
+   https://lists.debian.org/debian-isp/2004/01/msg00259.html */
+axl_bool          __slm_allow_empty_mail_from = axl_true;
+
 /** 
  * @internal Init function, perform all the necessary code to register
  * profiles, configure Vortex, and any other init task. The function
@@ -80,6 +84,10 @@ static int  slm_init (ValvuladCtx * _ctx)
 		__slm_mode = VALVULA_MOD_SLM_VALID_MAIL_FROM;
 	else if (axl_cmp (mode, "disabled"))
 		__slm_mode = VALVULA_MOD_SLM_DISABLED;
+
+	/* get allow empty mail from */
+	if (HAS_ATTR_VALUE (node, "allow-empty-mail-from", "no")) 
+		__slm_allow_empty_mail_from = axl_false;
 
 	/* ensure tables */
 	if (! valvulad_db_ensure_table (ctx, "slm_exception",
@@ -134,6 +142,11 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 	/* check here for the exception first */
 	if (slm_has_exception (ctx, request))
 		return VALVULA_STATE_DUNNO;
+
+	if (request->sender && strlen (request->sender) == 0 && __slm_allow_empty_mail_from) {
+		msg ("Allowing empty mail from <> for sasl user %s", request->sasl_username);
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
 
 	if (__slm_mode == VALVULA_MOD_SLM_FULL) {
 		/* check if sender and sasl username look like a mail account */
