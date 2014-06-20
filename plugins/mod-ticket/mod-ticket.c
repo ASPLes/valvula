@@ -54,15 +54,17 @@ void ticket_change_day (ValvuladCtx * ctx, long new_value, axlPointer user_data)
 
 	/* get all usage records before setting them to 0 */
 	res = valvulad_db_run_query (ctx,  "SELECT id, current_day_usage FROM domain_ticket WHERE current_day_usage > 0");
+
+	/* handle data to record history */
+	now = valvula_now ();
 	
 	/* get next row */
 	row = GET_ROW (res);
 	while (row) {
-		/* handle data to record history */
-		now = valvula_now ();
 
+		/* in the following sentence, we substract 100 to now to make sure it references to the previous day where the quota was consumed */
 		if (! valvulad_db_run_query (ctx, "INSERT INTO domain_ticket_history (domain_ticket_id, stamp, day_usage) VALUES ('%d', '%d', '%d')",
-					     GET_CELL_AS_LONG (row, 0), now, GET_CELL_AS_LONG (row, 1))) {
+					     GET_CELL_AS_LONG (row, 0), now - 100, GET_CELL_AS_LONG (row, 1))) {
 			error ("Failed to insert domain ticket history..");
 		} /* end if */
 
@@ -90,15 +92,17 @@ void ticket_change_month (ValvuladCtx * ctx, long new_value, axlPointer user_dat
 
 	/* get all usage records before setting them to 0 */
 	res = valvulad_db_run_query (ctx,  "SELECT id, current_month_usage FROM domain_ticket WHERE current_month_usage > 0");
+
+	/* handle data to record history */
+	now = valvula_now ();
 	
 	/* get next row */
 	row = GET_ROW (res);
 	while (row) {
-		/* handle data to record history */
-		now = valvula_now ();
 
+		/* in the following sentence, we substract 100 to now to make sure it references to the previous day where the quota was consumed */
 		if (! valvulad_db_run_query (ctx, "INSERT INTO domain_month_ticket_history (domain_ticket_id, stamp, month_usage) VALUES ('%d', '%d', '%d')",
-					     GET_CELL_AS_LONG (row, 0), now, GET_CELL_AS_LONG (row, 1))) {
+					     GET_CELL_AS_LONG (row, 0), now - 100, GET_CELL_AS_LONG (row, 1))) {
 			error ("Failed to insert domain ticket history (month)..");
 		} /* end if */
 
