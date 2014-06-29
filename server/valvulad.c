@@ -491,7 +491,7 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	if (VALVULA_STATE_REJECT == state)
 		return;
 
-	msg ("%s: %s -> %s%s%s%s%s, port %d, queue-id %s%s%s%s%s",
+	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s",
 	     valvula_support_state_str (state),
 	     request->sender, request->recipient, 
 	     /* drop SASL information */
@@ -501,7 +501,10 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	     sasl_user ? ")" : "",
 	     /* include message */
 	     request->listener_port, 
+	     request->recipient_count,
+	     /* queue report */
 	     request->queue_id ? request->queue_id : "<undef>" ,
+	     /* client address */
 	     request->client_address ? ", from " : "",
 	     request->client_address ? request->client_address : "",
 	     message ? ": " : "",
