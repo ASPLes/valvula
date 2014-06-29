@@ -431,7 +431,7 @@ void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char *
 	     sasl_user ? " (" : "",
 	     sasl_user ? "sasl_user=" : "",
 	     sasl_user ? sasl_user : "",
-	     sasl_user ? ") " : "",
+	     sasl_user ? ")" : "",
 	     /* include message */
 	     request->listener_port, 
 	     request->queue_id ? request->queue_id : "<undef>" ,
