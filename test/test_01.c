@@ -414,6 +414,10 @@ axl_bool  test_02 (void)
 		return axl_false;
 	} /* end if */
 
+	/* now remove the table */
+	printf ("Test 02: remove test_02_table (if it is present)..\n");
+	valvulad_db_table_remove (ctx, "test_02_table");
+
 	/* do a database creation */
 	printf ("Test 02: check if test_02_table exists..\n");
 	if (valvulad_db_table_exists (ctx, "test_02_table")) {
