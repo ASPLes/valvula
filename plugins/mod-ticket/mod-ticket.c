@@ -322,6 +322,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	long           month_limit;
 	
 	const char   * query;
+	int            count_update;
 
 	/* check if the domain is limited by ticket */
 	if (valvula_get_sender_domain (request))
@@ -459,9 +460,10 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	valvulad_db_release_result (result);
 
 	/* apply operations */
-	total_used ++;
-	current_day_usage ++;
-	current_month_usage ++;
+	count_update         = request->recipient_count == 0 ? 1 : request->recipient_count;
+	total_used          += count_update;
+	current_day_usage   += count_update;
+	current_month_usage += count_update;
 
 	/* msg ("mod-ticket: %s total limit: %d (used: %d), day limit: %d (used: %d), month limit: %d (used: %d)",
 	     valvula_get_sasl_user (request) ? valvula_get_sasl_user (request) : valvula_get_sender_domain (request),
@@ -559,6 +561,14 @@ END_C_DECLS
  *
  * At the same time, these tickets allows to define a time limit to be
  * consumed, day limit, month limit and global limits. 
+ *
+ * NOTE: this module is recommended to be connected to
+ * smtpd_data_restrictions to avoid problems with test phase software
+ * (which first connects to simulate and then does the final send
+ * operation). It can also work in smtpd_end_of_data_restrictions
+ * though it is not recommended because your server will have to
+ * accept the entire message first to make a final decision.
+ *
  * 
  * 
  * 
