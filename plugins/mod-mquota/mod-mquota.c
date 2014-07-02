@@ -57,6 +57,8 @@ typedef enum {
 /* hashes to track activity */
 ValvulaMutex hash_mutex;
 
+axl_bool enable_debug = axl_false;
+
 /* these hashes tracks activity */
 /* account level */
 axlHash * __mod_mquota_minute_hash;
@@ -122,11 +124,15 @@ axl_bool mod_mquota_time_is_before (long hour_a, long minute_a,
 
 ModMquotaLimit * mod_mquota_report_limit_select (ModMquotaLimit * limit)
 {
-/*	if (limit && limit->label)
+	/* report some debug */
+	if (limit && limit->label && enable_debug) {
 		msg ("Selecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label,  
-		limit->global_limit, limit->hour_limit, limit->minute_limit); */
-	if (limit == NULL)
+		     limit->global_limit, limit->hour_limit, limit->minute_limit); 
+	} /* end if */
+
+	if (limit == NULL && enable_debug) {
 		wrn ("No sending mquota period was found.."); 
+	} /* end if */
 	return limit;
 } /* end if */
 
@@ -150,9 +156,14 @@ ModMquotaLimit * mod_mquota_get_current_period (void) {
 		
 		/* get limit */
 		limit = axl_list_get_nth (__mod_mquota_limits, iterator);
-		/* msg ("Checking now is %02d:%02d (start %02d:%02d - end %02d:%02d)", 
-		     current_hour, current_minute, limit->start_hour, limit->start_minute, 
-		     limit->end_hour, limit->end_minute); */
+
+		/* check debug */
+		if (enable_debug) {
+			msg ("Checking now is %02d:%02d (start %02d:%02d - end %02d:%02d)", 
+			     current_hour, current_minute, limit->start_hour, limit->start_minute, 
+			     limit->end_hour, limit->end_minute); 
+		} /* end if */
+
 		if (limit && 
 		    /* current hour:minute <= end time */
 		    mod_mquota_time_is_before (current_hour, current_minute, limit->end_hour, limit->end_minute) && 
@@ -168,6 +179,10 @@ ModMquotaLimit * mod_mquota_get_current_period (void) {
 		iterator++;
 	} /* end while */
 
+	if (enable_debug) {
+		msg ("No period matched, checking for no match configuration..");
+	} /* end if */
+
 	/* reached this point, no limit was found, try to find what to
 	 * do when this happens */
 	switch (__mod_mquota_no_match_conf) {
@@ -175,6 +190,10 @@ ModMquotaLimit * mod_mquota_get_current_period (void) {
 		
 		/* get first limit */
 		limit = axl_list_get_nth (__mod_mquota_limits, 0);
+
+		if (enable_debug) {
+			msg ("Reporting first period: %p", limit);
+		} /* end if */
 
 		/* get the first limit found */
 		return mod_mquota_report_limit_select (limit);
@@ -200,7 +219,9 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	axlHash         * hash;
 	ModMquotaLimit  * old_reference;
 
-	/* msg ("mod-quota: updating accounting info"); */
+	if (enable_debug) {
+		msg ("mod-quota: updating accounting info"); 
+	} /* end if */
 
 	/* lock */
 	valvula_mutex_lock (&hash_mutex);
@@ -218,6 +239,10 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	/* reset hour hash if reached */
 	__mod_mquota_hour_track ++;
 	if (__mod_mquota_hour_track == 60) {
+		if (enable_debug) {
+			msg ("Found hour period change, calling to reset hour stats");
+		} /* end if */
+
 		/* reset minute counting */
 		__mod_mquota_hour_track = 0;
 
@@ -234,11 +259,17 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 
 	/* now check if global period have changed */
 	if (mod_mquota_get_current_period () != __mod_mquota_current_period) {
-		msg ("Period change detected, applying new values");
 
 		/* get old reference */
 		old_reference = __mod_mquota_current_period;
 		__mod_mquota_current_period = mod_mquota_get_current_period ();
+
+		/* report global period change */
+		if (enable_debug) {
+			msg ("Global period change detected, old is %p, new is %p, applying new values", 
+			     old_reference, __mod_mquota_current_period);
+		} /* end if */
+
 		axl_hash_free (old_reference->accounting);
 		axl_hash_free (old_reference->domain_accounting);
 		old_reference->accounting = NULL;
@@ -346,6 +377,15 @@ static int  mquota_init (ValvuladCtx * _ctx)
 	__mod_mquota_hour_hash          = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 	__mod_mquota_domain_minute_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 	__mod_mquota_domain_hour_hash   = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+
+	/* get debug support */
+	node = axl_doc_get (_ctx->config, "/valvula/enviroment/default-sending-quota");
+	if (node) {
+		if (HAS_ATTR_VALUE (node, "debug", "yes")) {
+			enable_debug = axl_true;
+		} /* end if */
+
+	} /* end if */
 
 	/* parse limits */
 	__mod_mquota_limits = axl_list_new (axl_list_always_return_1, axl_free);

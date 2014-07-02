@@ -41,6 +41,9 @@ BEGIN_C_DECLS
 
 ValvuladCtx * ctx = NULL;
 
+/* debug status */
+axl_bool      enable_debug = axl_false;
+
 /** 
  * @brief Init function, perform all the necessary code to register
  * profiles, configure Vortex, and any other init task. The function
@@ -49,6 +52,8 @@ ValvuladCtx * ctx = NULL;
  */
 static int  bwl_init (ValvuladCtx * _ctx)
 {
+	axlNode         * node;
+
 	/* configure the module */
 	ctx = _ctx;
 
@@ -127,6 +132,11 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "sasl_user", "varchar(1024)",
 				  "description", "varchar(500)",
 				  NULL);
+
+	/* get debug status */
+	node = axl_doc_get (_ctx->config, "/valvula/enviroment/mod-bwl");
+	if (HAS_ATTR_VALUE (node, "debug", "yes"))
+		enable_debug = axl_true;
 
 	return axl_true;
 }
@@ -324,8 +334,16 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 	if (valvula_is_authenticated (request) && bwl_is_sasl_user_blocked (ctx, request))
 		return VALVULA_STATE_REJECT;
 
+	if (enable_debug) {
+		msg ("bwl: working with sender_domain=%s", sender_domain);
+		msg ("bwl: working with sender=%s", sender);
+		msg ("bwl: working with recipient_domain=%s", recipient_domain);
+		msg ("bwl: working with recipient=%s", recipient);
+	} /* end if */
+
 	/* get current status at server level */
-	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",
+	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", 
+				   "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR destination = '%s' OR destination = '%s')",
 				   sender_domain, sender, recipient_domain, recipient);
 	/* check valvula state reported */
 	if (state != VALVULA_STATE_DUNNO) 
@@ -333,6 +351,13 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 
 	/* check if recipient_domain is for a local delivery */
 	if (valvulad_run_is_local_delivery (ctx, request)) {
+		if (enable_debug) {
+			msg ("bwl: working with sender_domain=%s", sender_domain);
+			msg ("bwl: working with sender=%s", sender);
+			msg ("bwl: working with recipient_domain=%s", recipient_domain);
+			msg ("bwl: working with recipient=%s", recipient);
+		} /* end if */
+
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
 		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_DOMAIN, "domain lists", 
