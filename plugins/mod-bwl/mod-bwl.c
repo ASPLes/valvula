@@ -335,10 +335,10 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 		return VALVULA_STATE_REJECT;
 
 	if (enable_debug) {
-		msg ("bwl: working with sender_domain=%s", sender_domain);
-		msg ("bwl: working with sender=%s", sender);
-		msg ("bwl: working with recipient_domain=%s", recipient_domain);
-		msg ("bwl: working with recipient=%s", recipient);
+		msg ("bwl (1): working with sender_domain=%s", sender_domain);
+		msg ("bwl (1): working with sender=%s", sender);
+		msg ("bwl (1): working with recipient_domain=%s", recipient_domain);
+		msg ("bwl (1): working with recipient=%s", recipient);
 	} /* end if */
 
 	/* get current status at server level */
@@ -352,10 +352,10 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 	/* check if recipient_domain is for a local delivery */
 	if (valvulad_run_is_local_delivery (ctx, request)) {
 		if (enable_debug) {
-			msg ("bwl: working with sender_domain=%s", sender_domain);
-			msg ("bwl: working with sender=%s", sender);
-			msg ("bwl: working with recipient_domain=%s", recipient_domain);
-			msg ("bwl: working with recipient=%s", recipient);
+			msg ("bwl (2): working with sender_domain=%s", sender_domain);
+			msg ("bwl (2): working with sender=%s", sender);
+			msg ("bwl (2): working with recipient_domain=%s", recipient_domain);
+			msg ("bwl (2): working with recipient=%s", recipient);
 		} /* end if */
 
 		/* get current status at domain level: rules that applies to recipient 
