@@ -269,6 +269,9 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 		break;
 	} /* end if */
 
+	/* flag the connection as process finished */
+	/* connection->process_launched = axl_false; */
+
 	return;
 }
 
@@ -315,6 +318,16 @@ ValvulaRequestRegistry * __valvula_reader_find_next_handler (ValvulaCtx * ctx, a
 	return registry;
 }
 
+int __valvula_reader_record_handle_start (ValvulaCtx * ctx, const char * handler_name, ValvulaConnection * connection, ValvulaRequest * request)
+{
+	return -1;
+}
+
+void __valvula_reader_record_handle_stop (ValvulaCtx * ctx, int record_id)
+{
+	return;
+}
+
 
 axlPointer valvula_reader_process_request (axlPointer _connection)
 {
@@ -331,6 +344,9 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 
 	/* handler reference */
 	ValvulaProcessRequest     handler;
+	const char              * handler_name;
+	int                       record_id;
+
 	axlPointer                user_data;
 	ValvulaRequestRegistry  * registry = NULL;
 	axlHashCursor           * cursor;
@@ -373,15 +389,22 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			valvula_log (VALVULA_LEVEL_DEBUG, "Checking registry handler: %p", registry);
 
 			/* get handler and user data */
-			handler   = registry->process_handler;
-			user_data = registry->user_data;
+			handler      = registry->process_handler;
+			handler_name = registry->identifier;
+			user_data    = registry->user_data;
 
 			/* start tracking */
 			gettimeofday (&start_m, NULL);
 
+			/* record we are about to enter in a handler with a particular name */
+			record_id = __valvula_reader_record_handle_start (ctx, handler_name, connection, connection->request);
+
 			/* call to notify request and get a response */
 			message = NULL;
 			state   = handler (ctx, connection, connection->request, user_data, &message);
+
+			/* call to record that we finished */
+			__valvula_reader_record_handle_stop (ctx, record_id);
 
 			valvula_log (VALVULA_LEVEL_DEBUG, "Handler %p reported state (%d) %s", registry, state, valvula_support_state_str (state));
 
@@ -550,14 +573,14 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 
 	if (strlen (buffer) == 0) {
 		/* check if the process was launched */
-		if (connection->process_launched) {
+		/* if (connection->process_launched) {
 			valvula_log (VALVULA_LEVEL_DEBUG, "Connection close while processing on session=%d (%p), closing connection");
 			valvula_connection_close (connection);
 			return;
-		} /* end if */
+		} */ /* end if */
 
 		/* flag we are about to launch the process */
-		connection->process_launched = axl_true;
+		/* connection->process_launched = axl_true; */
 
 		/* drop a log */
 		valvula_log (VALVULA_LEVEL_DEBUG, "Launching process request over connection session=%d (%p)", 
