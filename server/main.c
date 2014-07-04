@@ -128,6 +128,8 @@ void valvulad_report_status (void) {
 	return;
 }
 
+char ** __valvulad_ref_argv;
+
 void valvulad_signal (int _signal)
 {
 	ValvulaCtx        * _ctx      = ctx->ctx;
@@ -163,6 +165,21 @@ void valvulad_signal (int _signal)
 				axl_free (cmd);
 			} /* end if */
 			axl_free (bt_file);
+		} else if (HAS_ATTR_VALUE (node, "action", "reexec")) {
+			/* report what are the requests that are in place */
+			error ("Restarting the server (removing pid file: %s).. ", pid_file_path);
+			unlink (pid_file_path);
+
+			error ("Finishing server as clean as possible..");
+			/* free valvula server context */
+			valvula_exit_ctx (ctx->ctx, axl_true);
+			valvulad_exit (ctx);
+
+			error ("Restarting valvula..");
+			execv (__valvulad_ref_argv[0], __valvulad_ref_argv);
+
+			error ("execv() call failed, errno=%d", errno);
+			exit (-1);
 		} /* end if */
 
 		error ("Ending valvula process...");
@@ -411,6 +428,9 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 int main (int argc, char ** argv) 
 {
 	axl_bool      result;
+
+	/* record a reference to arguments received */
+	__valvulad_ref_argv = argv;
 
 	/* parse arguments */
 	install_arguments (argc, argv);
