@@ -283,7 +283,7 @@ void valvulad_signal (int _signal)
 			__valvulad_ref_argv = __valvulad_add_skip_pid_check (__valvulad_ref_argv);
 			execv (__valvulad_ref_argv[0], __valvulad_ref_argv);
 
-			error ("execv() call failed, errno=%d", errno);
+			error ("execv() call failed, errno=%d (%s)", errno, strerror (errno));
 			exit (-1);
 		} /* end if */
 
