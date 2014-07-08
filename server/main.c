@@ -531,10 +531,7 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 				       valvula_status, uid, gid, errno, strerror (errno));
 			} /* end if */
 
-			if (chown (pid_file_path, uid, gid) != 0) {
-				error ("Unable to change permissions to file %s (%d:%d), error was errno=%d (%s)",
-				       valvula_status, uid, gid, errno, strerror (errno));
-			} /* end if */
+			/**** do no change pid file ownership is a security problem ****/
 
 		} /* end if */
 	} /* end if */
