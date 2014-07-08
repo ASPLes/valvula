@@ -231,7 +231,9 @@ void valvulad_signal (int _signal)
 		} else if (HAS_ATTR_VALUE (node, "action", "reexec") || HAS_ATTR_VALUE (node, "action", "re-exec")) {
 			/* report what are the requests that are in place */
 			error ("Restarting the server (removing pid file: %s).. ", pid_file_path);
-			unlink (pid_file_path);
+			if (unlink (pid_file_path) == -1) 
+				error ("Failed to remove pid file %s, errno=%d (%s)", pid_file_path, errno, strerror (errno));
+
 
 			error ("Finishing server as clean as possible..");
 			/* free valvula server context */
