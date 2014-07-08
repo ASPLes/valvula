@@ -42,7 +42,7 @@ BEGIN_C_DECLS
 ValvuladCtx * ctx = NULL;
 
 /* debug status */
-axl_bool      enable_debug = axl_false;
+axl_bool      __mod_bwl_enable_debug = axl_false;
 
 /** 
  * @brief Init function, perform all the necessary code to register
@@ -136,7 +136,7 @@ static int  bwl_init (ValvuladCtx * _ctx)
 	/* get debug status */
 	node = axl_doc_get (_ctx->config, "/valvula/enviroment/mod-bwl");
 	if (HAS_ATTR_VALUE (node, "debug", "yes"))
-		enable_debug = axl_true;
+		__mod_bwl_enable_debug = axl_true;
 
 	return axl_true;
 }
@@ -334,7 +334,7 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 	if (valvula_is_authenticated (request) && bwl_is_sasl_user_blocked (ctx, request))
 		return VALVULA_STATE_REJECT;
 
-	if (enable_debug) {
+	if (__mod_bwl_enable_debug) {
 		msg ("bwl (1): working with sender_domain=%s", sender_domain);
 		msg ("bwl (1): working with sender=%s", sender);
 		msg ("bwl (1): working with recipient_domain=%s", recipient_domain);
@@ -351,7 +351,7 @@ ValvulaState bwl_process_request (ValvulaCtx        * _ctx,
 
 	/* check if recipient_domain is for a local delivery */
 	if (valvulad_run_is_local_delivery (ctx, request)) {
-		if (enable_debug) {
+		if (__mod_bwl_enable_debug) {
 			msg ("bwl (2): working with sender_domain=%s", sender_domain);
 			msg ("bwl (2): working with sender=%s", sender);
 			msg ("bwl (2): working with recipient_domain=%s", recipient_domain);

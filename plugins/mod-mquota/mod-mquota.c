@@ -57,7 +57,7 @@ typedef enum {
 /* hashes to track activity */
 ValvulaMutex hash_mutex;
 
-axl_bool enable_debug = axl_false;
+axl_bool __mod_mquota_enable_debug = axl_false;
 
 /* these hashes tracks activity */
 /* account level */
@@ -125,12 +125,12 @@ axl_bool mod_mquota_time_is_before (long hour_a, long minute_a,
 ModMquotaLimit * mod_mquota_report_limit_select (ModMquotaLimit * limit)
 {
 	/* report some debug */
-	if (limit && limit->label && enable_debug) {
+	if (limit && limit->label && __mod_mquota_enable_debug) {
 		msg ("Selecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label,  
 		     limit->global_limit, limit->hour_limit, limit->minute_limit); 
 	} /* end if */
 
-	if (limit == NULL && enable_debug) {
+	if (limit == NULL && __mod_mquota_enable_debug) {
 		wrn ("No sending mquota period was found.."); 
 	} /* end if */
 	return limit;
@@ -158,7 +158,7 @@ ModMquotaLimit * mod_mquota_get_current_period (void) {
 		limit = axl_list_get_nth (__mod_mquota_limits, iterator);
 
 		/* check debug */
-		if (enable_debug) {
+		if (__mod_mquota_enable_debug) {
 			msg ("Checking now is %02d:%02d (start %02d:%02d - end %02d:%02d)", 
 			     current_hour, current_minute, limit->start_hour, limit->start_minute, 
 			     limit->end_hour, limit->end_minute); 
@@ -179,7 +179,7 @@ ModMquotaLimit * mod_mquota_get_current_period (void) {
 		iterator++;
 	} /* end while */
 
-	if (enable_debug) {
+	if (__mod_mquota_enable_debug) {
 		msg ("No period matched, checking for no match configuration..");
 	} /* end if */
 
@@ -191,7 +191,7 @@ ModMquotaLimit * mod_mquota_get_current_period (void) {
 		/* get first limit */
 		limit = axl_list_get_nth (__mod_mquota_limits, 0);
 
-		if (enable_debug) {
+		if (__mod_mquota_enable_debug) {
 			msg ("Reporting first period: %p", limit);
 		} /* end if */
 
@@ -219,7 +219,7 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	axlHash         * hash;
 	ModMquotaLimit  * old_reference;
 
-	if (enable_debug) {
+	if (__mod_mquota_enable_debug) {
 		msg ("mod-quota: updating accounting info"); 
 	} /* end if */
 
@@ -239,7 +239,7 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	/* reset hour hash if reached */
 	__mod_mquota_hour_track ++;
 	if (__mod_mquota_hour_track == 60) {
-		if (enable_debug) {
+		if (__mod_mquota_enable_debug) {
 			msg ("Found hour period change, calling to reset hour stats");
 		} /* end if */
 
@@ -265,7 +265,7 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 		__mod_mquota_current_period = mod_mquota_get_current_period ();
 
 		/* report global period change */
-		if (enable_debug) {
+		if (__mod_mquota_enable_debug) {
 			msg ("Global period change detected, old is %p, new is %p, applying new values", 
 			     old_reference, __mod_mquota_current_period);
 		} /* end if */
@@ -382,7 +382,7 @@ static int  mquota_init (ValvuladCtx * _ctx)
 	node = axl_doc_get (_ctx->config, "/valvula/enviroment/default-sending-quota");
 	if (node) {
 		if (HAS_ATTR_VALUE (node, "debug", "yes")) {
-			enable_debug = axl_true;
+			__mod_mquota_enable_debug = axl_true;
 		} /* end if */
 
 	} /* end if */
