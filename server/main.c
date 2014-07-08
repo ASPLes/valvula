@@ -188,6 +188,33 @@ void show_current_processes (ValvuladCtx * ctx)
 
 char ** __valvulad_ref_argv;
 
+char ** __valvulad_add_skip_pid_check (char ** arguments) 
+{
+	int      iterator = 0;
+	char  ** result;
+
+	/* check if skip pid check is found; if it is found, just
+	 * return without doing any modification */
+	while (arguments[iterator]) {
+
+		if (axl_cmp (arguments[iterator], "--skip-pid-check"))
+			return arguments;
+
+		iterator++;
+	} /* end if */
+
+	/* create new pointer */
+	result = (char **) axl_new (char **, iterator + 1);
+	result[iterator] = "--skip-pid-check";
+
+	while (iterator > 0) {
+		iterator--;
+		result[iterator] = __valvulad_ref_argv[iterator];
+	} /* end */
+		
+	return result;
+}
+
 void valvulad_signal (int _signal)
 {
 	ValvulaCtx        * _ctx      = ctx->ctx;
@@ -253,6 +280,7 @@ void valvulad_signal (int _signal)
 			}
 
 			error ("Restarting valvula..");
+			__valvulad_ref_argv = __valvulad_add_skip_pid_check (__valvulad_ref_argv);
 			execv (__valvulad_ref_argv[0], __valvulad_ref_argv);
 
 			error ("execv() call failed, errno=%d", errno);
@@ -407,6 +435,9 @@ void install_arguments (int argc, char ** argv)
 	exarg_install_arg ("check-db", "b", EXARG_NONE, 
 			   "Ask valvulad server to check current database connection.");
 
+	exarg_install_arg ("skip-pid-check", "f", EXARG_NONE, 
+			   "Makes valvula to skip pid checking on startup.");
+
 	/* install exarg options */
 	exarg_install_arg ("is-local-destination", "l", EXARG_STRING, 
 			   "Ask valvula to check if the provided domain or account is a local destination for this server. Please note this option only works when valvula is able to detect local postfix configuration to the right query. If it does not work, please check valvula's server documentation.");
@@ -450,11 +481,15 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 	int       gid, uid;
 
 	/* check if pid file exists */
-	if (valvula_support_file_test (pid_file_path, FILE_EXISTS)) {
-	        abort_error ("Unable to start server, found pid file in place %s. There is a valvula server running. If not, remove file %s",
-			     pid_file_path, pid_file_path);
-		exit (-1);
-	        return;
+	if  (! exarg_is_defined ("skip-pid-check")) {
+		if (valvula_support_file_test (pid_file_path, FILE_EXISTS)) {
+			abort_error ("Unable to start server, found pid file in place %s. There is a valvula server running. If not, remove file %s",
+				     pid_file_path, pid_file_path);
+			exit (-1);
+			return;
+		} /* end if */ 
+	} else {
+		wrn ("Skipping pid file checking..");
 	} /* end if */
 
 	/* open pid file or create it to place the pid file */
