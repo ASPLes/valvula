@@ -130,6 +130,11 @@ typedef struct _ValvuladCtx {
 	 * @brief When this context was started */
 	int              started_at;
 
+	/* 
+	 * Keep track of listeners to close them on restart.
+	 */
+	axlList       *  listeners;
+
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {

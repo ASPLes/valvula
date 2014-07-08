@@ -817,6 +817,9 @@ void valvula_thread_pool_exit (ValvulaCtx * ctx)
 	int             iterator;
 	ValvulaThread  * thread;
 
+	if (ctx->skip_thread_pool_wait)
+		return;
+
 	valvula_log (VALVULA_LEVEL_DEBUG, "stopping thread pool..");
 
 	/* flag the queue to be stoping */

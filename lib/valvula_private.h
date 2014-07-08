@@ -62,6 +62,9 @@ struct _ValvulaCtx {
 	int          ref_count;
 	ValvulaMutex inet_ntoa_mutex;
 
+	ValvulaMutex   op_mutex;
+	axlList      * request_in_process;
+
 	ValvulaHash  * process_handler_registry;
 
 	ValvulaMutex         listener_unlock;
@@ -84,6 +87,7 @@ struct _ValvulaCtx {
 	axlPointer          on_reading;
 
 	ValvulaThread       reader_thread;
+	axl_bool            skip_reader_stop;
 
 	/**** valvula io waiting module state ****/
 	ValvulaIoWaitingType waiting_type;
@@ -180,5 +184,11 @@ struct _ValvulaRequestRegistry {
 	int                       requests_handled;
 	ValvulaMutex              stats_mutex;
 };
+
+typedef struct _ValvulaReaderProcess  {
+	const char     * handler_name;
+	ValvulaRequest * request;
+	int              stamp;
+} ValvulaReaderProcess;
 
 #endif

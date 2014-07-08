@@ -154,7 +154,7 @@ int          valvula_readline (ValvulaConnection * connection, char  * buffer, i
 #if defined(ENABLE_VALVULA_LOG)
 			/* if the connection is closed, just return
 			 * without logging a message */
-			if (valvula_connection_is_ok (connection)) {
+			if (valvula_connection_is_ok (connection) && ! connection->process_launched) {
 				error_msg = strerror (errno);
 				valvula_log (VALVULA_LEVEL_CRITICAL, "unable to read a line from conn-id (socket %d, rc %d), error was: %s",
 					     valvula_connection_get_socket (connection), rc,
@@ -321,13 +321,47 @@ ValvulaRequestRegistry * __valvula_reader_find_next_handler (ValvulaCtx * ctx, a
 	return registry;
 }
 
-int __valvula_reader_record_handle_start (ValvulaCtx * ctx, const char * handler_name, ValvulaConnection * connection, ValvulaRequest * request)
+axlPointer __valvula_reader_record_handle_start (ValvulaCtx * ctx, const char * handler_name, ValvulaRequest * request)
 {
-	return -1;
+	ValvulaReaderProcess * process;
+	struct timeval tv;
+
+	/* create process */
+	process = axl_new (ValvulaReaderProcess, 1);
+	if (process == NULL)
+		return NULL;
+
+	/* record content */
+	process->request      = request;
+	process->handler_name = handler_name;
+
+	/* get current stamp */
+	gettimeofday (&tv, NULL);
+	process->stamp        = tv.tv_sec;
+
+	/* lock registry */
+	valvula_mutex_lock (&ctx->op_mutex);
+
+	/* request in process */
+	axl_list_append (ctx->request_in_process, process);
+
+	/* release registry */
+	valvula_mutex_unlock (&ctx->op_mutex);
+
+	return process;
 }
 
-void __valvula_reader_record_handle_stop (ValvulaCtx * ctx, int record_id)
+void __valvula_reader_record_handle_stop (ValvulaCtx * ctx, axlPointer _process)
 {
+	/* lock registry */
+	valvula_mutex_lock (&ctx->op_mutex);
+
+	/* request in process */
+	axl_list_remove_ptr (ctx->request_in_process, _process);
+
+	/* release registry */
+	valvula_mutex_unlock (&ctx->op_mutex);
+
 	return;
 }
 
@@ -348,7 +382,7 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	/* handler reference */
 	ValvulaProcessRequest     handler;
 	const char              * handler_name;
-	int                       record_id;
+	axlPointer                record_id;
 
 	axlPointer                user_data;
 	ValvulaRequestRegistry  * registry = NULL;
@@ -389,18 +423,18 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 		/* start tracking */
 		gettimeofday (&start, NULL);
 		do {
-			valvula_log (VALVULA_LEVEL_DEBUG, "Checking registry handler: %p", registry);
-
 			/* get handler and user data */
 			handler      = registry->process_handler;
 			handler_name = registry->identifier;
 			user_data    = registry->user_data;
 
+			valvula_log (VALVULA_LEVEL_DEBUG, "Checking registry handler: %p (%s)", registry, handler_name);
+
 			/* start tracking */
 			gettimeofday (&start_m, NULL);
 
 			/* record we are about to enter in a handler with a particular name */
-			record_id = __valvula_reader_record_handle_start (ctx, handler_name, connection, connection->request);
+			record_id = __valvula_reader_record_handle_start (ctx, handler_name, connection->request);
 
 			/* call to notify request and get a response */
 			message = NULL;
@@ -1465,6 +1499,10 @@ void valvula_reader_stop (ValvulaCtx * ctx)
 	/* get current context */
 	ValvulaReaderData * data;
 
+	/* skip reader stop as indicated */
+	if (ctx->skip_reader_stop)
+		return;
+
 	valvula_log (VALVULA_LEVEL_DEBUG, "stopping valvula reader ..");
 
 	/* create a bacon to signal valvula reader that it should stop
@@ -1478,8 +1516,8 @@ void valvula_reader_stop (ValvulaCtx * ctx)
 	valvula_log (VALVULA_LEVEL_DEBUG, "signal sent reader ..");
 
 	/* waiting until the reader is stoped */
-	valvula_log (VALVULA_LEVEL_DEBUG, "waiting valvula reader 60 seconds to stop");
-	if (PTR_TO_INT (valvula_async_queue_timedpop (ctx->reader_stopped, 60000000))) {
+	valvula_log (VALVULA_LEVEL_DEBUG, "waiting valvula reader 10 seconds to stop");
+	if (PTR_TO_INT (valvula_async_queue_timedpop (ctx->reader_stopped, 10000000))) {
 		valvula_log (VALVULA_LEVEL_DEBUG, "valvula reader properly stopped, cleaning thread..");
 		/* terminate thread */
 		valvula_thread_destroy (&ctx->reader_thread, axl_false);

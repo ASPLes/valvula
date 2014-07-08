@@ -78,6 +78,10 @@ ValvulaCtx * valvula_ctx_new (void)
 	/* init stats mutex */
 	valvula_mutex_create (&ctx->stats_mutex);
 
+	/* init op mutex */
+	valvula_mutex_create (&ctx->op_mutex);
+	ctx->request_in_process = axl_list_new (axl_list_always_return_1, axl_free);
+
 	/* return context created */
 	return ctx;
 }
@@ -496,6 +500,8 @@ void        valvula_ctx_free2 (ValvulaCtx * ctx, const char * who)
 	valvula_mutex_destroy (&ctx->ref_mutex);
 
 	valvula_mutex_destroy (&ctx->stats_mutex);
+	valvula_mutex_destroy (&ctx->op_mutex);
+	axl_list_free (ctx->request_in_process);
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "about.to.free ValvulaCtx %p", ctx);
 

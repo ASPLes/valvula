@@ -35,6 +35,7 @@
  */
 
 #include <valvulad.h>
+#include <valvula_private.h>
 
 
 #if defined(AXL_OS_UNIX)

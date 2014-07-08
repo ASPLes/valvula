@@ -534,6 +534,9 @@ axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
 	if (! valvula_init_ctx (ctx->ctx)) 
 		return axl_false;
 
+	/* init list */
+	ctx->listeners = axl_list_new (axl_list_always_return_1, NULL);
+
 	/* setup clean function for threads */
 	valvula_thread_pool_set_cleanup_func (ctx->ctx, valvulad_cleanup_mysql);
 
@@ -597,6 +600,10 @@ void valvulad_exit (ValvuladCtx * ctx)
 	axl_free (ctx->la_query);
 	axl_hash_free (ctx->la_hash);
 	
+
+	/* release listeners */
+	axl_list_free (ctx->listeners);
+
 	/* release all context resources */
 	axl_doc_free (ctx->config);
 	axl_free (ctx->config_path);
