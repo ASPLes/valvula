@@ -270,7 +270,10 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 	} /* end if */
 
 	/* flag the connection as process finished */
-	/* connection->process_launched = axl_false; */
+	/* DO NOT UNCOMMENT THE FOLLOWING: code is simplier to handle
+	   procesing a request for each connection it is showed to
+	   work better */
+	/* connection->process_launched = axl_false; */ 
 
 	return;
 }
@@ -573,14 +576,14 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 
 	if (strlen (buffer) == 0) {
 		/* check if the process was launched */
-		/* if (connection->process_launched) {
+	        if (connection->process_launched) {
 			valvula_log (VALVULA_LEVEL_DEBUG, "Connection close while processing on session=%d (%p), closing connection");
 			valvula_connection_close (connection);
 			return;
-		} */ /* end if */
+		} /* end if */
 
 		/* flag we are about to launch the process */
-		/* connection->process_launched = axl_true; */
+		connection->process_launched = axl_true; 
 
 		/* drop a log */
 		valvula_log (VALVULA_LEVEL_DEBUG, "Launching process request over connection session=%d (%p)", 
