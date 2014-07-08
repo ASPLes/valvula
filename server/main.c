@@ -487,6 +487,7 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 		/* change group first */
 		gid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "group"), axl_false);
 		uid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "user"), axl_true);
+		msg ("Attempting to update pid ownership to %d:%d", uid, gid);
 		if (gid > 0 && uid > 0) {
 			if (chown (valvula_status, uid, gid) != 0) {
 				error ("Unable to change permissions to file %s (%d:%d), error was errno=%d (%s)",
