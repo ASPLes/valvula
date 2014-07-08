@@ -128,6 +128,64 @@ void valvulad_report_status (void) {
 	return;
 }
 
+void show_current_processes (ValvuladCtx * ctx)
+{
+	ValvulaCtx           * _ctx = ctx->ctx;
+	int                    iterator;
+	ValvulaReaderProcess * process;
+	const char           * sasl_user;
+	int                    now;
+	struct timeval         tv;
+	ValvulaRequest       * request;
+
+	/* get current stamp */
+	gettimeofday (&tv, NULL);
+	now = tv.tv_sec;
+
+	/* call to acquire mutex */
+	valvula_mutex_lock (&_ctx->op_mutex);
+
+	if (axl_list_length (_ctx->request_in_process) == 0) {
+
+		error ("No process was in processing state..");
+
+		/* release lock */
+		valvula_mutex_unlock (&_ctx->op_mutex);
+		return;
+	} /* end if */
+
+	error ("Current processes being handled and not finished");
+	
+	iterator = 0;
+	while (iterator < axl_list_length (_ctx->request_in_process)) {
+		/* get next process */
+		process   = axl_list_get_nth (_ctx->request_in_process, iterator);
+		request   = process->request;
+		sasl_user = valvula_get_sasl_user (process->request);
+		
+		error ("%d) %s : %s -> %s%s%s%s%s, port %d, queue-id %s, from %s (processing during %d secs)", 
+		       iterator + 1, process->handler_name, 
+		       /* request status */
+		       request->sender, request->recipient, 
+		       /* drop SASL information */
+		       sasl_user ? " (" : "",
+		       sasl_user ? "sasl_user=" : "",
+		       sasl_user ? sasl_user : "",
+		       sasl_user ? ")" : "",
+		       /* include message */
+		       request->listener_port, 
+		       request->queue_id ? request->queue_id : "<undef>" ,
+		       request->client_address ? request->client_address : "<undef>",
+		       now - process->stamp);
+
+		/* next iterator */
+		iterator++;
+	}
+
+	valvula_mutex_unlock (&_ctx->op_mutex);
+	return;
+}
+
 char ** __valvulad_ref_argv;
 
 void valvulad_signal (int _signal)
@@ -137,12 +195,17 @@ void valvulad_signal (int _signal)
 	char              * cmd;
 	ValvulaAsyncQueue * queue;
 	axlNode           * node;
+	int                 iterator;
+	ValvulaConnection * listener;
 
 	/* unlock listener */
 	if (_signal == SIGINT || _signal == SIGTERM) 
 		valvula_listener_unlock (_ctx);
 	else if (_signal == SIGSEGV || _signal == SIGABRT) {
-		error ("Critical signal received: %d", _signal);
+		error ("Valvula received a critical signal: %d", _signal);
+
+		/* call to show current processes */
+		show_current_processes (ctx);
 
 		/* get signal handling */
 		node = axl_doc_get (ctx->config, "/valvula/global-settings/signal");
@@ -165,15 +228,27 @@ void valvulad_signal (int _signal)
 				axl_free (cmd);
 			} /* end if */
 			axl_free (bt_file);
-		} else if (HAS_ATTR_VALUE (node, "action", "reexec")) {
+		} else if (HAS_ATTR_VALUE (node, "action", "reexec") || HAS_ATTR_VALUE (node, "action", "re-exec")) {
 			/* report what are the requests that are in place */
 			error ("Restarting the server (removing pid file: %s).. ", pid_file_path);
 			unlink (pid_file_path);
 
 			error ("Finishing server as clean as possible..");
 			/* free valvula server context */
+			ctx->ctx->skip_thread_pool_wait = axl_true;
+			ctx->ctx->skip_reader_stop = axl_true;
 			valvula_exit_ctx (ctx->ctx, axl_true);
-			valvulad_exit (ctx);
+			/* valvulad_exit (ctx); */
+			iterator = 0;
+			while (iterator < axl_list_length (ctx->listeners)) {
+
+				/* get next iterator */
+				listener = axl_list_get_nth (ctx->listeners, iterator);
+				valvula_connection_close (listener);
+
+				/* next iterator */
+				iterator++;
+			}
 
 			error ("Restarting valvula..");
 			execv (__valvulad_ref_argv[0], __valvulad_ref_argv);

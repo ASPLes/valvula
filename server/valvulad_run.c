@@ -705,6 +705,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 			return axl_false;
 		}
 		msg ("Started listener at %s:%s", ATTR_VALUE (node, "host"), ATTR_VALUE (node, "port"));
+		axl_list_append (ctx->listeners, listener);
 
 		/* get listen node */
 		node = axl_node_get_next_called (node, "listen");
