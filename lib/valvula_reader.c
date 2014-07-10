@@ -591,6 +591,14 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 		return; /* not ready yet */
 
 	valvula_log (VALVULA_LEVEL_DEBUG, "Found content line: %s (%d bytes)", buffer, bytes_read);
+	if (axl_memcmp (buffer, "checkserver", 11)) {
+		valvula_log (VALVULA_LEVEL_DEBUG, "Received request to check server, reporting ok and closing connection: socket=%d",
+			     connection->session);
+		send (connection->session, "I'm running right", 17, 0);
+		connection->process_launched = axl_true;
+		valvula_connection_close (connection); 
+		return;
+	} /* end if */
 
 	/* increase number of lines found until now to limit them */
 	connection->lines_found += 1;

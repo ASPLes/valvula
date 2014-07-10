@@ -33,7 +33,7 @@
  *      Email address:
  *         info@aspl.es - http://www.aspl.es/valvula
  */
-#include <valvulad.h>
+#include <mod-mquota.h>
 
 /* use this declarations to avoid c++ compilers to mangle exported
  * names. */
@@ -66,40 +66,6 @@ axlHash * __mod_mquota_hour_hash;
 /* domain level */
 axlHash * __mod_mquota_domain_minute_hash;
 axlHash * __mod_mquota_domain_hour_hash;
-
-typedef struct _ModMquotaLimit {
-	/* this period id has a reference to the plan that this period
-	 * applies. If it has -1 as value, it means it is a period
-	 * defined at the valvula.conf file. Otherwise, this is a
-	 * period declared at SQL tables */
-	int            period_id;
-	const char   * label;
-
-	/* when this applies */
-	int            start_hour;
-	int            start_minute;
-
-	/* when this ends */
-	int            end_hour;
-	int            end_minute;
-
-	/* limits */
-	int            minute_limit;
-	int            hour_limit;
-	int            global_limit;
-
-	/* domain limits */
-	int            domain_minute_limit;
-	int            domain_hour_limit;
-	int            domain_global_limit;
-
-	/* mutex and hash that tracks global counting for this
-	 * period. Each ModMquotaLimit represents a period that is
-	 * being applied inside a plan. */
-	axlHash      * accounting;
-	axlHash      * domain_accounting;
-
-} ModMquotaLimit;
 
 /* reference to the list of mquotas lists */
 axlList                      * __mod_mquota_limits = NULL;
@@ -140,15 +106,9 @@ ModMquotaLimit * mod_mquota_report_limit_select (ModMquotaLimit * limit)
  * Internal function used to select what's the current default period
  * to apply.
  */
-ModMquotaLimit * mod_mquota_get_current_period (void) {
+ModMquotaLimit * mod_mquota_get_current_period (int current_minute, int current_hour) {
 	ModMquotaLimit * limit;
-	int              current_minute;
-	int              current_hour;
 	int              iterator;
-
-	/* get minute and hour */
-	current_minute = valvula_get_minute ();
-	current_hour   = valvula_get_hour ();
 
 	/* for all default registered period, find the right value */
 	iterator = 0;
@@ -173,6 +133,21 @@ ModMquotaLimit * mod_mquota_get_current_period (void) {
 			/* limit found */
 			return mod_mquota_report_limit_select (limit);
 			
+		} /* end if */
+
+		/* inverse periods support */
+		if (limit && 
+		    ((limit->start_hour > limit->end_hour) || ((limit->start_hour == limit->end_hour) &&  (limit->start_minute < limit->end_minute)))) {
+
+			/* inverse periods defined like this: 21:00 < 09:00 and we now it is 08:00 */
+			if (mod_mquota_time_is_before (current_hour, current_minute, limit->end_hour, limit->end_minute))
+				return mod_mquota_report_limit_select (limit);
+			/* end if */
+
+			/* inverse periods defined like this: 21:00 < 09:00 and we now it is 22:00 */
+			if (mod_mquota_time_is_before (limit->start_hour, limit->start_minute, current_hour, current_minute))
+				return mod_mquota_report_limit_select (limit);
+			/* end if */
 		} /* end if */
 
 		/* next iterator */
@@ -218,6 +193,9 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 {
 	axlHash         * hash;
 	ModMquotaLimit  * old_reference;
+	ModMquotaLimit  * new_reference;
+	int               current_minute;
+	int               current_hour;
 
 	if (__mod_mquota_enable_debug) {
 		msg ("mod-quota: updating accounting info"); 
@@ -257,12 +235,17 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 		axl_hash_free (hash);
 	} /* end if */
 
+	/* get minute and hour */
+	current_minute = valvula_get_minute ();
+	current_hour   = valvula_get_hour ();
+
 	/* now check if global period have changed */
-	if (mod_mquota_get_current_period () != __mod_mquota_current_period) {
+	new_reference = mod_mquota_get_current_period (current_minute, current_hour);
+	if (new_reference != __mod_mquota_current_period) {
 
 		/* get old reference */
 		old_reference = __mod_mquota_current_period;
-		__mod_mquota_current_period = mod_mquota_get_current_period ();
+		__mod_mquota_current_period = new_reference;
 
 		/* report global period change */
 		if (__mod_mquota_enable_debug) {
@@ -355,6 +338,8 @@ static int  mquota_init (ValvuladCtx * _ctx)
 	axlNode         * node;
 	const char      * mode;
 	ModMquotaLimit  * limit;
+	int               current_minute;
+	int               current_hour;
 
 	/* configure the module */
 	ctx = _ctx;
@@ -425,9 +410,13 @@ static int  mquota_init (ValvuladCtx * _ctx)
 
 	} /* end if */
 
+	/* get minute and hour */
+	current_minute = valvula_get_minute ();
+	current_hour   = valvula_get_hour ();
+
 	/** get default period that applies to every user that do not
 	 * have exceptions or database configurations */
-	__mod_mquota_current_period = mod_mquota_get_current_period ();
+	__mod_mquota_current_period = mod_mquota_get_current_period (current_minute, current_hour);
 	if (__mod_mquota_current_period == NULL) {
 		wrn ("No default period was found, unable to start mod-mquota module..");
 		return axl_false;
