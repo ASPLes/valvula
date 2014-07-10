@@ -37,6 +37,7 @@
  */
 
 #include <valvulad.h>
+#include <mod-mquota.h>
 
 axl_bool test_common_enable_debug = axl_false;
 
@@ -1885,6 +1886,7 @@ axl_bool test_07 (void) {
 	ValvulaState           state; 
 	ValvuladModule       * module;
 	int                    iterator;
+	ModMquotaLimit       * limit;
 
 	/* get reference */
 	ctx = axl_new (ValvuladCtx, 1);
@@ -1903,6 +1905,110 @@ axl_bool test_07 (void) {
 	/* ctx  = test_valvula_load_config ("Test 06: ", path, axl_true);  */
 	if (! ctx) {
 		printf ("ERROR (1): unable to load configuration file at test07.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/***** 08:00 -> night quota *****/
+	printf ("Test 07: detect period right at 08:00 -> night quota..\n");
+	limit = mod_mquota_get_current_period (0, 8);
+	if (limit == NULL) {
+		printf ("ERROR (1.1): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "night quota")) {
+		printf ("ERROR (1.2): expected to find night quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/****** 10:00 -> day quota *******/
+	printf ("Test 07: detect period right at 10:00 -> day quota..\n");
+	limit = mod_mquota_get_current_period (0, 10);
+	if (limit == NULL) {
+		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "day quota")) {
+		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/****** 20:49 -> day quota *******/
+	printf ("Test 07: detect period right at 20:49 -> day quota..\n");
+	limit = mod_mquota_get_current_period (49, 20);
+	if (limit == NULL) {
+		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "day quota")) {
+		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/****** 22:00 -> day quota *******/
+	printf ("Test 07: detect period right at 22:00 -> night quota..\n");
+	limit = mod_mquota_get_current_period (0, 22);
+	if (limit == NULL) {
+		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "night quota")) {
+		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/****** 23:59 -> day quota *******/
+	printf ("Test 07: detect period right at 23:59 -> night quota..\n");
+	limit = mod_mquota_get_current_period (59, 23);
+	if (limit == NULL) {
+		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "night quota")) {
+		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/****** 00:00 -> night quota *******/
+	printf ("Test 07: detect period right at 00:00 -> night quota..\n");
+	limit = mod_mquota_get_current_period (0, 0);
+	if (limit == NULL) {
+		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "night quota")) {
+		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/****** 00:01 -> night quota *******/
+	printf ("Test 07: detect period right at 00:01 -> night quota..\n");
+	limit = mod_mquota_get_current_period (1, 0);
+	if (limit == NULL) {
+		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "night quota")) {
+		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/****** 01:00 -> night quota *******/
+	printf ("Test 07: detect period right at 01:00 -> night quota..\n");
+	limit = mod_mquota_get_current_period (0, 1);
+	if (limit == NULL) {
+		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "night quota")) {
+		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
 		return axl_false;
 	} /* end if */
 

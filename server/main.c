@@ -400,6 +400,87 @@ void valvulad_show_current_server_status (void)
 	return;
 }
 
+void valvulad_ping_server (void) {
+	axl_bool           result;
+	axlNode          * node;
+	VALVULA_SOCKET     _socket;
+	int                timeout = 10;
+	char               buffer[20];
+	const char       * host;
+	const char       * port;
+	
+
+	/* init here valvula library and valvulaD context */
+	if (! valvulad_init (&ctx)) {
+		error ("Failed to initialize ValvulaD context, unable to start server");
+		exit (-1);
+	} /* end if */
+
+	/* parse configuration file */
+	if (exarg_is_defined ("config"))
+		result = valvulad_config_load (ctx, exarg_get_string ("config"));
+	else
+		result = valvulad_config_load (ctx, "/etc/valvula/valvula.conf");
+
+	/* get node */
+	node = axl_doc_get (ctx->config, "/valvula/general/listen");
+	if (! node ) {
+		printf ("ERROR: nothing to test, no listener was found defined\n");
+		exit (-1);
+	} /* end if */
+
+	while (node) {
+
+		/* connect to the server */
+		port = ATTR_VALUE (node, "port");
+		host = ATTR_VALUE (node, "host");
+		
+		if (! port)
+			continue;
+		if (! host)
+			host = "127.0.0.1";
+		 
+		_socket = valvula_connection_sock_connect (ctx->ctx, host, port, &timeout, NULL);
+		if (_socket <= 0) {
+			printf ("ERROR: unable to connect to %s:%s, _socket=%d, error=%d\n", 
+				host, port, _socket, errno);
+			exit (-1);
+		} /* end if */
+		valvula_connection_set_sock_block (_socket, axl_true);
+
+		/* send check server request */
+		if (send (_socket, "checkserver\n", 12, 0) != 12) {
+			printf ("ERROR: failed to send checkserver request, bytes expected weren't 11, errno=%d\n", errno);
+			exit (-1);
+		} /* end if */
+
+		/* wait for reply */
+		memset (buffer, 0, 20);
+		if (recv (_socket, buffer, 17, 0) != 17) {
+			printf ("ERROR: expected to receive 20 bytes but found: %s, errno=%d : %s\n", buffer, errno, strerror (errno));
+			exit (-1);
+		} /* end if */
+
+		/* check content here */
+		valvula_close_socket (_socket);
+
+		if (! axl_cmp (buffer, "I'm running right")) {
+			printf ("ERROR: expected to receive different values but found: %s\n", buffer);
+			exit (-1);
+		} /* end if */
+
+		printf ("%s:%s working right!\n", host, port);
+
+		/* get next <listen /> node */
+		node = axl_node_get_next_called (node, "listen");
+	} /* end while */
+
+	printf ("Valvula server working OK\n");
+
+	exit (0);
+}
+
+
 void install_arguments (int argc, char ** argv)
 {
 	/* install headers for help */
@@ -446,6 +527,9 @@ void install_arguments (int argc, char ** argv)
 	exarg_install_arg ("status", "s", EXARG_NONE, 
 			   "Dump status of the server.");
 
+	/* install status option */
+	exarg_install_arg ("pingserver", "p", EXARG_NONE, 
+			   "Ping server to check if it is alive.");
 
 	/* call to parse arguments */
 	exarg_parse (argc, argv);
@@ -463,6 +547,12 @@ void install_arguments (int argc, char ** argv)
 		valvulad_show_current_server_status ();
 		return;
 	}
+
+	if (exarg_is_defined ("pingserver")) {
+		/* call to ping servers */
+		valvulad_ping_server ();
+		return;
+	} /* end if */
 
 	return;
 }
