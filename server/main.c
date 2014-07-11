@@ -400,6 +400,12 @@ void valvulad_show_current_server_status (void)
 	return;
 }
 
+axl_bool catch_ping_server_timeout (ValvulaCtx * ctx, axlPointer user_data, axlPointer user_data2)
+{
+	printf ("ERROR: received timeout while waiting valvula to reply to ping..\n");
+	exit (-1);
+}
+
 void valvulad_ping_server (void) {
 	axl_bool           result;
 	axlNode          * node;
@@ -408,7 +414,7 @@ void valvulad_ping_server (void) {
 	char               buffer[20];
 	const char       * host;
 	const char       * port;
-	
+	int                event;
 
 	/* init here valvula library and valvulaD context */
 	if (! valvulad_init (&ctx)) {
@@ -444,6 +450,9 @@ void valvulad_ping_server (void) {
 			continue;
 		if (! host)
 			host = "127.0.0.1";
+
+		/* ensure that in 10 seconds we get called */
+		event = valvula_thread_pool_new_event (ctx->ctx, 10000000, catch_ping_server_timeout, NULL, NULL);
 		 
 		_socket = valvula_connection_sock_connect (ctx->ctx, host, port, &timeout, NULL);
 		if (_socket <= 0) {
@@ -458,6 +467,10 @@ void valvulad_ping_server (void) {
 			printf ("ERROR: failed to send checkserver request, bytes expected weren't 11, errno=%d\n", errno);
 			exit (-1);
 		} /* end if */
+
+		/* ensure that in 10 seconds we get called */
+		valvula_thread_pool_remove (ctx->ctx, event);
+		event = valvula_thread_pool_new_event (ctx->ctx, 10000000, catch_ping_server_timeout, NULL, NULL);
 
 		/* wait for reply */
 		memset (buffer, 0, 20);
