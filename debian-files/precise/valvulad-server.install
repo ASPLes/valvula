@@ -1,8 +1,11 @@
 usr/bin/valvulad
 usr/bin/valvulad-mgr.py
+usr/bin/check-valvulad.py
 etc/valvula/valvula.example.conf
 etc/init.d/valvulad
 etc/valvula/mods-enabled
+etc/cron.d/check-valvulad
+
 
 
 
