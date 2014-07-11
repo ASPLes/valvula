@@ -200,11 +200,8 @@ axl_bool valvulad_db_check_conn (ValvuladCtx * ctx)
 ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 {
 	MYSQL_RES * result;
-	MYSQL     * dbconn;
 	char      * complete_query;
 	va_list     args;
-	axl_bool    non_query;
-	int         iterator;
 	
 	/* check context or query */
 	if (ctx == NULL || query == NULL)
@@ -230,40 +227,77 @@ ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	/* clear query */
 	axl_stream_trim (complete_query);
 
+	/* report result */
+	result = valvulad_db_run_query_s (ctx, complete_query);
+
+	axl_free (complete_query);
+	return result;
+}
+
+/** 
+ * @brief Allows to run a query when it is a single paramemeter. This
+ * function is recommended when providing static strings or already
+ * formated queries (to avoid problems with varadic string
+ * implementations).
+ *
+ * @param ctx The context where the query will be executed
+ *
+ * @param query The query to run.
+ *
+ * @return A reference to the result or NULL if it fails.
+ */
+ValvuladRes     valvulad_db_run_query_s   (ValvuladCtx * ctx, const char  * query)
+{
+	int         iterator;
+	axl_bool    non_query;
+	MYSQL     * dbconn;
+	char      * local_query;
+	MYSQL_RES * result;
+
+	if (ctx == NULL || query == NULL)
+		return NULL;
+
+	/* make a local copy to handle it */
+	local_query = axl_strdup (query);
+	if (local_query == NULL)
+		return NULL;
+
 	/* get if we have a non query request */
-	non_query = ! axl_stream_casecmp ("SELECT", complete_query, 6);
+	non_query = ! axl_stream_casecmp ("SELECT", local_query, 6);
 
 	if (ctx->debug_queries)
-		msg ("%s: running query (non-query=%d): %s", __AXL_PRETTY_FUNCTION__, non_query, complete_query);
+		msg ("%s: running query (non-query=%d): %s", __AXL_PRETTY_FUNCTION__, non_query, local_query);
 
 	/* prepare query (replace # by %) */
 	iterator = 0;
-	while (complete_query && complete_query[iterator]) {
-		if (complete_query[iterator] == '#')
-			complete_query[iterator] = '%';
+	while (local_query && local_query[iterator]) {
+		if (local_query[iterator] == '#')
+			local_query[iterator] = '%';
 		/* next position */
 		iterator++;
-	}
+	} /* end if */
 
 	/* get connection */
 	dbconn = valvulad_db_get_connection (ctx);
 
 	/* now run query */
-	if (mysql_query (dbconn, complete_query)) {
-		axl_free (complete_query);
+	if (mysql_query (dbconn, local_query)) {
 		error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
 
 		/* release the connection */
 		valvulad_db_release_connection (ctx, dbconn); 
+
+		/* release conn */
+		axl_free (local_query);
 		return NULL;
 	} /* end if */
 
-	/* release the query string */
-	axl_free (complete_query);
-	
 	if (non_query) {
 		/* release the connection */
 		valvulad_db_release_connection (ctx, dbconn); 
+
+		/* release conn */
+		axl_free (local_query);
 
 		/* report ok */
 		return INT_TO_PTR (axl_true);
@@ -274,6 +308,9 @@ ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	
 	/* release the connection */
 	valvulad_db_release_connection (ctx, dbconn); 
+
+	/* release conn */
+	axl_free (local_query);
 
 	return result;
 }
@@ -591,7 +628,7 @@ axl_bool        valvulad_db_boolean_query (ValvuladCtx * ctx,
 	axl_stream_trim (complete_query);
 
 	/* run query */
-	result = valvulad_db_run_query (ctx, complete_query);
+	result = valvulad_db_run_query_s (ctx, complete_query);
 	axl_free (complete_query);
 
 	if (result == NULL)
@@ -638,7 +675,7 @@ axl_bool        valvulad_db_run_non_query (ValvuladCtx * ctx,
 	axl_stream_trim (complete_query);
 
 	/* run query */
-	result = valvulad_db_run_query (ctx, complete_query);
+	result = valvulad_db_run_query_s (ctx, complete_query);
 	axl_free (complete_query);
 	if (result == NULL)
 		return axl_false;

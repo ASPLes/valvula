@@ -75,6 +75,8 @@ ValvuladRes     valvulad_db_run_query     (ValvuladCtx * ctx,
 					   const char * query, 
 					   ...);
 
+ValvuladRes     valvulad_db_run_query_s   (ValvuladCtx * ctx, 
+					   const char  * query);
 
 /** 
  * @brief Get the next row from a result object.

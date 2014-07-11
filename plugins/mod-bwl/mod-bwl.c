@@ -268,7 +268,7 @@ ValvulaState bwl_check_status (ValvulaCtx         * _ctx,
 	} /* end if */
 
 	/* call to create the query */
-	result = valvulad_db_run_query (ctx, query);
+	result = valvulad_db_run_query_s (ctx, query);
 	axl_free (query);
 	if (! result) {
 		/* release result */
