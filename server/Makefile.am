@@ -3,6 +3,9 @@ EXTRA_DIST = exarg.h exarg.c
 etcdir = $(sysconfdir)/valvula
 etc_DATA = valvula.example.conf
 
+crondir = $(sysconfdir)/cron.d
+cron_DATA = check-valvulad 
+
 if ENABLE_POLL_SUPPORT
 INCLUDE_VALVULA_POLL=-DVALVULA_HAVE_POLL=1
 endif
@@ -25,7 +28,7 @@ LIBS            = $(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS) $(NOPOLL_LIBS)
 
 bin_PROGRAMS = valvulad
 
-bin_SCRIPTS = valvulad-mgr.py
+bin_SCRIPTS = valvulad-mgr.py check-valvulad.py
 
 valvulad_SOURCES = main.c exarg.c exarg.h 
 
