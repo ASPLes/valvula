@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import commands
 import os
 import sys
 
@@ -34,7 +33,7 @@ if not os.path.exists (pid_file):
     sys.exit (0)
 
 # call to ping server
-(status, output) = commands.getstatusoutput ("valvulad -p")
+status = os.system ("valvulad -p > /dev/null 2>&1")
 if status == 0:
     info ("Valvulad server is working right")
     sys.exit (0)
@@ -46,12 +45,12 @@ except Exception:
     pass
 
 # kill all instances
-commands.getstatusoutput ("killall -9 valvulad")
-commands.getstatusoutput ("killall -9 valvulad")
+os.system ("killall -9 valvulad  > /dev/null 2>&1")
+os.system ("killall -9 valvulad  > /dev/null 2>&1")
 
 # now stop and start
-commands.getstatusoutput ("service valvulad stop")
-commands.getstatusoutput ("service valvulad start")
+os.system ("service valvulad stop > /dev/null 2>&1")
+os.system ("service valvulad start > /dev/null 2>&1")
 
 
 
