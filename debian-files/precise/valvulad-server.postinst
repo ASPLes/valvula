@@ -17,7 +17,7 @@ case "$1" in
 	fi
 
 	# restart server if it were installed
-	/etc/init.d/valvulad restart
+	/etc/init.d/valvulad restart > /dev/null 2>&1
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
