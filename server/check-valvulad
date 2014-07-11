@@ -1,6 +1,6 @@
-# /etc/cron.d/valvulad: crontab fragment for exim
+# /etc/cron.d/valvulad: crontab for valvulad server
 
 SHELL=/bin/sh
-PATH=/usr/sbin
+PATH=/usr/bin
 
 */1  *  *  *  *  root   	check-valvulad.py
