@@ -422,6 +422,11 @@ void valvulad_ping_server (void) {
 	else
 		result = valvulad_config_load (ctx, "/etc/valvula/valvula.conf");
 
+	if (! result) { 
+		printf ("ERROR: unable to load valvula configuration, failed to locate server to ping it\n");
+		exit (-1);
+	} /* end if */
+
 	/* get node */
 	node = axl_doc_get (ctx->config, "/valvula/general/listen");
 	if (! node ) {
