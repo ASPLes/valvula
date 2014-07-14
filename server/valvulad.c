@@ -1032,6 +1032,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * - \ref valvulad_mod_mquota
  * - \ref valvulad_mod_bwl
  * - \ref valvulad_mod_ticket
+ * - \ref valvulad_mod_mw
  *
  * \section contact_aspl Contact Us
  * 
