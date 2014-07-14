@@ -42,6 +42,7 @@ build_doc: prepare_xmls
 
 prepare_xmls:
 	axl-knife -i ../server/valvula.example.conf -o valvula.example.conf.xml -e -p fragment
+	axl-knife -i ../plugins/mod-mw/mod-mw.example.conf -o mod-mw.example.conf.xml -e -p fragment
 
 all: build_doc
 

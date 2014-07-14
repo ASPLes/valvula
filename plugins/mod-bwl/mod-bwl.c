@@ -424,7 +424,7 @@ END_C_DECLS
 /** 
  * \page valvulad_mod_bwl mod-bwl : Valvula blacklisting module
  *
- * \section valvulad_mod_bwl Introduction
+ * \section valvulad_mod_bwl_intro Introduction
  *
  * mod-bwl is a handy module that allows implementing blacklisting
  * rules that are based on source and destination at the same time. As
