@@ -36,7 +36,6 @@
 * Publicar noticia en twitter ASPL_es
   Publicar comentario en FrancisBrosnanB
   Publicar comentario en GooglePlus Francis
-  Publicar comentario en ASPLhosting
 
 
 
