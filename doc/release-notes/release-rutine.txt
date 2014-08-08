@@ -16,8 +16,9 @@
 
 * publicar en listas de correo de aspl.
 
-* publicar en:
-  http://www.softpedia.com
+* publicar en: 
+  http://www.freshcode.club
+  http://launchpad.net
 
 * actualizar web de valvula (actualizar sección de noticias y a la gestión
   de releases notes).
