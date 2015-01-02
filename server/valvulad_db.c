@@ -59,6 +59,11 @@ char * __valvulad_db_escape_query (const char * query)
 	return complete_query;
 }
 
+/** 
+ * @internal reference to simulate failures
+ */
+axl_bool        __valvulad_simulate_connection_error = axl_false;
+
 MYSQL   * valvulad_db_get_connection  (ValvuladCtx * ctx)
 {
 	axlNode * node;
@@ -82,7 +87,11 @@ MYSQL   * valvulad_db_get_connection  (ValvuladCtx * ctx)
 		/* get port configured by the user */
 		port = atoi (ATTR_VALUE (node, "port"));
 	}
-	
+
+	if (__valvulad_simulate_connection_error) {
+		return NULL;
+	} /* end if */
+
 	/* create a connection */
 	if (mysql_real_connect (dbconn, 
 				/* get host */
@@ -279,6 +288,13 @@ ValvuladRes     valvulad_db_run_query_s   (ValvuladCtx * ctx, const char  * quer
 
 	/* get connection */
 	dbconn = valvulad_db_get_connection (ctx);
+	if (dbconn == NULL) {
+		error ("Failed to acquire connection to run query");
+
+		/* release conn */
+		axl_free (local_query);
+		return NULL;
+	} /* end if */
 
 	/* now run query */
 	if (mysql_query (dbconn, local_query)) {
