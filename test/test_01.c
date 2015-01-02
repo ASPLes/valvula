@@ -2141,6 +2141,44 @@ axl_bool test_07 (void) {
 	return axl_true;	
 }
 
+/* test mod mquota */
+axl_bool test_08 (void) {
+
+	ValvuladCtx          * ctx;
+	extern axl_bool        __valvulad_simulate_connection_error;
+
+	/* get reference */
+	ctx = axl_new (ValvuladCtx, 1);
+
+	printf ("Test 08: checking SQL failure..\n");
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 07", "test_07.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* ctx  = test_valvula_load_config ("Test 06: ", path, axl_true);  */
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test07.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/* simulate sql error */
+	__valvulad_simulate_connection_error = axl_true;
+
+	/** DOMAIN TEST ***/
+	valvulad_db_run_non_query (ctx, "DELETE FROM mquota_exception");
+
+	/* finish test */
+	common_finish (ctx);
+
+	return axl_true;	
+}
+
 #define CHECK_TEST(name) if (run_test_name == NULL || axl_cmp (run_test_name, name))
 
 typedef axl_bool (* ValvulaTestHandler) (void);
@@ -2180,7 +2218,7 @@ int main (int argc, char ** argv)
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
 	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_03, test_04, test_05,\n");
-	printf ("**                  test_06\n");
+	printf ("**                  test_06, test_07, test_08\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
 	printf ("**     <valvula@lists.aspl.es> Valvula Mailing list\n**\n");
@@ -2252,6 +2290,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_07")
 	run_test (test_07, "Test 07: test mod-mquota");
+
+	/* run tests */
+	CHECK_TEST("test_08")
+	run_test (test_08, "Test 08: test mod-mquota");
 
 	printf ("All tests passed OK!\n");
 
