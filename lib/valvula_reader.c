@@ -265,8 +265,16 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 		break;
 	case VALVULA_STATE_LOG:
 		break;
-	default:
+	case VALVULA_STATE_HOLD:
 		break;
+	case VALVULA_STATE_PREPEND:
+		break;
+	case VALVULA_STATE_GENERIC_ERROR:
+		break;
+	case VALVULA_STATE_FILTER:
+		__valvula_reader_send (connection, "filter", message);
+		break;
+	/* do not place here a default; we want an error here when some case is not handled */
 	} /* end if */
 
 	/* flag the connection as process finished */

@@ -170,6 +170,10 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "ticket_plan_id", "int",
 				  /* flag to block the user */
 				  "block_ticket", "int",
+				  /* has fixed outgoing ip */
+				  "has_outgoing_ip", "int",
+				  /* reference to the outgoing ip if any */
+				  "outgoing_ip_id", "int",
 				  NULL);
 
 	/* day tracking */
@@ -198,6 +202,22 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "stamp", "int",
 				  /* total day used */
 				  "month_usage", "int",
+				  NULL);
+
+	/* out going ips */
+	valvulad_db_ensure_table (ctx, 
+				  /* table name */
+				  "outgoing_ip", 
+				  /* attributes */
+				  "id", "autoincrement int", 
+				  /* out going ip */
+				  "outgoing_ip", "varchar(32)",
+				  /* transport */
+				  "transport", "varchar(256)",
+				  /* label */
+				  "label", "varchar(256)",
+				  /* description */
+				  "description", "varchar(512)",
 				  NULL);
 
 	/* add on day and on month change */
@@ -291,6 +311,39 @@ axl_bool mod_ticket_ensure_alternative_user (ValvuladCtx * ctx, ValvuladRes resu
 
 }
 
+ValvulaState __mod_ticket_return_dunno_or_filter (ValvuladCtx * ctx, const char * descriptive_user, long has_outgoing_ip, long outgoing_ip_id, char ** message)
+{
+	/* get result and row */
+	ValvuladRes    result  = NULL;
+	ValvuladRow    row;
+	const char   * transport;
+
+	msg ("mod-ticket: has_outgoing_ip=%d, outgoing_ip_id=%d\n", has_outgoing_ip, outgoing_ip_id);
+	if (! has_outgoing_ip || outgoing_ip_id <= 0) {
+		/* report dunno (accept) if it was not outgoing ip */
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* call to get values for transport */
+	result  = valvulad_db_run_query (ctx, "SELECT transport FROM outgoing_ip WHERE id = '%d'", outgoing_ip_id);
+	row     = __ticket_get_row_or_fail (ctx, result);
+	if (row == NULL) {
+		/* found error, report DUNNO for now */
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* get transport */
+	transport = GET_CELL (row, 0);
+	msg ("mod-ticket: reporting transport (%s) for user=%s", transport, descriptive_user);
+	(*message) = axl_strdup (transport);
+
+	/* release result */
+	valvulad_db_release_result (result);
+
+	/* report dunno (accept) if it was not outgoing ip */
+	return VALVULA_STATE_FILTER;
+}
+
 /** 
  * @brief Process request for the module.
  */
@@ -315,6 +368,8 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	long           total_used;
 	long           record_id;
 	long           block_ticket;
+	long           has_outgoing_ip;
+	long           outgoing_ip_id;
 
 	long           ticket_plan_id;
 	long           total_limit;
@@ -361,18 +416,18 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	if (sasl_user_in_tickets) {
 		/* prepare query to get the right user */
 		if (alternative_user)
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE sasl_user LIKE '#%s#'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket, has_outgoing_ip, outgoing_ip_id FROM domain_ticket WHERE sasl_user LIKE '#%s#'";
 		else 
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE sasl_user = '%s'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket, has_outgoing_ip, outgoing_ip_id FROM domain_ticket WHERE sasl_user = '%s'";
 
 		/* run query */
 		result = valvulad_db_run_query (ctx,  query, valvula_get_sasl_user (request));
 	} else if (domain_in_tickets) {
 		/* prepare query to get the right domain */
 		if (alternative_user) 
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE domain LIKE '#%s#'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket, has_outgoing_ip, outgoing_ip_id FROM domain_ticket WHERE domain LIKE '#%s#'";
 		else
-			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket FROM domain_ticket WHERE domain = '%s'";
+			query = "SELECT total_used, current_day_usage, current_month_usage, valid_until, ticket_plan_id, id, block_ticket, has_outgoing_ip, outgoing_ip_id FROM domain_ticket WHERE domain = '%s'";
 
 		/* run query */
 		result = valvulad_db_run_query (ctx, query, valvula_get_sender_domain (request));
@@ -382,7 +437,8 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		/* maybe the database configurat was removed before checking previous request, no problem */
+		/* maybe the database configuration was removed before
+		 * checking previous request, no problem */
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
@@ -414,6 +470,8 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	ticket_plan_id      = GET_CELL_AS_LONG (row, 4);
 	record_id           = GET_CELL_AS_LONG (row, 5);
 	block_ticket        = GET_CELL_AS_LONG (row, 6);
+	has_outgoing_ip     = GET_CELL_AS_LONG (row, 7);
+	outgoing_ip_id      = GET_CELL_AS_LONG (row, 8);
 
 	if (block_ticket) {
 		/* release result */
@@ -426,7 +484,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 				 ticket_plan_id, block_ticket, descriptive_user);
 			
 		return VALVULA_STATE_REJECT;
-	}
+	} /* end if */
 
 	/* release result */
 	valvulad_db_release_result (result);
@@ -442,13 +500,13 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		return VALVULA_STATE_DUNNO;
+		return __mod_ticket_return_dunno_or_filter (ctx, descriptive_user, has_outgoing_ip, outgoing_ip_id, message);
 	} /* end if */
 
 	/* get row from result */
 	row = __ticket_get_row_or_fail (ctx, result);
 	if (row == NULL) {
-		return VALVULA_STATE_DUNNO;
+		return __mod_ticket_return_dunno_or_filter (ctx, descriptive_user, has_outgoing_ip, outgoing_ip_id, message);
 	}
 
 	/* get values */
@@ -509,7 +567,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	
 	/* by default report return dunno */
-	return VALVULA_STATE_DUNNO;
+	return __mod_ticket_return_dunno_or_filter (ctx, descriptive_user, has_outgoing_ip, outgoing_ip_id, message);
 }
 
 /** 

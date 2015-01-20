@@ -507,7 +507,12 @@ typedef enum {
 	 * @brief An error happened during processing but it doesn't
 	 * match any known error.
 	 */
-	VALVULA_STATE_GENERIC_ERROR = 12
+	VALVULA_STATE_GENERIC_ERROR = 12,
+
+	/** 
+	 * @brief Allows to configure postfix filter option (see access(5))
+	 */
+	VALVULA_STATE_FILTER = 13
 } ValvulaState;
 
 /** 

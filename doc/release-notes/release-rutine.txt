@@ -16,6 +16,12 @@
 
 * publicar en listas de correo de aspl.
 
+* Actualizar web/pad.xml para reflejar la nueva version. Subirlo a la web y
+  publicar en:
+
+  - http://www.fileguru.com/application.html
+  - http://www.softpedia.com/user/submit.shtml
+
 * publicar en: 
   http://www.freshcode.club
   http://launchpad.net
