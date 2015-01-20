@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XML_DIZ_INFO>
+  <MASTER_PAD_VERSION_INFO>
+    <MASTER_PAD_VERSION>4.0</MASTER_PAD_VERSION>
+    <MASTER_PAD_EDITOR>AppVisor 1.0.43</MASTER_PAD_EDITOR>
+    <MASTER_PAD_EDITOR_URL>http://publisher.appvisor.com</MASTER_PAD_EDITOR_URL>
+    <MASTER_PAD_INFO>Portable Application Description, or PAD(TM) 2004 Association of Software Professionals (ASP)http://www.asp-shareware.org/pad is a data set standard and specification that is commercialsoftware publishers to disseminate certified information about their software application. The PAD format is copyright of the ASP and cannot be used without the formal licensing and permission of both the Association of Software Professionals and its agent AppVisor.com.</MASTER_PAD_INFO>
+    <CERTIFIED>No</CERTIFIED>
+    <CERTIFICATE_ID></CERTIFICATE_ID>
+    <CERTIFICATE_LICENSE></CERTIFICATE_LICENSE>
+  </MASTER_PAD_VERSION_INFO>
+  <RoboSoft>
+    <Company_UIN>CMP-44005B73E761</Company_UIN>
+    <Product_UIN>APP-540022EFF761</Product_UIN>
+    <Publish_on_CD>N</Publish_on_CD>
+    <NewsFeed_Search_String></NewsFeed_Search_String>
+    <Search_String>Valvula</Search_String>
+    <Press_Release_Search_String></Press_Release_Search_String>
+    <Backlink></Backlink>
+    <Comments_For_Reviewer></Comments_For_Reviewer>
+    <Search_String_Unique>Valvula</Search_String_Unique>
+    <Search_Engine_Search_String></Search_Engine_Search_String>
+    <Web_Directories_Search_String></Web_Directories_Search_String>
+    <Company_Description></Company_Description>
+  </RoboSoft>
+  <Company_Info>
+    <PublisherID>pid-1200c1fc3e51</PublisherID>
+    <BrandID>bid-44005b73e761</BrandID>
+    <Company_Name>Advanced Software Production Line, S.L.</Company_Name>
+    <Country>Spain</Country>
+    <State_Province>Madrid</State_Province>
+    <City_Town>Alcala de Henares</City_Town>
+    <Zip_Postal_Code>28802</Zip_Postal_Code>
+    <Address_1>C/ Antonio Suarez 10, A-102</Address_1>
+    <Address_2></Address_2>
+    <Company_WebSite_URL>http://www.aspl.es</Company_WebSite_URL>
+    <Contact_Info>
+      <Contact_First_Name>Francis</Contact_First_Name>
+      <Contact_Last_Name>Brosnan Blázquez</Contact_Last_Name>
+      <Contact_Email>info@aspl.es</Contact_Email>
+      <Author_First_Name>Francis</Author_First_Name>
+      <Author_Last_Name>Brosnan Blázquez</Author_Last_Name>
+      <Author_Email>info@aspl.es</Author_Email>
+      <Contact_Phone></Contact_Phone>
+    </Contact_Info>
+    <Support_Info>
+      <Sales_Email>info@aspl.es</Sales_Email>
+      <Support_Email>info@aspl.es</Support_Email>
+      <General_Email>info@aspl.es</General_Email>
+      <Sales_Phone>0034911341422</Sales_Phone>
+      <Support_Phone>0034911341422</Support_Phone>
+      <General_Phone>0034911341422</General_Phone>
+      <Fax_Phone>0034911341422</Fax_Phone>
+    </Support_Info>
+    <GooglePlusPage></GooglePlusPage>
+    <LinkedinPage></LinkedinPage>
+    <TwitterCompanyPage>https://twitter.com/aspl_es</TwitterCompanyPage>
+    <FacebookCompanyPage></FacebookCompanyPage>
+    <CompanyStorePage></CompanyStorePage>
+  </Company_Info>
+  <Program_Info>
+    <AppID>app-540022eff761</AppID>
+    <Program_Name>Valvula</Program_Name>
+    <Program_Version>1.0.4</Program_Version>
+    <Program_Release_Month>08</Program_Release_Month>
+    <Program_Release_Day>12</Program_Release_Day>
+    <Program_Release_Year>2014</Program_Release_Year>
+    <Program_Cost_Dollars>0</Program_Cost_Dollars>
+    <Program_Cost_Other_Code></Program_Cost_Other_Code>
+    <Program_Cost_Other></Program_Cost_Other>
+    <Program_Type>Freeware</Program_Type>
+    <Program_Category_Class>Servers::Mail Servers</Program_Category_Class>
+    <Program_Specific_Category></Program_Specific_Category>
+    <Program_Categories>Email :: Misc. Email Tools,Email :: Anti-Spam,Email :: Signature Tools,Email :: Server Tools,Email :: Mailing List Tools,Email :: Checkers,Internet :: Security,Programming :: C &amp; C++ &amp; C#,Programming :: SQL</Program_Categories>
+    <Program_Release_Status>New Release</Program_Release_Status>
+    <Program_Install_Support>Install and Uninstall</Program_Install_Support>
+    <Program_OS_Support>Unix,Linux,Mac OS X</Program_OS_Support>
+    <Program_Language>English</Program_Language>
+    <Program_Change_Info>http://lists.aspl.es/pipermail/valvula/2014-July/000001.html</Program_Change_Info>
+    <Program_System_Requirements>LibAxl (http://www.aspl.es/xml)</Program_System_Requirements>
+    <Limitations>None</Limitations>
+    <Awards></Awards>
+    <File_Info>
+      <File_Size_Bytes>506880</File_Size_Bytes>
+      <File_Size_K>495</File_Size_K>
+      <File_Size_MB>0.48</File_Size_MB>
+    </File_Info>
+    <Expire_Info>
+      <Has_Expire_Info>N</Has_Expire_Info>
+      <Expire_Count></Expire_Count>
+      <Expire_Based_On></Expire_Based_On>
+      <Expire_Year></Expire_Year>
+      <Expire_Other_Info></Expire_Other_Info>
+      <Expire_Month></Expire_Month>
+      <Expire_Day></Expire_Day>
+    </Expire_Info>
+    <FacebookFanPage></FacebookFanPage>
+    <VideoLink1URL></VideoLink1URL>
+    <VideoLink2URL></VideoLink2URL>
+    <Includes_JAVA_VM></Includes_JAVA_VM>
+    <Includes_DirectX></Includes_DirectX>
+    <Includes_VB_Runtime></Includes_VB_Runtime>
+    <GooglePlusFanPage></GooglePlusFanPage>
+  </Program_Info>
+  <Web_Info>
+    <Application_URLs>
+      <Application_Info_URL>http://www.aspl.es/valvula</Application_Info_URL>
+      <Application_Order_URL>http://www.aspl.es/valvula/downloads</Application_Order_URL>
+      <Application_Screenshot_URL>http://www.aspl.es/valvula/mail-policy-manager-001.png</Application_Screenshot_URL>
+      <Application_Icon_URL>http://www.aspl.es/valvula/valvula-logo-32x32.png</Application_Icon_URL>
+      <Application_XML_File_URL>http://repository.appvisor.com/app-540022eff761/site-01/Valvula_pad.xml</Application_XML_File_URL>
+    </Application_URLs>
+    <Download_URLs>
+      <Primary_Download_URL>http://www.aspl.es/valvula/downloads/valvula-1.0.4.tar.gz</Primary_Download_URL>
+      <Secondary_Download_URL></Secondary_Download_URL>
+      <Additional_Download_URL_1></Additional_Download_URL_1>
+      <Additional_Download_URL_2></Additional_Download_URL_2>
+    </Download_URLs>
+  </Web_Info>
+  <Program_Descriptions>
+    <English>
+      <Keywords>postfix policy daemon, mail server tools, anti-spam systems</Keywords>
+      <Char_Desc_45>High performance Mail policy daemon for Postf</Char_Desc_45>
+      <Char_Desc_80>High performance Mail policy daemon for Postf</Char_Desc_80>
+      <Char_Desc_250>Valvula is a OpenSource high performance mail policy daemon for Postfix, written in ANSI C, that provides out of the box support for sender login mismatch, mail quotas, per user and per domain blacklists and white-lists and much more.</Char_Desc_250>
+      <Char_Desc_450>Valvula is a OpenSource high performance mail policy daemon for Postfix, written in ANSI C, that provides out of the box support for sender login mismatch, mail quotas, per user and per domain blacklists and white-lists and much more.</Char_Desc_450>
+      <Char_Desc_2000>Valvula is a OpenSource high performance mail policy daemon for Postfix, written in ansi C, that provides out of the box support for sender login mismatch, mail quotas, per user and per domain blacklists and whitelists and much more.
+
+It is system administrator friendly by providing many automatic features (like automatically detecting Postfix MySQL databases to be able to detect local domains and local accounts to make better decisions).
+
+Valvula is fully extensible through plugins and it is composed by a base library (libValvula) that integrates into a ready to use server (valvulad) that is able to run different ports with different modules so you can connect same valvula process at different points inside Postfix policy restriction sections.
+
+Valvula is released under the terms of GPL 2.0 and currently is being used, among others, by Core-Admin to provide advanced mail policy management along with massive mail ticket system.</Char_Desc_2000>
+    </English>
+  </Program_Descriptions>
+  <Permissions>
+    <Distribution_Permissions>http://www.aspl.es/valvula/licensing.html</Distribution_Permissions>
+    <EULA>http://www.aspl.es/valvula/licensing.html</EULA>
+  </Permissions>
+  <Affiliates>
+    <Affiliates_Regsoft_Order_Page></Affiliates_Regsoft_Order_Page>
+    <Affiliates_Regnow_Order_Page></Affiliates_Regnow_Order_Page>
+    <Affiliates_Regsoft_Vendor_ID></Affiliates_Regsoft_Vendor_ID>
+    <Affiliates_Regnow_Vendor_ID></Affiliates_Regnow_Vendor_ID>
+    <Affiliates_Regsoft_Product_ID></Affiliates_Regsoft_Product_ID>
+    <Affiliates_Regnow_Product_ID></Affiliates_Regnow_Product_ID>
+    <Affiliates_FORM></Affiliates_FORM>
+    <Affiliates_FORM_VER></Affiliates_FORM_VER>
+    <Affiliates_VERSION></Affiliates_VERSION>
+    <Affiliates_URL></Affiliates_URL>
+    <Affiliates_Information_Page></Affiliates_Information_Page>
+    <Affiliates_Avangate_Order_Page></Affiliates_Avangate_Order_Page>
+    <Affiliates_Avangate_Vendor_ID></Affiliates_Avangate_Vendor_ID>
+    <Affiliates_Avangate_Product_ID></Affiliates_Avangate_Product_ID>
+    <Affiliates_Avangate_Maximum_Commission_Rate></Affiliates_Avangate_Maximum_Commission_Rate>
+    <Affiliates_BMTMicro_Order_Page></Affiliates_BMTMicro_Order_Page>
+    <Affiliates_BMTMicro_Vendor_ID></Affiliates_BMTMicro_Vendor_ID>
+    <Affiliates_BMTMicro_Product_ID></Affiliates_BMTMicro_Product_ID>
+    <Affiliates_BMTMicro_Maximum_Commission_Rate></Affiliates_BMTMicro_Maximum_Commission_Rate>
+    <Affiliates_eSellerate_Order_Page></Affiliates_eSellerate_Order_Page>
+    <Affiliates_eSellerate_Vendor_ID></Affiliates_eSellerate_Vendor_ID>
+    <Affiliates_eSellerate_Product_ID></Affiliates_eSellerate_Product_ID>
+    <Affiliates_eSellerate_Maximum_Commission_Rate></Affiliates_eSellerate_Maximum_Commission_Rate>
+    <Affiliates_Kagi_Order_Page></Affiliates_Kagi_Order_Page>
+    <Affiliates_Kagi_Vendor_ID></Affiliates_Kagi_Vendor_ID>
+    <Affiliates_Kagi_Product_ID></Affiliates_Kagi_Product_ID>
+    <Affiliates_Kagi_Maximum_Commission_Rate></Affiliates_Kagi_Maximum_Commission_Rate>
+    <Affiliates_Order1_Order_Page></Affiliates_Order1_Order_Page>
+    <Affiliates_Order1_Vendor_ID></Affiliates_Order1_Vendor_ID>
+    <Affiliates_Order1_Product_ID></Affiliates_Order1_Product_ID>
+    <Affiliates_Order1_Maximum_Commission_Rate></Affiliates_Order1_Maximum_Commission_Rate>
+    <Affiliates_Regnet_Order_Page></Affiliates_Regnet_Order_Page>
+    <Affiliates_Regnet_Vendor_ID></Affiliates_Regnet_Vendor_ID>
+    <Affiliates_Regnet_Product_ID></Affiliates_Regnet_Product_ID>
+    <Affiliates_Regnet_Maximum_Commission_Rate></Affiliates_Regnet_Maximum_Commission_Rate>
+    <Affiliates_Regnow_Maximum_Commission_Rate></Affiliates_Regnow_Maximum_Commission_Rate>
+    <Affiliates_Regsoft_Maximum_Commission_Rate></Affiliates_Regsoft_Maximum_Commission_Rate>
+    <Affiliates_ShareIt_Order_Page></Affiliates_ShareIt_Order_Page>
+    <Affiliates_ShareIt_Vendor_ID></Affiliates_ShareIt_Vendor_ID>
+    <Affiliates_ShareIt_Product_ID></Affiliates_ShareIt_Product_ID>
+    <Affiliates_ShareIt_Maximum_Commission_Rate></Affiliates_ShareIt_Maximum_Commission_Rate>
+    <Affiliates_SWReg_Order_Page></Affiliates_SWReg_Order_Page>
+    <Affiliates_SWReg_Vendor_ID></Affiliates_SWReg_Vendor_ID>
+    <Affiliates_SWReg_Product_ID></Affiliates_SWReg_Product_ID>
+    <Affiliates_SWReg_Maximum_Commission_Rate></Affiliates_SWReg_Maximum_Commission_Rate>
+  </Affiliates>
+  <NewsFeed>
+    <NewsFeed_FORM></NewsFeed_FORM>
+    <NewsFeed_VERSION></NewsFeed_VERSION>
+    <NewsFeed_URL></NewsFeed_URL>
+    <NewsFeed_DESCRIPTION></NewsFeed_DESCRIPTION>
+    <NewsFeed_Feed_URL></NewsFeed_Feed_URL>
+    <NewsFeed_Type></NewsFeed_Type>
+    <NewsFeed_Site_URL></NewsFeed_Site_URL>
+    <NewsFeed_Author_First_Name>Francis</NewsFeed_Author_First_Name>
+    <NewsFeed_Author_Last_Name>Brosnan Blázquez</NewsFeed_Author_Last_Name>
+    <NewsFeed_Author_Email>info@aspl.es</NewsFeed_Author_Email>
+    <NewsFeed_Language></NewsFeed_Language>
+    <NewsFeed_Title></NewsFeed_Title>
+    <NewsFeed_Description_70></NewsFeed_Description_70>
+    <NewsFeed_Description_250></NewsFeed_Description_250>
+    <NewsFeed_Purpose></NewsFeed_Purpose>
+    <NewsFeed_Site_Name></NewsFeed_Site_Name>
+  </NewsFeed>
+  <Press_Release>
+    <Press_Release>http://lists.aspl.es/pipermail/valvula/2014-July/000001.html</Press_Release>
+    <Keywords>stable-release, new-features</Keywords>
+    <Headline>New stable release with bug fixings and new features</Headline>
+    <Summary>http://lists.aspl.es/pipermail/valvula/2014-July/000001.html</Summary>
+    <Press_Release_Plain>http://lists.aspl.es/pipermail/valvula/2014-July/000001.html</Press_Release_Plain>
+    <Related_URL>http://lists.aspl.es/pipermail/valvula/2014-July/000001.html</Related_URL>
+  </Press_Release>
+  <Site>
+    <Site_FORM></Site_FORM>
+    <Site_VERSION></Site_VERSION>
+    <Site_URL></Site_URL>
+    <Site_DESCRIPTION></Site_DESCRIPTION>
+    <Site_Site_Title>Official project home page</Site_Site_Title>
+    <Site_Site_URL>http://www.aspl.es/valvula</Site_Site_URL>
+    <Site_Keywords>homepage, project-site</Site_Keywords>
+    <Site_Description_100>Official homepage</Site_Description_100>
+    <Site_Description_250>Official homepage</Site_Description_250>
+    <Site_Description_450>Official homepage</Site_Description_450>
+    <Site_Contact_First_Name>Francis</Site_Contact_First_Name>
+    <Site_Contact_Last_Name>Brosnan Blázquez</Site_Contact_Last_Name>
+    <Site_Contact_Email>info@aspl.es</Site_Contact_Email>
+  </Site>
+  <Download_Link_Points_To_Non_Binary_File>TRUE</Download_Link_Points_To_Non_Binary_File>
+  <Dynamic_PAD>
+    <General>
+      <DP_Pad_Enabled>TRUE</DP_Pad_Enabled>
+      <DP_AtFormFill_Enabled>TRUE</DP_AtFormFill_Enabled>
+      <DP_Distributive_Enabled>TRUE</DP_Distributive_Enabled>
+      <DP_Script_Base_URL>http://repository.appvisor.com/</DP_Script_Base_URL>
+      <DP_Pad_Mask>Valvula_pad.xml</DP_Pad_Mask>
+      <DP_Distributive_Primary_URL>http://www.aspl.es/valvula/downloads/valvula-1.0.4.tar.gz</DP_Distributive_Primary_URL>
+      <DP_Distributive_Mask>valvula-1.0.4.tar.gz</DP_Distributive_Mask>
+    </General>
+  </Dynamic_PAD>
+</XML_DIZ_INFO>

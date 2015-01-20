@@ -268,6 +268,24 @@ void send_content (VALVULA_SOCKET socket, const char * header, const char * cont
 	return;
 }
 
+const char * test_valvula_content = NULL;
+
+ValvulaState test_translate_action_step2 (ValvulaState state, const char * content) {
+	/* if nothing to check, just report state received */
+	if (! test_valvula_content)
+		return state;
+
+	if (! axl_memcmp (test_valvula_content, content, strlen (test_valvula_content))) {
+		printf ("ERROR: expected to find '%s' but found '%s'\n", test_valvula_content, content);
+		exit (-1);
+	} /* end if */
+
+	/* test ok, reset it and report value reported */
+	test_valvula_content = NULL;
+	return state;
+}
+
+
 ValvulaState test_translate_action (const char * buffer, int buffer_len)
 {
 	int iterator = 0;
@@ -276,13 +294,16 @@ ValvulaState test_translate_action (const char * buffer, int buffer_len)
 		iterator++;
 
 	if (axl_memcmp (buffer + iterator + 1, "dunno", 5))
-		return VALVULA_STATE_DUNNO;
+		return test_translate_action_step2 (VALVULA_STATE_DUNNO, buffer + iterator + 7);
 	if (axl_memcmp (buffer + iterator + 1, "reject", 6)) 
-		return VALVULA_STATE_REJECT;
+		return test_translate_action_step2 (VALVULA_STATE_REJECT, buffer + iterator + 8);
 	if (axl_memcmp (buffer + iterator + 1, "ok", 2))
-		return VALVULA_STATE_OK;
+		return test_translate_action_step2 (VALVULA_STATE_OK, buffer + iterator + 4);
 	if (axl_memcmp (buffer + iterator + 1, "discard", 7))
-		return VALVULA_STATE_DISCARD;
+		return test_translate_action_step2 (VALVULA_STATE_DISCARD, buffer + iterator + 9);
+	if (axl_memcmp (buffer + iterator + 1, "filter", 6)) {
+		return test_translate_action_step2 (VALVULA_STATE_FILTER, buffer + iterator + 8);
+	}
 
 	
 	printf ("ERROR: unable to translate (%s) into an state, reporting generic error..\n", buffer);
@@ -1207,6 +1228,73 @@ axl_bool test_03 (void) {
 	/* finish test */
 	common_finish (ctx);
 
+	return axl_true;
+}
+
+axl_bool test_03a (void) {
+
+	ValvuladCtx   * ctx;
+	const char    * path;
+	ValvulaState    state;
+	
+
+	/* load basic configuration */
+	path = "test_03.conf";
+	ctx  = test_valvula_load_config ("Test 03a: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 03a: phase 1\n");
+	printf ("Test ---:\n");
+
+
+	printf ("Test 03a: Check filter support (outgoing support for especific transports)..\n");
+	valvulad_db_run_non_query (ctx, "DELETE FROM outgoing_ip");
+	valvulad_db_run_non_query (ctx, "INSERT INTO outgoing_ip (id, outgoing_ip, transport, label) VALUES ('1', '129.23.3.23', 'transport11', 'label for transport')");
+	/* block account */
+	valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET block_ticket = '0', total_used = '0', current_day_usage = '0', current_month_usage = '0', has_outgoing_ip = '1', outgoing_ip_id = '1', valid_until = '%d' WHERE sasl_user = 'test@limited.com'", valvula_now () + 1000);
+	
+
+	test_valvula_content = "transport11";
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test@limited.com", NULL);
+
+	if (state != VALVULA_STATE_FILTER) {
+		printf ("ERROR (3a.17.27.16): expected valvula state %d but found %d\n", VALVULA_STATE_FILTER, state);
+		return axl_false;
+	} /* end if */
+
+
+	/* check that filter report is the following value */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"francis@aspl.es", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "test2@limited.com", NULL);
+
+	if (state == VALVULA_STATE_FILTER) {
+		printf ("ERROR (3a.17.27.17): expected valvula state %d but found %d\n", VALVULA_STATE_FILTER, state);
+		return axl_false;
+	} /* end if */
+
+	/* finish test */
+	common_finish (ctx);
+	
 	return axl_true;
 }
 
@@ -2217,7 +2305,7 @@ int main (int argc, char ** argv)
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
-	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_03, test_04, test_05,\n");
+	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_03, test_03a, test_04, test_05,\n");
 	printf ("**                  test_06, test_07, test_08\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
@@ -2274,6 +2362,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_03")
 	run_test (test_03, "Test 03: checking mod-ticket");
+
+	/* run tests */
+	CHECK_TEST("test_03a")
+	run_test (test_03a, "Test 03a: checking mod-ticket transport change support");
 
 	/* run tests */
 	CHECK_TEST("test_04")

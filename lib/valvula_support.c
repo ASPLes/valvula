@@ -639,8 +639,11 @@ const char * valvula_support_state_str              (ValvulaState state)
 		return "REDIRECT";
 	case VALVULA_STATE_GENERIC_ERROR:
 		return "GENERIC_ERROR";
-	default:
-		break;
+	case VALVULA_STATE_FILTER:
+		return "FILTER";
+	case VALVULA_STATE_LOG:
+		return "LOG";
+		/* do not place here a default; we want an error here when some case is not handled */
 	}
 
 	return "UNKNOWN";
