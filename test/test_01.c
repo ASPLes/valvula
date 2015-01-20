@@ -1252,7 +1252,7 @@ axl_bool test_03a (void) {
 
 	printf ("Test 03a: Check filter support (outgoing support for especific transports)..\n");
 	valvulad_db_run_non_query (ctx, "DELETE FROM outgoing_ip");
-	valvulad_db_run_non_query (ctx, "INSERT INTO outgoing_ip (id, outgoing_ip, transport, label) VALUES ('1', '129.23.3.23', 'transport11', 'label for transport')");
+	valvulad_db_run_non_query (ctx, "INSERT INTO outgoing_ip (id, is_active, outgoing_ip, transport, label) VALUES ('1', '1', '129.23.3.23', 'transport11', 'label for transport')");
 	/* block account */
 	valvulad_db_run_non_query (ctx, "UPDATE domain_ticket SET block_ticket = '0', total_used = '0', current_day_usage = '0', current_month_usage = '0', has_outgoing_ip = '1', outgoing_ip_id = '1', valid_until = '%d' WHERE sasl_user = 'test@limited.com'", valvula_now () + 1000);
 	
