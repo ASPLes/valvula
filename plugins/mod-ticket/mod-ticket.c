@@ -321,7 +321,6 @@ ValvulaState __mod_ticket_return_dunno_or_filter (ValvuladCtx * ctx, const char 
 	const char   * transport;
 	axl_bool       is_active;
 
-	msg ("mod-ticket: has_outgoing_ip=%d, outgoing_ip_id=%d\n", has_outgoing_ip, outgoing_ip_id);
 	if (! has_outgoing_ip || outgoing_ip_id <= 0) {
 		/* report dunno (accept) if it was not outgoing ip */
 		return VALVULA_STATE_DUNNO;
@@ -346,7 +345,6 @@ ValvulaState __mod_ticket_return_dunno_or_filter (ValvuladCtx * ctx, const char 
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
-	msg ("mod-ticket: reporting transport (%s) for user=%s", transport, descriptive_user);
 	(*message) = axl_strdup_printf ("%s:", transport);
 
 	/* release result */
