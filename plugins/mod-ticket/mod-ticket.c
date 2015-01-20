@@ -210,6 +210,8 @@ static int  ticket_init (ValvuladCtx * _ctx)
 				  "outgoing_ip", 
 				  /* attributes */
 				  "id", "autoincrement int", 
+				  /* is active */
+				  "is_active", "int", 
 				  /* out going ip */
 				  "outgoing_ip", "varchar(32)",
 				  /* transport */
@@ -317,6 +319,7 @@ ValvulaState __mod_ticket_return_dunno_or_filter (ValvuladCtx * ctx, const char 
 	ValvuladRes    result  = NULL;
 	ValvuladRow    row;
 	const char   * transport;
+	axl_bool       is_active;
 
 	msg ("mod-ticket: has_outgoing_ip=%d, outgoing_ip_id=%d\n", has_outgoing_ip, outgoing_ip_id);
 	if (! has_outgoing_ip || outgoing_ip_id <= 0) {
@@ -325,7 +328,7 @@ ValvulaState __mod_ticket_return_dunno_or_filter (ValvuladCtx * ctx, const char 
 	} /* end if */
 
 	/* call to get values for transport */
-	result  = valvulad_db_run_query (ctx, "SELECT transport FROM outgoing_ip WHERE id = '%d'", outgoing_ip_id);
+	result  = valvulad_db_run_query (ctx, "SELECT transport, is_active FROM outgoing_ip WHERE id = '%d'", outgoing_ip_id);
 	row     = __ticket_get_row_or_fail (ctx, result);
 	if (row == NULL) {
 		/* found error, report DUNNO for now */
@@ -334,6 +337,15 @@ ValvulaState __mod_ticket_return_dunno_or_filter (ValvuladCtx * ctx, const char 
 
 	/* get transport */
 	transport = GET_CELL (row, 0);
+	is_active = GET_CELL_AS_LONG (row, 1);
+
+	if (! is_active) {
+		/* found that this transport is not enabled, so tell
+		 * postfix to use default transport that is, by
+		 * reporting DUNNO */
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
 	msg ("mod-ticket: reporting transport (%s) for user=%s", transport, descriptive_user);
 	(*message) = axl_strdup (transport);
 
