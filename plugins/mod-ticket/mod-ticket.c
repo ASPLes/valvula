@@ -347,7 +347,7 @@ ValvulaState __mod_ticket_return_dunno_or_filter (ValvuladCtx * ctx, const char 
 	} /* end if */
 
 	msg ("mod-ticket: reporting transport (%s) for user=%s", transport, descriptive_user);
-	(*message) = axl_strdup (transport);
+	(*message) = axl_strdup_printf ("%s:", transport);
 
 	/* release result */
 	valvulad_db_release_result (result);
