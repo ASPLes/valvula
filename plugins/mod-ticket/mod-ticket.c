@@ -696,6 +696,13 @@ END_C_DECLS
  * updates into the MySQL database. Valvula will notice that this is
  * available on the next incoming request to be checked.
  * 
+ *
+ * \section valvulad_mod_ticket_references Additional notes
+ *
+ * For further notes, please take a look at the implementation at:
+ *
+ * https://dolphin.aspl.es/svn/publico/valvula/plugins/mod-ticket/mod-ticket.c
+ * 
  * 
  * 
  */
