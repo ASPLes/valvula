@@ -1403,6 +1403,9 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \section valvulad_server_configuring_modules 2. Enabling Valvulad server modules
  *
+ * \note you need python-axl installed in your system in order to have
+ * valvulad-mgr.py working.
+ * 
  * Please, read each module documentation to know more about them and
  * their features. Assuming you know what modules you want you have to:
  *
