@@ -40,7 +40,7 @@ Description: Base library used by the server valvulad (dev headers)
 Package: valvulad-server
 Section: libs
 Architecture: any
-Depends: libvalvula-server (>= ${Source-Version})
+Depends: libvalvula-server (>= ${Source-Version}), python-axl
 Description: high performance policy server (for postfix)
   valvulad-server is a high performance, thread based policy server
   with support for postfix.
