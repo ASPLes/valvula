@@ -637,6 +637,64 @@ END_C_DECLS
  * though it is not recommended because your server will have to
  * accept the entire message first to make a final decision.
  *
+ * \section valvulad_mod_ticket_connecting Connecting the module with postfix to make it usable
+ *
+ * Once valvula is installed with this module enabled, you can use the
+ * following commands to connect it to postfix:
+ *
+ * 1) Ensure mod-ticket is available by running:
+ * \code
+ * >> valvulad-mgr.py -o
+ * Module: mod-ticket
+ * \endcode
+ *
+ * 2) List listeners running this module:
+ * \code
+ * >> valvulad-mgr.py -l
+ * Listen: 127.0.0.1:3579
+ *   Mod: mod-ticket
+ * \endcode
+ *
+ * 3) Now connect it to postfix like:
+ *
+ * \code
+ * >> valvulad-mgr.py -c smtpd_data_restrictions 3579 first
+ * \endcode
+ * 
+ * 4) Finaly, you have to reload postfix, for example:
+ *
+ * \code
+ * >> service postfix reload
+ * \endcode
+ *
+ *
+ * \section valvulad_mod_ticket_configuring Configuring plans to limit sending operations
+ *
+ * 1) First, you'll have to create the set of plans to apply to your
+ * sending users. For that, connect to the valvula database and insert
+ * them like:
+ * 
+ * \code
+ * mysql> INSERT INTO ticket_plan (name, description, total_limit, day_limit, month_limit) VALUES ('You plan name', 'description', 100000, 3000, 10000)
+ * \endcode
+ * 
+ * 2) Now, with that plan created, create a rule that binds this plan to a sending sasl user like this:
+ *
+ * \code 
+ * mysql> INSERT INTO domain_ticket (sasl_user, valid_until, ticket_plan_id) VALUES ('test@limited.com', -1, plan_id)
+ * \endcode
+ * 
+ * ...where plan_id is the id inside ticket_plan table and -1 is that
+ * you are making this rule to have no limit in time, allowing the
+ * user to consume without time ilmit. Otherwise, place there an unix
+ * stamp epoch indicating when that user should be blocked even
+ * through there's still quota available.
+ *
+ * ...and that's all.
+ *
+ * You don't have to restart valvula after including modifications or
+ * updates into the MySQL database. Valvula will notice that this is
+ * available on the next incoming request to be checked.
  * 
  * 
  * 
