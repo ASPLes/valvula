@@ -89,6 +89,7 @@ MYSQL   * valvulad_db_get_connection  (ValvuladCtx * ctx)
 	}
 
 	if (__valvulad_simulate_connection_error) {
+		mysql_close (dbconn);
 		return NULL;
 	} /* end if */
 
@@ -104,6 +105,7 @@ MYSQL   * valvulad_db_get_connection  (ValvuladCtx * ctx)
 				ATTR_VALUE (node, "dbname"), 
 				port, NULL, 0) == NULL) {
 		error ("Mysql connect error: %s, failed to run SQL command", mysql_error (dbconn));
+		mysql_close (dbconn);
 		return NULL;
 	} /* end if */
 
