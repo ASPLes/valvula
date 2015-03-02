@@ -543,6 +543,18 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	return NULL;
 }
 
+axlPointer valvula_reader_process_request_proxy (axlPointer _connection)
+{
+	/* get call from process request */
+	axlPointer result = valvula_reader_process_request (_connection);
+
+	/* release connection reference */
+	valvula_connection_unref (_connection, "valvula reader (process request)");
+
+	/* return value found from call */
+	return result;
+}
+
 #define valvula_reader_set_value(var,value_to_configure) do { \
 	if (var)                                             \
 		axl_free (var);                              \
@@ -639,8 +651,15 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 		valvula_log (VALVULA_LEVEL_DEBUG, "Launching process request over connection session=%d (%p)", 
 			     connection->session, connection);
 
+		/* increase reference counting */
+		if (! valvula_connection_ref (connection, "valvula reader (process request)")) {
+			valvula_log (VALVULA_LEVEL_CRITICAL, "unable to increase connection reference count at process request, dropping connection");
+			valvula_connection_close (connection);
+			return;
+		} /* end if */
+
 		/* process request */
-		valvula_thread_pool_new_task (ctx, valvula_reader_process_request, connection);
+		valvula_thread_pool_new_task (ctx, valvula_reader_process_request_proxy, connection);
 		return;
 	} /* end if */
 
