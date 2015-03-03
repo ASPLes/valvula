@@ -1,4 +1,4 @@
-EXTRA_DIST = exarg.h exarg.c 
+EXTRA_DIST = exarg.h exarg.c valvulad-mgr.py check-valvulad.py check-valvulad valvula.example.conf
 
 etcdir = $(sysconfdir)/valvula
 etc_DATA = valvula.example.conf
