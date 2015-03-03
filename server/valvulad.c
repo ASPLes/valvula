@@ -491,9 +491,9 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	if (VALVULA_STATE_REJECT == state)
 		return;
 
-	/*          q=queue, ca=client address, ep=encryption protocol, m=message */
-	/*                                                           q|ca |ep |m */
-	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s%s%s",
+	/*          q=queue, ca=client address, ep=encryption protocol, ec=encryption cipher, ek=encryption keysize, m=message */
+	/*                                                           q|ca |ep |ec |ek  |m */
+	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s%s%s%s%s%s%s",
 	     valvula_support_state_str (state),
 	     request->sender, request->recipient, 
 	     /* drop SASL information */
@@ -512,6 +512,12 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	     /* tls configuration */
 	     (request->encryption_protocol && strlen (request->encryption_protocol) > 0) ? ", tls=" : "",
 	     (request->encryption_protocol && strlen (request->encryption_protocol) > 0)  ? request->encryption_protocol : "",
+	     /* tls cipher */
+	     (request->encryption_cipher && strlen (request->encryption_cipher) > 0) ? ", cipher=" : "",
+	     (request->encryption_cipher && strlen (request->encryption_cipher) > 0)  ? request->encryption_cipher : "",
+	     /* tls keysize */
+	     (request->encryption_keysize && strlen (request->encryption_keysize) > 0) ? ", keysize=" : "",
+	     (request->encryption_keysize && strlen (request->encryption_keysize) > 0)  ? request->encryption_keysize : "",
 	     
 	     message ? ": " : "",
 	     message ? message : "");
