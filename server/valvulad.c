@@ -491,7 +491,9 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	if (VALVULA_STATE_REJECT == state)
 		return;
 
-	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s",
+	/*          q=queue, ca=client address, ep=encryption protocol, m=message */
+	/*                                                           q|ca |ep |m */
+	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s%s%s",
 	     valvula_support_state_str (state),
 	     request->sender, request->recipient, 
 	     /* drop SASL information */
@@ -507,6 +509,10 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	     /* client address */
 	     request->client_address ? ", from " : "",
 	     request->client_address ? request->client_address : "",
+	     /* tls configuration */
+	     request->encryption_protocol ? ", tls=" : "",
+	     request->encryption_protocol ? request->encryption_protocol : "",
+	     
 	     message ? ": " : "",
 	     message ? message : "");
 
