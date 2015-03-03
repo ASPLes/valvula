@@ -1093,6 +1093,14 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * >> make install
  * \endcode
  *
+ * Then, to have working console administration tool (<b>valvulad-mgr.py</b>) you need to have python-axl installed. 
+ * To have it installed, take a look at http://www.aspl.es/xml/html/axl_install.html
+ * For debian systems, you can also install it by running:
+ *
+ * \code
+ * >> apt-get install python-axl
+ * \endcode
+ *
  * Now see next section to know how to setup valvula to get it up and running.
  *
  * - \ref valvulad_administration_manual
@@ -1405,6 +1413,12 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * \note you need python-axl installed in your system in order to have
  * valvulad-mgr.py working.
+ * \note To have it installed, take a look at http://www.aspl.es/xml/html/axl_install.html
+ * \note For debian systems, you can also install it by running:
+ *
+ * \note \code
+ * >> apt-get install python-axl
+ * \endcode
  * 
  * Please, read each module documentation to know more about them and
  * their features. Assuming you know what modules you want you have to:
