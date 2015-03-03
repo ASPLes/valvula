@@ -510,8 +510,8 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	     request->client_address ? ", from " : "",
 	     request->client_address ? request->client_address : "",
 	     /* tls configuration */
-	     request->encryption_protocol ? ", tls=" : "",
-	     request->encryption_protocol ? request->encryption_protocol : "",
+	     (request->encryption_protocol && strlen (request->encryption_protocol) > 0) ? ", tls=" : "",
+	     (request->encryption_protocol && strlen (request->encryption_protocol) > 0)  ? request->encryption_protocol : "",
 	     
 	     message ? ": " : "",
 	     message ? message : "");
