@@ -1,10 +1,22 @@
 EXTRA_DIST = valvula.doxygen \
+	     valvula.doxygen.in \
 	     valvula-footer.html \
 	     valvula-header.html \
 	     main-page-logo.png \
 	     valvula.css \
 	     body_back.gif \
-	     aspl-logo-header.png
+	     aspl-logo-header.png \
+	     component-separation.png \
+	     threaded-design.png \
+	     port-separation.png \
+	     automatic-conf.png \
+	     robust-implementation.png \
+	     stats-support.png  \
+	     administrator-friendly.png \
+	     adding-modules.png \
+	     valvulad-open-source.png \
+	     hacha-100x171.png
+
 bin_SCRIPTS = initial_build_doc
 
 help:
@@ -38,7 +50,7 @@ build_doc: prepare_xmls
 	cp $(top_srcdir)/doc/administrator-friendly.png html
 	cp $(top_srcdir)/doc/adding-modules.png html
 	cp $(top_srcdir)/doc/valvulad-open-source.png html
-	cp $(top_srcdir)/web/images/hacha-100x171.png html
+	cp $(top_srcdir)/doc/hacha-100x171.png html
 
 prepare_xmls:
 	axl-knife -i ../server/valvula.example.conf -o valvula.example.conf.xml -e -p fragment
