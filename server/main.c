@@ -610,7 +610,11 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 	/* stringfy pid */
 	size = axl_stream_printf_buffer (buffer, 20, NULL, "%d", pid);
 	msg ("signaling PID %d at %s", pid, pid_file_path);
-	fwrite (buffer, size, 1, pid_file);
+	if (fwrite (buffer, size, 1, pid_file) <= 0) {
+	        abort_error ("Unable to write pid file content at %s, error was: errno=%d : %s",
+			     pid_file, errno, strerror (errno));
+		return;
+	}
 
 	fclose (pid_file);
 
