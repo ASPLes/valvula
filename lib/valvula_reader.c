@@ -1232,9 +1232,9 @@ void __valvula_reader_dispatch_connection (int                  fds,
 axl_bool __valvula_reader_detect_and_cleanup_connection (axlListCursor * cursor) 
 {
 	ValvulaConnection * conn;
-	char               bytes[3];
-	int                result;
-	int                fds;
+	char                bytes[4];
+	int                 result;
+	int                 fds;
 #if defined(ENABLE_VALVULA_LOG)
 	ValvulaCtx        * ctx;
 #endif
