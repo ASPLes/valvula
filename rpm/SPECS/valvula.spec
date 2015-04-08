@@ -31,6 +31,8 @@ make install DESTDIR=%{buildroot} INSTALL='install -p'
 find %{buildroot} -name '*.la' -exec rm -f {} ';'
 find %{buildroot} -name "mod-mw.*" -delete
 find %{buildroot} -name "mod-test.*" -delete
+mkdir -p %{buildroot}/etc/init.d
+install -p %{_builddir}/%{name}-%{version}/doc/valvulad-rpm-init.d %{buildroot}/etc/init.d/valvulad
 
 %post -p /sbin/ldconfig
 
@@ -128,6 +130,14 @@ with support for postfix.
    /usr/bin/check-valvulad.py
    /usr/bin/valvulad-mgr.py
    /etc/cron.d/check-valvulad
+   /etc/init.d/valvulad
+
+%post -n valvulad-server
+chkconfig valvulad on
+if [ ! -f /etc/valvula/valvula.conf ]; then
+        cp /etc/valvula/valvula.example.conf /etc/valvula/valvula.conf
+fi
+service valvulad restart
 
 # valvulad-mod-ticket package
 %package -n valvulad-mod-ticket
