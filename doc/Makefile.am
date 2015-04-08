@@ -15,7 +15,9 @@ EXTRA_DIST = valvula.doxygen \
 	     administrator-friendly.png \
 	     adding-modules.png \
 	     valvulad-open-source.png \
-	     hacha-100x171.png
+	     hacha-100x171.png \
+	     valvulad-init.d \
+             valvulad-rpm-init.d
 
 bin_SCRIPTS = initial_build_doc
 
