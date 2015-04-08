@@ -5,7 +5,7 @@
 # chkconfig: 2345 12 88
 # valvulad        Advanced policy server
 ### BEGIN INIT INFO
-# Provides: $ext_dnsd
+# Provides: $valvulad
 # Required-Start: $local_fs
 # Required-Stop: $local_fs
 # Default-Start:  2 3 4 5
