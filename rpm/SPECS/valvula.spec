@@ -1,3 +1,4 @@
+%define release_date %(date +"%a %b %d %Y")
 %define valvula_version %(cat VERSION)
 
 Name:           valvula
@@ -205,6 +206,5 @@ defined periods.
    /etc/valvula/mods-available/mod-mquota.xml
 
 %changelog
-* Sun Apr 07 2015 Francis Brosnan Blázquez <francis@aspl.es> - %{valvula_version}
-- New upstream release
+%include rpm/SPECS/changelog.inc
 
