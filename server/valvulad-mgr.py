@@ -43,7 +43,9 @@ import commands
 from optparse import OptionParser
 
 # configuration declaration
-valvula_conf = "/etc/valvula/valvula.conf"
+base_directory = "/etc/valvula"
+valvula_conf   = "%s/valvula.conf" % base_directory
+
 
 conf = None
 
@@ -98,13 +100,13 @@ def list_current_listeners ():
 
 def get_modules ():
 
-    if not os.path.exists ("/etc/valvula/mods-available"):
+    if not os.path.exists ("%s/mods-available" % base_directory):
         print "INFO: no modules found, /etc/valvula/mods-available does not exists"
         print "INFO: reporting default known modules.."
         return ["mod-ticket"]
 
     # get all modules
-    items  = os.listdir ("/etc/valvula/mods-available")
+    items  = os.listdir ("%s/mods-available" % base_directory)
     result = []
     for item in items:
         if ".xml" == item[-4:]:
@@ -263,9 +265,11 @@ def add_module_complete (module_name, host_decl):
     save_config ()
 
     # add link if missing
-    if not os.path.exists ("/etc/valvula/mods-enabled/%s.xml" % module_name):
-        if os.path.exists ("/etc/valvula/mods-available/%s.xml" % module_name):
-            os.symlink ("/etc/valvula/mods-available/%s.xml" % module_name, "/etc/valvula/mods-enabled/%s.xml" % module_name)
+    if not os.path.exists ("%s/mods-enabled/%s.xml" % (base_directory, module_name)):
+        if os.path.exists ("%s/mods-available/%s.xml" % (base_directory, module_name)):
+            if os.path.exists ("%s/mods-enabled" % base_directory):
+                os.symlink ("%s/mods-available/%s.xml" % (base_directory, module_name), "%s/mods-enabled/%s.xml" % (base_directory, module_name))
+            # end if
         # end if
     # end if
 
