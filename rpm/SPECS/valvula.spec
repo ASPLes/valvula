@@ -135,6 +135,9 @@ with support for postfix.
 
 %post -n valvulad-server
 chkconfig valvulad on
+if [ ! -d /etc/valvula/mods-enabled ]; then
+   mkdir -p /etc/valvula/mods-enabled
+fi
 if [ ! -f /etc/valvula/valvula.conf ]; then
         cp /etc/valvula/valvula.example.conf /etc/valvula/valvula.conf
 fi
