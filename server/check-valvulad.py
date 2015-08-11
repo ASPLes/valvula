@@ -28,9 +28,9 @@ for arg in sys.argv:
         verbose = True
 
 # check if we have to implement the check
-if not os.path.exists (pid_file):
-    info ("Nothing to check, valvulad is not running and was not started")
-    sys.exit (0)
+# if not os.path.exists (pid_file):
+#     info ("Nothing to check, valvulad is not running and was not started")
+#     sys.exit (0)
 
 # call to ping server
 status = os.system ("valvulad -p > /dev/null 2>&1")
@@ -51,6 +51,9 @@ os.system ("killall -9 valvulad  > /dev/null 2>&1")
 # now stop and start
 os.system ("service valvulad stop > /dev/null 2>&1")
 os.system ("service valvulad start > /dev/null 2>&1")
+
+# integration with core-admin (if present)
+
 
 
 
