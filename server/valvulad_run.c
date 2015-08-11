@@ -859,7 +859,7 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 					/* get database */
 					dbname,
 					port, NULL, 0) == NULL) {
-			error ("Mysql connect error: %s, failed to run SQL command", mysql_error (dbconn));
+			error ("Mysql connect error: mysql_error(dbconn)=[%s], failed to run SQL command, mysql_real_connect() failed", mysql_error (dbconn));
 			return axl_false;
 		} /* end if */
 
