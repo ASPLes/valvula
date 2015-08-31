@@ -39,6 +39,10 @@
 #include <valvulad.h>
 #include <mod-mquota.h>
 
+/* private import: do not include it unless you know what you are
+ * doing */
+#include <valvula_private.h>
+
 axl_bool test_common_enable_debug = axl_false;
 
 int          test_readline (ValvulaCtx * ctx, VALVULA_SOCKET session, char  * buffer, int  maxlen)
@@ -857,6 +861,110 @@ axl_bool  test_02d (void)
 
 	return axl_true;
 }
+
+#define test_02e_account "prvs=6199d1e9f=kd5fet.gfj3t6@dkg3t5.com"
+
+void __test_02e_final_state (ValvulaCtx        * ctx,
+			     ValvulaConnection * connection, 
+			     ValvulaRequest    * request, 
+			     ValvulaState        state, 
+			     const char        * message,
+			     axlPointer          user_data)
+{
+	
+	printf ("Test 02-e: sender=%s\n", request->sender);
+	printf ("Test 02-e: recipient=%s\n", request->recipient);
+	
+	if (! axl_cmp (request->sender, test_02e_account)) {
+		printf ("ERROR: expected to receive parsed account %s but found %s\n", test_02e_account, request->sender);
+		exit (-1);
+	}
+
+	if (! axl_cmp (request->recipient, "francis@aspl.es")) {
+		printf ("ERROR: received unexpected value (..1..)\n");
+		exit (-1);
+	}
+
+	if (! axl_cmp (request->queue_id, "935jfe534")) {
+		printf ("ERROR: received unexpected value (..2..), value received: %s\n", request->queue_id);
+		exit (-1);
+	}
+
+	if (request->size != 235) {
+		printf ("ERROR: received unexpected value (..3..): %d\n", request->size);
+		exit (-1);
+	}
+
+	if (! axl_cmp (request->protocol_state, "RCPT")) {
+		printf ("ERROR: received unexpected value (..4..)..\n");
+		exit (-1);
+	}
+
+	if (! axl_cmp (request->protocol_name, "SMTP")) {
+		printf ("ERROR: received unexpected value (..5..)..\n");
+		exit (-1);
+	}
+
+	if (! axl_cmp (request->sasl_method, "plain")) {
+		printf ("ERROR: received unexpected value (..6..)..\n");
+		exit (-1);
+	}
+
+	if (! axl_cmp (request->sasl_username, "francis@aspl.es")) {
+		printf ("ERROR: received unexpected value (..7..)..\n");
+		exit (-1);
+	}
+
+	if (! axl_cmp (request->client_address, "127.0.0.1")) {
+		printf ("ERROR: received unexpected value (..8..)..\n");
+		exit (-1);
+	}
+
+
+
+	return;
+}
+
+axl_bool  test_02e (void)
+{
+	ValvuladCtx   * ctx;
+	const char    * path;
+	ValvulaState    state;
+
+	/* load basic configuration */
+	path = "test_01.conf";
+	ctx  = test_valvula_load_config ("Test 02-e: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR: unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	/* configure final report function */
+	ctx->ctx->report_final_state           = __test_02e_final_state;
+
+	/* do a request */
+	state = test_valvula_request (/* policy server location */
+				      "127.0.0.1", "3579", 
+				      /* state */
+				      "smtpd_access_policy", "RCPT", "SMTP",
+				      /* sender, recipient, recipient count */
+				      "prvs=6199d1e9f=kd5fet.gfj3t6@dkg3t5.com", "francis@aspl.es", "1",
+				      /* queue-id, size */
+				      "935jfe534", "235",
+				      /* sasl method, sasl username, sasl sender */
+				      "plain", "francis@aspl.es", NULL);
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (01-a.1): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		return axl_false;
+	}
+
+	/* free valvula server context */
+	printf ("Test 02-e: finishing configuration..\n");
+	common_finish (ctx);
+
+	return axl_true;
+}
+
 
 axl_bool test_sending_limit_and_final_reject (const char * auth_user, int allowed_sending_item, axl_bool check_final_error) {
 	int            iterator;
@@ -2305,7 +2413,7 @@ int main (int argc, char ** argv)
 	printf ("** To gather information about memory consumed (and leaks) use:\n**\n");
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
-	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_03, test_03a, test_04, test_05,\n");
+	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_02e, test_03, test_03a, test_04, test_05,\n");
 	printf ("**                  test_06, test_07, test_08\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
@@ -2358,6 +2466,9 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_02d")
 	run_test (test_02d, "Test 02-d: more test local accounts detection support");
+
+	CHECK_TEST("test_02e")
+	run_test (test_02e, "Test 02-e: detect accounts and notifications with (=) in the midle");
 
 	/* run tests */
 	CHECK_TEST("test_03")

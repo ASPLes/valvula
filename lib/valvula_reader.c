@@ -278,7 +278,7 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 	} /* end if */
 
 	/* flag the connection as process finished */
-	/* DO NOT UNCOMMENT THE FOLLOWING: code is simplier to handle
+	/* DO NOT UNCOMMENT THE FOLLOWING CODE: this is for handle
 	   procesing a request for each connection it is showed to
 	   work better */
 	/* connection->process_launched = axl_false; */ 
@@ -561,6 +561,35 @@ axlPointer valvula_reader_process_request_proxy (axlPointer _connection)
 	var = axl_strdup(value_to_configure);		     \
 	} while (0)
 
+char ** __valvula_reader_get_items (const char * buffer)
+{
+	char ** result;
+	int     iterator  = 0;
+	int     length    = strlen (buffer);
+
+	/* printf ("Handling: %s\n", buffer); */
+
+	while (buffer[iterator] != '=' && buffer[iterator] != 0)
+		iterator++;
+
+	if (iterator > 0 && buffer[iterator] == '=') {
+		result    = axl_new (char *, 3);
+
+		/* key */
+		result[0] = axl_new (char, iterator + 1);
+		memcpy (result[0], buffer, iterator);
+
+		/* value */
+		result[1] = axl_new (char, length - iterator + 1);
+		memcpy (result[1], buffer + iterator + 1, length - iterator -1);
+
+		/* printf ("Reporting key: [%s], value: [%s]\n", result[0], result[1]); */
+		return result;
+	}
+
+	return NULL;
+}
+
 /** 
  * @internal
  * 
@@ -664,7 +693,7 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 	} /* end if */
 
 	/* parse line and attach to the connection request */	
-	items = axl_split (buffer, 1, "=");
+	items = __valvula_reader_get_items (buffer);
 	if (items == NULL || items[0] == NULL || items[1] == NULL) {
 		axl_freev (items);
 		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to process line received, empty content found or malformed, closing connection");
@@ -682,7 +711,7 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 
 	else if (axl_cmp (items[0], "queue_id"))
 		valvula_reader_set_value (connection->request->queue_id, items[1]);
-	else if (axl_cmp (items[0], "size"))
+	else if (axl_cmp (items[0], "size") || axl_cmp (items[0], "message_size")) 
 		connection->request->size = (int) valvula_support_strtod (items[1], NULL);
 
 	else if (axl_cmp (items[0], "sender"))
