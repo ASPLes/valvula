@@ -1,0 +1,153 @@
+                     --\\ Valvula //--
+                      She's fine for me
+                           1.0.5
+
+Advanced Software Production Line is proud to announce a new stable
+release of the Valvula.
+
+Valvula is a OpenSource high performance mail policy daemon for
+Postfix, written in ANSI C, that provides out of the box support for
+sender login mismatch, mail quotas, per user and per domain blacklists
+and white-lists and much more.
+
+Valvula is fully extensible through plugins and it is composed by a
+base library (libValvula) that integrates into a ready to use server
+(valvulad) that is able to run different ports with different modules
+so you can connect same valvula process at different points inside
+Postfix policy restriction sections.
+
+
+Resources
+~~~~~~~~~
+
+   Valvula homepage
+   [ http://www.aspl.es/valvula ]
+
+   Commercial support
+   [ http://www.aspl.es/valvula/commercial.html ]
+
+   Advanced Software Production Line, S.L.
+   [ http://www.aspl.es ]
+
+   Featured project: Core-Admin
+   [ http://www.core-admin.com ]
+
+This release in short
+~~~~~~~~~~~~~~~~~~~~~ 
+
+  - Added official support to centOS (stable packages ready to use).
+
+  - Several bugs were fixed (see details).
+
+
+Changes from previous release
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* [fix] Making valvula server code to avoid callign MySQL API when
+  dbconn reported is NULL (in cases where mysql host is gone).
+
+* [fix] Several updates applied to mod-ticket module to allow
+  reporting filter value for a particular ticket so this allows to
+  implement different policies to different tickets like using
+  different ips or configurations.  Added regression test test_03a to
+  check all this support.
+
+* [fix] Updated mod-ticket to report DUNNO when transport is defined
+  but disabled.
+
+* [fix] Updated regression test (test_03a) to honour is_active flag
+  for outgoing_ip table.
+
+* [fix] More fixings applied to mod-ticket.c to properly configured
+  the transport to use in the case it is configured.
+
+* [fix] Removed ":" after transport filter value reported.
+
+* [fix] Restoring backup last : suffix when indicating transports with
+  filter command.
+
+* [fix] Removing debugging code from mod-ticket.c..
+
+* [fix] added more documentation to install and use mod-ticket module.
+
+* [fix] Updated debian building process to require python-axl for
+  valvulad-server so vavulad-mgr.py works out of the box.
+
+* [fix] Updated server documentation to make a reference to python-axl
+  to have valvula-mgr.py working.
+
+* [fix] Adding more references to mod-ticket documentation..
+
+* [fix] Making valvula_reader_process_request to acquire a reference
+  to the connection being handled to avoid losing a reference during
+  the operation..
+
+* [fix] Added and fixed some references to make dist .targz to work
+  (error reported by Martin Thomas Schrott).
+
+* [fix] Improved documentation to better explain you need python-axl
+  installed to have valvulad-mgr.py working..
+
+* [fix] Added more information to indicate encryption protocol..
+
+* [fix] More updates on log reporting when tls is used..
+
+* [fix] More updates to report more information about TLS used during
+  session..
+
+* [fix] More updates on valvulad logging about tls operations..
+
+* [fix] Fixed compilation error due to unused return value while
+  writing pid file on valvula server start.
+
+* [fix] Added support to create centos packages..
+
+* [fix] Added support to Centos packages to enable valvula as a
+  service after installing it.
+
+* [fix] Fixed init.d for rpm..
+
+* [fix] More updates to include svn revision into version. More
+  improvements on Centos packages...
+
+* [fix] More improvements on centos packaging..
+
+* [fix] adding additional documentation to <request-line>
+  configuration inside valvula.example.conf.
+
+* [fix] More updates on valvulad-mgr.py to check if
+  /etc/valvula/mod-enabled/ exists..
+
+* [fix] Updated buildrpm to create mods-enabled directory when
+  valvulad-server is installed.
+
+* [fix] More updates on MySQL error reporting.
+
+* [fix] Updated check-valvulad.py to ensure it recovers valvula
+  without considering if the pid file is present or not..
+
+* [fix] Fixed support to handle values provided by the protocol that
+  includes = in the middle of the content. Added regression test
+  (test_02e) to reproduce bug and check fix introduced.
+
+
+About Advanced Software Production Line, S.L. (ASPL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Advanced Software Production Line (ASPL) provides GNU/Linux support
+  and consulting services to enable organisation to introduce
+  GNU/Linux into their processes, making other platforms to properly
+  interact with it.
+
+  You can contact us, using English or Spanish, at:
+
+       http://www.aspl.es - info@aspl.es
+
+  We hope Valvula may be useful you. Enjoy Valvula!
+
+--
+Francis Brosnan Blázquez           - francis@aspl.es
+Advanced Software Production Line  - http://www.aspl.es
+31th Aug 2015, Madrid (Spain)
+
+

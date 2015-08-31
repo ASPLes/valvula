@@ -58,6 +58,39 @@
 
 <p>Then run an <b>apt-cache search valvula</b> to search Valvula packages.</p>
 
+<h2>Latest CentOS packages</h2>
+
+<p>CentOS packages are also provided using the following yum  repository:</p>
+
+<p style='background: #ffee93; padding: 6px; margin: 6px; font-weight: bold'><i>NOTE: do not use these sources if you are using <a href="http://www.core-admin.com">Core-Admin</a> unless you know what you are doing.</i></p>
+  
+<pre>
+
+  # /etc/yum.repos.d/ASPL-Base.repo
+  # Aspl-Public repo 
+  #
+  # ASPL packages for libaxl, vortex, nopoll, myqtt, ext-dns, valvula
+  # and other open source public projects
+  #
+  
+  [aspl-public]
+  name=Aspl-Public-$releasever - Base
+  baseurl=http://www.aspl.es/centos/public/$releasever/$basearch/
+  gpgcheck=0
+ 
+  # Aspl-Private repo 
+  #
+  # ASPL packages for commercial projects like core-admin
+  #
+  [aspl-private]
+  name=Aspl-Private-$releasever - Base
+  baseurl=http://www.aspl.es/centos/private/$releasever/$basearch/
+  gpgcheck=0
+
+</pre>
+
+<p>Then run an <b>yum search valvula</b> to search Valvula packages.</p>
+
 <h2>Subversion repository public access</h2>
   
 <p>You can also access to the SVN repository at the following location:</p>
@@ -67,6 +100,7 @@
 <h2>Release tracking</h2>
 
 <ul>
+  <li><a href="http://lists.aspl.es/pipermail/valvula/2015-August/000029.html">1.0.5 She's fine for me - Anunciada el 2015/08/28</a></li>
   <li><a href="http://lists.aspl.es/pipermail/valvula/2014-July/000001.html">1.0.4 'Blue shield' - Released on 2014/07/28</a></li>
   <li><a href="http://lists.aspl.es/pipermail/valvula/2014-June/000000.html">1.0.3 'Radioactive' - Released on 2014/05/17</a></li>
 </ul>
