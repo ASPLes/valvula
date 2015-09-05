@@ -1022,7 +1022,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * <b>Valvula server</b> is an Open Source, high performance Postfix policy daemon written in ANSI C that provides very useful features that makes it suitable for commercial enviroments (massive mail servers, hosting providers and corporate mail servers). Some of its features are:
  *
  * - Component separation that provides more flexibility to implement several contexts or to embeed the product into another project. 
- * - Highly threaded design with port separation which allows providing Valvula services with different modules at different ports running everything with a single daemon
+ * - Highly threaded design with port separation which allows providing Valvula services with different modules at different ports running everything within a single daemon
  * - Automatic postfix database detection (so your current Postfix configuration will be parsed by Valvula so it can also know what domains and accounts are local to make better decisions).
  * - Robust and well tested implementation checked by a strong regression test to ensure that the library and core server keep on working as new features are added across releases.
  * - See \ref valvulad_features "complete Valvula server feature lists".
@@ -1157,7 +1157,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * Even though there is a threading design in place, writing modules
  * is really easy because ValvulaD server takes cares of many details
  * so plugin writer only has to pay attention on the core features
- * their module has.
+ * its module has.
  *
  * \section valvulad_features_port_separation Port separation with different policies
  *
@@ -1169,7 +1169,7 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  *
  * Because you can have different combination of modules at different
  * ports, you are able to connect Valvula through postfix's
- * <b>check_policy_service</b> in really flexible manner.
+ * <b>check_policy_service</b> in a really flexible manner.
  *
  * \section valvulad_features_automatic_postfix Automatic postfix configuration detection
  *
