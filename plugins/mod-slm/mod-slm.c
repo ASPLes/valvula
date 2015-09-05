@@ -246,10 +246,10 @@ END_C_DECLS
  *
  * mod-slm allows to implement sender login mismatch restrictions
  * which allows limiting mail-from's spoofing. Postfix currently has
- * support for this but you need to declare some a full mapping which
- * in many cases is not possible, hard to implement and more over, it
- * may require exceptions that are also possible, but again, difficult
- * to maintain.
+ * support for this but you need to declare some full mapping between
+ * sender and auth account which in many cases is not possible, hard
+ * to implement and more over, it may require exceptions that are also
+ * possible, but again, difficult to maintain.
  *
  * At the same time, the module provides different operation modes
  * that can better adapt to different scenarios, providing full mode,
