@@ -694,6 +694,7 @@ axl_bool        valvulad_db_run_non_query (ValvuladCtx * ctx,
 
 	/* run query */
 	result = valvulad_db_run_query_s (ctx, complete_query);
+
 	axl_free (complete_query);
 	if (result == NULL)
 		return axl_false;

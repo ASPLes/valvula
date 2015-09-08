@@ -207,6 +207,18 @@ axl_bool  test_00 (void) {
 	} /* end if */
 
 	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, "tesT.com", "test.com")) {
+		printf ("ERROR 0.8.1: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, "TesT.com", "test.com")) {
+		printf ("ERROR 0.8.2: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
 	if (valvula_address_rule_match (ctx, "test2@test.com", "test@test.com")) {
 		printf ("ERROR 0.9: expected negative..\n");
 		return axl_false;
@@ -215,6 +227,24 @@ axl_bool  test_00 (void) {
 	/* check address rule match */
 	if (valvula_address_rule_match (ctx, "francis@aspl.es", "francis2@aspl.es")) {
 		printf ("ERROR 0.10: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, "francis@", "francis@asplhosting.com")) {
+		printf ("ERROR 0.11: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (valvula_address_rule_match (ctx, "francis@", "francisco@asplhosting.com")) {
+		printf ("ERROR 0.11: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check address rule match */
+	if (! valvula_address_rule_match (ctx, "francis@", "francis@")) {
+		printf ("ERROR 0.12: expected negative..\n");
 		return axl_false;
 	} /* end if */
 
@@ -1749,6 +1779,58 @@ axl_bool test_05 (void) {
 	} /* end if */
 
 	valvulad_db_run_non_query (ctx, "DELETE FROM bwl_global_sasl");
+
+	printf ("Test --: discarding messages with especific local-parts ...\n");
+	printf ("Test --: BLOCKING * -> web@* ( that's blocking anything directed to web@anything)\n");
+
+	/** delete current rules **/
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM bwl_global")) {
+		printf ("ERROR: unable to remove all global rules..\n");
+		return axl_false;
+	} /* end if */
+
+	/* now insert restriction */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, destination, status) VALUES ('1', 'web@', 'discard')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: attempting test@test.com -> web@aspl.es\n");
+	/* shouldn't work: rule should deny it */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "web@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_DISCARD) {
+		printf ("ERROR (4.12) expected discard indication but found: %d\n", state);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: attempting test@test.com -> webmaster@aspl.es\n");
+
+	/* it should work */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"test@test.com", "webmaster@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		"plain", "francis@aspl.es", NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (4.13) expected discard indication but found: %d\n", state);
+		return axl_false;
+	} /* end if */
 
 	/* finish test */
 	common_finish (ctx);

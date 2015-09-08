@@ -714,8 +714,9 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
  * rule=test.com        address=test@test.com   MATCH
  * rule=test2.com       address=test@test.com   NOT MATCH
  * rule=test.com        address=test.com        MATCH
- * rule=test@test.com   address=test@test.com   MATCH
+ * rule=test@test.com   address=test@test.com   MATCH       -- match by domain
  * rule=test2@test.com  address=test@test.com   NOT MATCH
+ * rule=test@           address=test@test.com   MATCH       -- match by local-part
  * \endcode
  *    
  * @return The function returns axl_true in the case everything
@@ -724,16 +725,38 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
  */
 axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, const char * address)
 {
+	char * local_part;
+	char * local_part_aux2;
+
 	/* check rule and address */
 	if (ctx == NULL || address == NULL)
 		return axl_false;
 	if (rule == NULL || strlen (rule) == 0)
 		return axl_true;
-	if (axl_cmp (rule, address))
+	if (axl_casecmp (rule, address))
 		return axl_true;
 	
-	if (!strstr (rule, "@") && axl_cmp (rule, valvula_get_domain (address)))
-		return axl_true;
+	if (!strstr (rule, "@")) {
+		/* rule not has @ in in */
+		/* check if domain matches: that is rule=aspl.es == get_domain(test@aspl.es) */
+		if (axl_casecmp (rule, valvula_get_domain (address)))
+			return axl_true;
+	} else {
+		/* rule has @ in it, try to check for for rule=web@ == get_local_part (web@aspl.es) */
+		if (valvula_get_domain (rule) == NULL || strlen (valvula_get_domain (rule)) == 0) {
+			local_part      = valvula_get_local_part (rule);
+			local_part_aux2 = valvula_get_local_part (address);
+			if (axl_casecmp (local_part, local_part_aux2)) {
+				/* matches */
+				axl_free (local_part);
+				axl_free (local_part_aux2);
+				return axl_true;
+			} /* end if */
+
+			axl_free (local_part);
+			axl_free (local_part_aux2);
+		}
+	} /* end if */
 
 	/* reporting it doesn't match */
 	return axl_false;
@@ -764,6 +787,38 @@ const char * valvula_get_domain (const char * address)
 }
 
 /** 
+ * @brief Allows to get local part from the provided domain [local-part]\@domain
+ *
+ * @param address The address that is being queried to report its local part.
+ *
+ * @return A reference to the domain or NULL if it fails. If the
+ * function receives a domain, the function reports NULL. Please note
+ * this function is different from valvula_get_domain in the sense it
+ * returns a pointer that should be released with axl_free
+ */
+char * valvula_get_local_part (const char * address)
+{
+	char * local_part;
+	int    iterator = 0;
+
+	if (! address)
+		return NULL;
+
+	/* find the end of the string or @ */
+	while (address[iterator] && address[iterator] != '@')
+		iterator++;
+
+	if (address[iterator] == '@') {
+		local_part = axl_new (char, iterator + 1);
+		memcpy (local_part, address, iterator);
+		return local_part;
+	}
+
+	/* return NULL */
+	return NULL;
+}
+
+/** 
  * @brief Allows to get recipient domain defined at the valvula
  * request.
  *
@@ -788,6 +843,42 @@ const char * valvula_get_recipient_domain (ValvulaRequest * request)
 	if (request->recipient[iterator] == '@')
 		return &(request->recipient[iterator+1]);
 	return request->recipient;
+}
+
+/** 
+ * @brief Allows to get local part associated to the sender of the
+ * provided request.
+ *
+ * @param request The request to get local-part from sender
+ *
+ * @return A newly allocated string holding local part or NULL (if
+ * sender is not defined or just domain is received). You must call to
+ * axl_free (result) when no longer needed.
+ */
+char       * valvula_get_sender_local_part (ValvulaRequest * request)
+{
+	if (request == NULL || request->sender == NULL)
+		return NULL;
+	
+	return valvula_get_local_part (request->sender);
+}
+
+/** 
+ * @brief Allows to get local part associated to the recipient of the
+ * provided request.
+ *
+ * @param request The request to get local-part from recipient
+ *
+ * @return A newly allocated string holding local part or NULL (if
+ * recipient is not defined or just domain is received). You must call to
+ * axl_free (result) when no longer needed.
+ */
+char       * valvula_get_recipient_local_part (ValvulaRequest * request)
+{
+	if (request == NULL || request->recipient == NULL)
+		return NULL;
+	
+	return valvula_get_local_part (request->recipient);
 }
 
 /** 
