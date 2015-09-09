@@ -156,12 +156,13 @@ typedef enum {
 	VALVULA_MOD_BWL_ACCOUNT = 3,
 } ValvulaModBwlLevel;
 
-ValvulaState bwl_check_status_rules (ValvulaCtx         * _ctx,
-				     ValvulaRequest     * request,
-				     ValvulaModBwlLevel   level,
-				     const char         * level_label,
-				     ValvuladRes          result,
-				     axl_bool             first_specific)
+ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
+				     ValvulaRequest      * request,
+				     ValvulaModBwlLevel    level,
+				     const char          * level_label,
+				     char               ** message,
+				     ValvuladRes           result,
+				     axl_bool              first_specific)
 {
 
 	ValvuladRow     row;
@@ -226,9 +227,16 @@ ValvulaState bwl_check_status_rules (ValvulaCtx         * _ctx,
 			
 		} /* end if */
 		if (axl_stream_casecmp (status, "discard", 7)) {
-			/* do not report a reject because it is a discard and it'll be reported */
 			valvulad_reject (ctx, VALVULA_STATE_DISCARD, request, "Discard due to blacklist (%s)", level_label); 
 			return VALVULA_STATE_DISCARD;
+			
+		} /* end if */
+
+		if (axl_stream_casecmp (status, "filter-discard", 14)) {
+			/* do a discard but instaed or returning DISCARD, use a filter to the transport discard: */
+			(*message) = axl_strdup ("discard:");
+			valvulad_reject (ctx, VALVULA_STATE_FILTER, request, "Discard (using filter-discard) due to blacklist (%s)", level_label); 
+			return VALVULA_STATE_FILTER;
 			
 		} /* end if */
 
@@ -241,11 +249,12 @@ ValvulaState bwl_check_status_rules (ValvulaCtx         * _ctx,
 	return VALVULA_STATE_DUNNO;
 }
 
-ValvulaState bwl_check_status (ValvulaCtx         * _ctx,
-			       ValvulaRequest     * request,
-			       ValvulaModBwlLevel   level,
-			       const char         * level_label,
-			       const char         * format,
+ValvulaState bwl_check_status (ValvulaCtx          * _ctx,
+			       ValvulaRequest      * request,
+			       ValvulaModBwlLevel    level,
+			       const char          * level_label,
+			       char               ** message,
+			       const char          * format,
 			       ...)
 {
 	/* get result and row */
@@ -282,7 +291,7 @@ ValvulaState bwl_check_status (ValvulaCtx         * _ctx,
 	/* msg ("Checking request from %s -> %s", request->sender, request->recipient); */
 
 	/* first check specific rules */
-	state = bwl_check_status_rules (_ctx, request, level, level_label, result, /* specific */ axl_true);
+	state = bwl_check_status_rules (_ctx, request, level, level_label, message, result, /* specific */ axl_true);
 	if (state != VALVULA_STATE_DUNNO) {
 		/* release result */
 		valvulad_db_release_result (result);
@@ -290,7 +299,7 @@ ValvulaState bwl_check_status (ValvulaCtx         * _ctx,
 	} /* end if */
 
 	/* now check rest of rules */
-	state = bwl_check_status_rules (_ctx, request, level, level_label, result, /* generic */ axl_false);
+	state = bwl_check_status_rules (_ctx, request, level, level_label, message, result, /* generic */ axl_false);
 	if (state != VALVULA_STATE_DUNNO) {
 		/* release result */
 		valvulad_db_release_result (result);
@@ -344,7 +353,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 	} /* end if */
 
 	/* get current status at server level */
-	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", 
+	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", message,
 				   "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR source = '%s@' OR destination = '%s' OR destination = '%s' OR destination = '%s@')",
 				   sender_domain, sender, sender_local_part, recipient_domain, recipient, recipient_local_part);
 	/* check valvula state reported */
@@ -362,7 +371,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
-		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_DOMAIN, "domain lists", 
+		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_DOMAIN, "domain lists", message,
 					   "SELECT status, source, '%s' as destination FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s')",
 					   recipient, recipient_domain, sender, sender_domain);
 		/* check valvula state reported */
@@ -371,7 +380,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
-		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_ACCOUNT, "account lists", 
+		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_ACCOUNT, "account lists", message,
 					   "SELECT status, source, '%s' as destination FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s')",
 					   recipient, recipient, sender, sender_domain);
 		/* check valvula state reported */
