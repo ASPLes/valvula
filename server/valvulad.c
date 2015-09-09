@@ -415,7 +415,7 @@ void valvulad_error (ValvuladCtx * ctx, axl_bool ignore_debug, const char * file
  *
  * @parm ... Additional parameters to complete the request.
  */
-void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char * format, ...)
+void  valvulad_reject (ValvuladCtx * ctx, ValvulaState state, ValvulaRequest * request, const char * format, ...)
 {
 	va_list        args;
 	char         * message;
@@ -426,7 +426,10 @@ void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char *
 	message = axl_stream_strdup_printfv (format, args);
 	va_end (args);
 
-	msg ("REJECT: %s -> %s%s%s%s%s, port %d, queue-id %s, from %s: %s", request->sender, request->recipient, 
+	msg ("%s: %s -> %s%s%s%s%s, port %d, queue-id %s, from %s: %s", 
+	     /* type of rejection */
+	     valvula_support_state_str (state),
+	     request->sender, request->recipient, 
 	     /* drop SASL information */
 	     sasl_user ? " (" : "",
 	     sasl_user ? "sasl_user=" : "",

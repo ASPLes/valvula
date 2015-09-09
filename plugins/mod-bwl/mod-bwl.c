@@ -221,13 +221,13 @@ ValvulaState bwl_check_status_rules (ValvulaCtx         * _ctx,
 		}
 		
 		if (axl_stream_casecmp (status, "reject", 6)) {
-			valvulad_reject (ctx, request, "Rejecting due to blacklist (%s)", level_label);
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting due to blacklist (%s)", level_label);
 			return VALVULA_STATE_REJECT;
 			
 		} /* end if */
 		if (axl_stream_casecmp (status, "discard", 7)) {
 			/* do not report a reject because it is a discard and it'll be reported */
-			/* valvulad_reject (ctx, request, "Discard due to blacklist (%s)", level_label); */
+			valvulad_reject (ctx, VALVULA_STATE_DISCARD, request, "Discard due to blacklist (%s)", level_label); 
 			return VALVULA_STATE_DISCARD;
 			
 		} /* end if */
@@ -308,7 +308,7 @@ axl_bool bwl_is_sasl_user_blocked (ValvuladCtx * ctx, ValvulaRequest * request)
 {
 	/* request is authenticated, check exceptions */
 	if (valvulad_db_boolean_query (ctx, "SELECT sasl_user FROM bwl_global_sasl WHERE sasl_user = '%s'", request->sasl_username)) {
-		valvulad_reject (ctx, request, "Rejecting sasl user (%s) due to administrative configuration (mod-bwl)", request->sasl_username);
+		valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting sasl user (%s) due to administrative configuration (mod-bwl)", request->sasl_username);
 		return axl_true; /* report rejected */
 	} /* end if */
 

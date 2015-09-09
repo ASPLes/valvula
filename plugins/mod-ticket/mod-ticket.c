@@ -468,7 +468,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		valvula_mutex_unlock (&work_mutex);
 
 		/* not accepted */
-		valvulad_reject (ctx, request, "Rejecting operation because tickets are expired (valid_until %d < %d)",
+		valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting operation because tickets are expired (valid_until %d < %d)",
 				 valid_until, valvula_now ());
 		return VALVULA_STATE_REJECT;
 	} /* end if */
@@ -490,7 +490,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		valvulad_reject (ctx, request, "Rejecting operation because ticket (%d) is blocked(%d) for user (%s)",
+		valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting operation because ticket (%d) is blocked(%d) for user (%s)",
 				 ticket_plan_id, block_ticket, descriptive_user);
 			
 		return VALVULA_STATE_REJECT;
@@ -542,7 +542,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		valvulad_reject (ctx, request, "Rejecting operation because total plan limit's reached (%d)", total_used);
+		valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting operation because total plan limit's reached (%d)", total_used);
 
 		return VALVULA_STATE_REJECT;
 	} /* end if */
@@ -552,7 +552,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		valvulad_reject (ctx, request, "Rejecting operation because day limit reached (%d)", day_limit);
+		valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting operation because day limit reached (%d)", day_limit);
 
 		return VALVULA_STATE_REJECT;
 	} /* end if */
@@ -562,7 +562,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
-		valvulad_reject (ctx, request, "Rejecting operation because month limit reached (%d)", month_limit);
+		valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting operation because month limit reached (%d)", month_limit);
 		return VALVULA_STATE_REJECT;
 	} /* end if */
 
