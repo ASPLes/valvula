@@ -431,8 +431,8 @@ void _valvula_log2 (ValvulaCtx        * ctx,
 #else
 	va_list   args;
 
-	/* if not VALVULA_DEBUG2 FLAG, do not output anything */
-	if (!valvula_log2_is_enabled (ctx)) {
+	/* if not VALVULA_DEBUG2 FLAG and log handler is not defined, do not output anything */
+	if ((!valvula_log2_is_enabled (ctx)) && ctx->log_handler == NULL) {
 		return;
 	} /* end if */
 	

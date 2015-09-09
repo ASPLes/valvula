@@ -529,6 +529,7 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 void valvulad_log_engine (ValvulaCtx * _ctx, ValvulaDebugLevel level, const char * file, int line, const char * message, axlPointer ptr)
 {
 	ValvuladCtx * ctx = ptr;
+
 	switch (level) {
 	case VALVULA_LEVEL_CRITICAL:
 		error ("%s:%d %s", file, line, message);
