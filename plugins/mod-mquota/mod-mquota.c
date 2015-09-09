@@ -562,19 +562,19 @@ axl_bool __mod_mquota_check_reject (const char     * sasl_user,
 		switch (check_type) {
 		case MOD_MQUOTA_GLOBAL_CHECK:
 			/* report specific global check */
-			valvulad_reject (ctx, request, "REJECTED: sending mquota reached for %s %s from (%s). %s global limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "REJECTED: sending mquota reached for %s %s from (%s). %s global limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
 					 info, sasl_user, request->client_address, label,
 					 usage, __mod_mquota_get_next_global_hour (), __mod_mquota_get_next_global_minute (), label_period);
 			break;
 		case MOD_MQUOTA_HOUR_CHECK:
 			/* report specific hour check */
-			valvulad_reject (ctx, request, "REJECTED: sending mquota reached for %s %s from (%s). %s hour limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "REJECTED: sending mquota reached for %s %s from (%s). %s hour limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
 					 info, sasl_user, request->client_address, label, 
 					 usage, __mod_mquota_get_next_hour_hour (), __mod_mquota_get_next_hour_minute (), label_period);
 			break;
 		case MOD_MQUOTA_MINUTE_CHECK:
 			/* report specific minute check */
-			valvulad_reject (ctx, request, "REJECTED: sending mquota reached for %s %s from (%s). %s minute limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "REJECTED: sending mquota reached for %s %s from (%s). %s minute limit=%d reached, user will have to wait until %02d:%02d (period: %s)", 
 					 info, sasl_user, request->client_address, label,
 					 usage, __mod_mquota_get_next_minute_hour (), __mod_mquota_get_next_minute_minute (), label_period);
 			break;
@@ -711,7 +711,7 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 
 	/* apply limits found, first global */
 	if (__mod_mquota_current_period == NULL) {
-		valvulad_reject (ctx, request, "Rejecting due to internal server error");
+		valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting due to internal server error");
 		error ("Default period isn't defined, unable to apply limits");
 		return VALVULA_STATE_REJECT;
 	} /* end if */

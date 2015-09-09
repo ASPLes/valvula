@@ -264,7 +264,8 @@ void  valvulad_wrn_sl   (ValvuladCtx * ctx, const char * file, int line, const c
 #define tbc_access(m,...)   do{valvulad_access (ctx, __AXL_FILE__, __AXL_LINE__, m, ##__VA_ARGS__);}while(0)
 void  valvulad_access   (ValvuladCtx * ctx, const char * file, int line, const char * format, ...);
 
-void  valvulad_reject (ValvuladCtx * ctx, ValvulaRequest * request, const char * format, ...);
+void  valvulad_reject (ValvuladCtx * ctx, ValvulaState state, ValvulaRequest * request, const char * format, ...);
+
 
 /** 
  * @internal The following definition allows to find printf like wrong

@@ -160,7 +160,7 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 
 		/* check and reject */
 		if (reject) {
-			valvulad_reject (ctx, request, "Rejecting because SASL username <%s> do not match mail from <%s> (mod-slm=full)", request->sasl_username, request->sender);
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting because SASL username <%s> do not match mail from <%s> (mod-slm=full)", request->sasl_username, request->sender);
 			return VALVULA_STATE_REJECT;
 		} /* end if */
 
@@ -177,14 +177,14 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 
 		/* check if we have to reject */
 		if (reject) {
-			valvulad_reject (ctx, request, "Rejecting because SASL username domain <%s> do not match mail from domain <%s> (mod-slm=same-domain)", 
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting because SASL username domain <%s> do not match mail from domain <%s> (mod-slm=same-domain)", 
 					 valvula_get_domain (request->sasl_username), valvula_get_domain (request->sender));
 			return VALVULA_STATE_REJECT;
 		} /* end if */
 
 		/* and now ensure the mail from account is valid */
 		if (! valvulad_run_is_local_address (ctx, request->sender)) {
-			valvulad_reject (ctx, request, "Rejecting because SASL username <%s> is sending with an unknown account mail from <%s> (mod-slm=same-domain)", 
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting because SASL username <%s> is sending with an unknown account mail from <%s> (mod-slm=same-domain)", 
 					 request->sasl_username, request->sender);
 			return VALVULA_STATE_REJECT;
 		} /* end if */
@@ -192,7 +192,7 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 	} else if (__slm_mode == VALVULA_MOD_SLM_VALID_MAIL_FROM) {
 		/* and now ensure the mail from account is valid */
 		if (! valvulad_run_is_local_address (ctx, request->sender)) {
-			valvulad_reject (ctx, request, "Rejecting because SASL username <%s> is sending with an unknown account mail from <%s> (mod-slm=valid-mail-from)", 
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting because SASL username <%s> is sending with an unknown account mail from <%s> (mod-slm=valid-mail-from)", 
 					 request->sasl_username, request->sender);
 			return VALVULA_STATE_REJECT;
 		} /* end if */
