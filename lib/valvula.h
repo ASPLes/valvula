@@ -358,6 +358,10 @@ axl_bool valvula_color_log_is_enabled (ValvulaCtx * ctx);
 void     valvula_color_log_enable     (ValvulaCtx * ctx, 
 				      axl_bool    status);
 
+void     valvula_set_log_handler      (ValvulaCtx * ctx,
+				       ValvulaLogHandler log_handler, 
+				       axlPointer        user_data);
+
 #if defined(__COMPILING_VALVULA__) && defined(__GNUC__)
 /* makes gcc happy, by prototyping functions which aren't exported
  * while compiling with -ansi. Really uggly hack, please report

@@ -355,6 +355,27 @@ typedef void         (* ValvulaReportFinalState) (ValvulaCtx * ctx,
 						  const char        * message,
 						  axlPointer          user_data);
 
+/** 
+ * @brief Log handler prototype that is called every time a log is
+ * produced by the valvula engine. This log handler definition is used
+ * by \ref valvula_set_log_handler
+ *
+ * @param ctx The context where the log message was produced.
+ *
+ * @param level The log level that was produced.
+ *
+ * @param message The message produced by the engine (already formated).
+ *
+ * @param user_data Optional user pointer configured at \ref valvula_set_log_handler
+ */
+typedef void         (* ValvulaLogHandler)       (ValvulaCtx          * ctx,
+						  ValvulaDebugLevel     level,
+						  const char          * file,
+						  int                   line,
+						  const char          * message,
+						  axlPointer            user_data);
+						  
+
 #endif
 
 /** 

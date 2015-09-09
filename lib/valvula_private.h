@@ -119,6 +119,10 @@ struct _ValvulaCtx {
 	int                       requests_handled;
 	ValvulaMutex              stats_mutex;
 
+	/*** log handling ****/
+	ValvulaLogHandler         log_handler;
+	axlPointer                log_handler_data;
+
 };
 
 /** 
