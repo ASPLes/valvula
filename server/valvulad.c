@@ -526,6 +526,23 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	return;
 }
 
+void valvulad_log_engine (ValvulaCtx * _ctx, ValvulaDebugLevel level, const char * file, int line, const char * message, axlPointer ptr)
+{
+	ValvuladCtx * ctx = ptr;
+	switch (level) {
+	case VALVULA_LEVEL_CRITICAL:
+		error ("%s:%d %s", file, line, message);
+		break;
+	case VALVULA_LEVEL_WARNING:
+		wrn ("%s:%d %s", file, line, message);
+		break;
+	default:
+		/* not reported, just failures */
+		break;
+	}
+	return;
+}
+
 /** 
  * @brief Auxiliar initialization function that allows to provide the
  * \ref ValvuladCtx context.
@@ -543,6 +560,9 @@ axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
 	ctx->ctx = valvula_ctx_new ();
 	if (ctx->ctx == NULL)
 		return axl_false;
+
+	/* configure log handler */
+	valvula_set_log_handler (ctx->ctx, valvulad_log_engine, ctx);
 
 	if (! valvula_init_ctx (ctx->ctx)) 
 		return axl_false;

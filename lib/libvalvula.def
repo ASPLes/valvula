@@ -159,6 +159,7 @@ valvula_reader_stop
 valvula_reader_watch_connection
 valvula_reader_watch_listener
 valvula_readline
+valvula_set_log_handler
 valvula_support_build_filename
 valvula_support_file_test
 valvula_support_getenv

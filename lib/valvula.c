@@ -255,6 +255,29 @@ void     valvula_color_log_enable (ValvulaCtx * ctx, axl_bool      status)
 }
 
 /** 
+ * @brief Allows to configure a log handler that is called every time
+ * a log is produced by the libValvula engine.
+ *
+ * @param ctx The context to configure.
+ *
+ * @param log_handler The log handler that is being configured.
+ *
+ * @param user_data User data pointer passed to the log_handler
+ */
+void     valvula_set_log_handler      (ValvulaCtx * ctx,
+				       ValvulaLogHandler log_handler, 
+				       axlPointer        user_data)
+{
+	if (ctx == NULL)
+		return;
+
+	ctx->log_handler      = log_handler;
+	ctx->log_handler_data = user_data;
+
+	return;
+}
+
+/** 
  * @internal Internal common log implementation to support several levels
  * of logs.
  * 
@@ -281,10 +304,10 @@ void _valvula_log_common (ValvulaCtx        * ctx,
 	struct timeval stamp;
 	char   buffer[1024];
 
-	/* if not VALVULA_DEBUG FLAG, do not output anything */
-	if (! valvula_log_is_enabled (ctx)) {
+	/* if not VALVULA_DEBUG FLAG and no log handler was found, do
+	 * not output anything */
+	if ((! valvula_log_is_enabled (ctx)) && ctx->log_handler == NULL) 
 		return;
-	} /* end if */
 
 
 	/* get current stamp */
@@ -292,7 +315,13 @@ void _valvula_log_common (ValvulaCtx        * ctx,
 
 	/* print the message */
 	vsnprintf (buffer, 1023, message, args);
-				
+
+	/* if log handler is enabled, route all messages there */
+	if (ctx->log_handler) {
+		ctx->log_handler (ctx, log_level, file, line, buffer, ctx->log_handler_data);
+		return;
+	} /* end if */
+
 	/* drop a log according to the level */
 #if defined (__GNUC__)
 	if (valvula_color_log_is_enabled (ctx)) {
