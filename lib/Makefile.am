@@ -53,7 +53,8 @@ libvalvula_include_HEADERS = valvula.h \
 	valvula_types.h \
 	valvula_listener.h \
 	valvula_connection.h \
-	valvula_hash.h
+	valvula_hash.h 
+
 
 libvalvula_la_LIBADD = \
 	$(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS)

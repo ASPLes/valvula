@@ -1,2 +1,3 @@
 usr/include/valvula/valvulad_*.h
 usr/include/valvula/valvulad.h
+usr/include/valvula/exarg.h
