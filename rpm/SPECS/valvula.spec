@@ -116,6 +116,7 @@ libvalvula-server development headers
    /usr/include/valvula/valvulad_moddef.h
    /usr/include/valvula/valvulad_module.h
    /usr/include/valvula/valvulad_run.h
+   /usr/include/valvula/exarg.h
 
 # valvulad-server package
 %package -n valvulad-server

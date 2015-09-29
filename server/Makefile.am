@@ -46,7 +46,7 @@ libvalvulad_include_HEADERS   = \
 	valvulad_log.h \
 	valvulad_run.h \
 	valvulad_db.h \
-	valvulad_module.h valvulad_moddef.h
+	valvulad_module.h valvulad_moddef.h 
 
 libvalvulad_la_SOURCES   = \
 	valvulad.c \
@@ -54,7 +54,8 @@ libvalvulad_la_SOURCES   = \
 	valvulad_log.c \
 	valvulad_run.c \
 	valvulad_db.c  \
-	valvulad_module.c
+	valvulad_module.c 
+
 
 libvalvulad_la_LIBADD  = $(LIBS) $(MYSQL_LIBS) ../lib/libvalvula.la  -ldl 
 libvalvulad_la_LDFLAGS = -no-undefined -export-symbols-regex '^(valvulad|__valvulad|_valvulad).*'
