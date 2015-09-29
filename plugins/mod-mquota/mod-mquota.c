@@ -581,9 +581,12 @@ axl_bool __mod_mquota_check_reject (const char     * sasl_user,
 		default:
 			break; /* never reached */
 		} 
+
+		/* lock released */
 		return axl_true;
 	} /* end if */
 
+	/* lock not released */
 	return axl_false;
 }
 
@@ -598,21 +601,24 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->global_limit, 
 				       __mod_mquota_current_period->label,
 				       global_usage, MOD_MQUOTA_GLOBAL_CHECK, axl_false))
-		return axl_true;
+		return axl_true; /* lock released by __mod_mquota_check_reject when it
+				  * returns axl_true */
 
 	/* check hour limit */
 	hour_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_hour_hash, (axlPointer) sasl_user));
 	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->hour_limit, 
 				       __mod_mquota_current_period->label,
 				       hour_usage, MOD_MQUOTA_HOUR_CHECK, axl_false))
-		return axl_true;
+		return axl_true; /* lock released by __mod_mquota_check_reject when it
+				  * returns axl_true */
 
 	/* check minute limit */
 	minute_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_minute_hash, (axlPointer) sasl_user));
 	if (__mod_mquota_check_reject (sasl_user, request, __mod_mquota_current_period->minute_limit, 
 				       __mod_mquota_current_period->label,
 				       minute_usage, MOD_MQUOTA_MINUTE_CHECK, axl_false))
-		return axl_true;
+		return axl_true; /* lock released by __mod_mquota_check_reject when it
+				  * returns axl_true */
 
 	/* reached this point, update record */
 	global_usage += 1;
@@ -720,13 +726,17 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 	valvula_mutex_lock (&hash_mutex);
 
 	if (__mod_mquota_check_reject_user (sasl_user, request)) 
-		return VALVULA_STATE_REJECT;
+		return VALVULA_STATE_REJECT;  /* lock already released by
+					       * __mod_mquota_check_reject_user
+					       * when it returns axl_true */
 
 	/* check domain limits */
 	if (strstr (sasl_user, "@")) {
 		/* check and reject if required */
 		if (__mod_mquota_check_reject_domain (sasl_domain, request))
-			return VALVULA_STATE_REJECT;
+			return VALVULA_STATE_REJECT; /* lock already released by
+						      * __mod_mquota_check_reject_user
+						      * when it returns axl_true */
 	} /* endi f */
 
 	/* release */
