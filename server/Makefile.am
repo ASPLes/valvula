@@ -60,7 +60,7 @@ libvalvulad_la_SOURCES   = \
 
 
 libvalvulad_la_LIBADD  = $(LIBS) $(MYSQL_LIBS) ../lib/libvalvula.la  -ldl 
-libvalvulad_la_LDFLAGS = -no-undefined -export-symbols-regex '^(valvulad|__valvulad|_valvulad).*'
+libvalvulad_la_LDFLAGS = -no-undefined -export-symbols-regex '^(valvulad|__valvulad|_valvulad|exarg).*'
 
 
 # copy exarg dependency to not force people to download a library with
