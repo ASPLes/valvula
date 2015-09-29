@@ -269,6 +269,8 @@ AM_CONDITIONAL(ENABLE_VALVULA_DOC, test "x$DOXYGEN" = "xyes")
 
 AC_OUTPUT([
 Makefile
+valvula.pc
+valvulad.pc
 lib/Makefile
 server/Makefile
 plugins/Makefile
