@@ -85,6 +85,7 @@ libvalvula core library developement headers
    /usr/include/valvula/valvula_thread.h
    /usr/include/valvula/valvula_thread_pool.h
    /usr/include/valvula/valvula_types.h
+   /usr/lib/pkgconfig/valvula.pc
 
 # libvalvula-server package
 %package -n libvalvula-server
@@ -117,6 +118,7 @@ libvalvula-server development headers
    /usr/include/valvula/valvulad_module.h
    /usr/include/valvula/valvulad_run.h
    /usr/include/valvula/exarg.h
+   /usr/lib/pkgconfig/valvulad.pc
 
 # valvulad-server package
 %package -n valvulad-server

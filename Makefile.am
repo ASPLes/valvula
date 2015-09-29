@@ -5,6 +5,9 @@ endif
 SUBDIRS = lib server plugins test $(VALVULA_DOC_DIR)
 EXTRA_DIST = VERSION 
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = valvula.pc valvulad.pc
+
 all-local: update-defs
 
 update-defs: 
