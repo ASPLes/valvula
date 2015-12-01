@@ -3,4 +3,5 @@
 SHELL=/bin/sh
 PATH=/usr/bin
 
-*/1  *  *  *  *  root   	check-valvulad.py
+*/1 * * * *	root	check-valvulad.py
+
