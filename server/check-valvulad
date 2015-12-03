@@ -1,7 +1,9 @@
 # /etc/cron.d/valvulad: crontab for valvulad server
 
 SHELL=/bin/sh
-PATH=/usr/bin
+PATH=/usr/bin:/usr/sbin
 
-*/1 * * * *	root	check-valvulad.py
+*/1 * * * *	root	/usr/bin/check-valvulad.py
+
+
 

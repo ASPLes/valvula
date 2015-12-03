@@ -2,11 +2,14 @@
 
 import os
 import sys
+import syslog
+import commands
 
 verbose  = False
 pid_file = "/var/run/valvulad.pid"
 
 def error (msg):
+    syslog.syslog (syslog.LOG_ERR, "check-valvula: error: %s" % msg)
     if not verbose:
         return
 
@@ -14,6 +17,8 @@ def error (msg):
     return
 
 def info (msg):
+    syslog.syslog (syslog.LOG_INFO, "check-valvula: info: %s" % msg)
+
     if not verbose:
         return
 
@@ -50,7 +55,13 @@ os.system ("killall -9 valvulad  > /dev/null 2>&1")
 
 # now stop and start
 os.system ("service valvulad stop > /dev/null 2>&1")
-os.system ("service valvulad start > /dev/null 2>&1")
+(status, output) = commands.getstatusoutput ("service valvulad start")
+if status:
+    error ("Failed to recover valvula, error was: %s" % output)
+    sys.exit (-1)
+# end if
+
+info ("Valvula recovered, output was: %s" % output)
 
 # integration with core-admin (if present)
 
