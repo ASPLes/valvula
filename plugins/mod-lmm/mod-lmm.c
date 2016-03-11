@@ -62,7 +62,7 @@ static int  lmm_init (ValvuladCtx * _ctx)
 	/* create databases to be used by the module */
 	valvulad_db_ensure_table (ctx, 
 				  /* table name */
-				  "lmm_global", 
+				  "lmm_by_domain", 
 				  /* attributes */
 				  "id", "autoincrement int", 
 				  /* rule status */
@@ -71,6 +71,8 @@ static int  lmm_init (ValvuladCtx * _ctx)
 				   * applies. If not defined, applies to all sources. When source 
 				   is a local destination, it must be autenticated */
 				  "domain", "varchar(1024)",
+				  /* source ips and networks: if allowed_networks is empty, then  */
+				  "allowed_networks", "varchar(1024)",
 				  /* rule description */
 				  "description", "varchar(500)",
 				  NULL);
