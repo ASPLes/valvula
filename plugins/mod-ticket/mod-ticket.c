@@ -538,7 +538,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	     total_limit, total_used, day_limit, current_day_usage, month_limit, current_month_usage);*/
 
 	/* check total used limit */
-	if (total_used > total_limit) {
+	if (total_limit > 0 && total_used > total_limit) {
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
@@ -548,7 +548,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	} /* end if */
 
 	/* check day limit */
-	if (current_day_usage > day_limit) {
+	if (day_limit > 0 && current_day_usage > day_limit) {
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
@@ -558,7 +558,7 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	} /* end if */
 
 	/* check month limit */
-	if (current_month_usage > month_limit) {
+	if (month_limit > 0 && current_month_usage > month_limit) {
 		/* unlock */
 		valvula_mutex_unlock (&work_mutex);
 
@@ -677,6 +677,12 @@ END_C_DECLS
  * \code
  * mysql> INSERT INTO ticket_plan (name, description, total_limit, day_limit, month_limit) VALUES ('You plan name', 'description', 100000, 3000, 10000)
  * \endcode
+ *
+ * Use -1 for any of the "limits" to disable it. For example, use
+ * total_limits == -1 to make total limits to be not applied at let
+ * only <b>day_limit</b> and <b>month_limit</b> to be applied. The
+ * same applies to the <b>day_limit</b> and <b>month_limit</b>
+ * attributes.
  * 
  * 2) Now, with that plan created, create a rule that binds this plan to a sending sasl user like this:
  *
