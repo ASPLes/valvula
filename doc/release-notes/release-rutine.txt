@@ -34,7 +34,4 @@
   Publicar comentario en FrancisBrosnanB
   Publicar comentario en GooglePlus Francis
 
-
-
-
-
+* Tag release at github.com

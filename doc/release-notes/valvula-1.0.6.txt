@@ -1,0 +1,125 @@
+                      --\\ Valvula //--
+                      Coming of an age
+                           1.0.6
+
+Advanced Software Production Line is proud to announce a new stable
+release of the Valvula.
+
+Valvula is a OpenSource high performance mail policy daemon for
+Postfix, written in ANSI C, that provides out of the box support for
+sender login mismatch, mail quotas, per user/domain blacklists/white-lists 
+and much more.
+
+Valvula is fully extensible through plugins and it is composed by a
+base library (libValvula) that integrates into a ready to use server
+(valvulad) that is able to run different ports with different modules
+so you can connect same valvula process at different points inside
+Postfix policy restriction sections.
+
+Resources
+~~~~~~~~~
+
+   Valvula homepage
+   [ http://www.aspl.es/valvula ]
+
+   Commercial support
+   [ http://www.aspl.es/valvula/commercial.html ]
+
+   Advanced Software Production Line, S.L.
+   [ http://www.aspl.es ]
+
+   Featured project: Core-Admin
+   [ http://www.core-admin.com ]
+
+This release in short
+~~~~~~~~~~~~~~~~~~~~~ 
+
+  - Added support to create rules to block or whitelist just local-part@
+  
+  - Wouter Paesen : reported a missing reference to exarg.h inside
+    libvalvula-server-dev package
+
+  - Updated mod-ticket to allow disabling some of the limits.
+
+  - Various stable corrections
+
+Changes from previous release
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* [fix] Several updates to make mod-bwl to allow blocking or
+  whitelisting using local-part@ rules. Updated mod-bwl documentation
+  to explain how to to use this.
+
+* [fix] Updated valvula_address_rule_match to also support matching
+  rules addressing only local part. Updated regression test_00 to
+  check this new function introduced.
+
+* [new] Added support to get local part from request for sender and
+  recipient values. API added:
+
+  - valvula_get_local_part
+  - valvula_get_sender_local_part
+  - valvula_get_recipient_local_part
+
+
+* [fix] Minor updates to better show logs for protocol lines received
+  from postfix..
+
+* [fix] Updated valvula.example.conf to use a new line limit (40->80).
+
+* [fix] Updated valvulad_reject API to allow providing the state that
+  is reported so discard messages can also unified format as
+  REJECT. Updated rest of the modules to conform with the change.
+
+* [fix] Updated valvula engine to allow external applications to
+  register a handler that is called every time a log message is
+  produced. Updated valvulad server to register a handler so error and
+  critical messages get reported by valvulad configuration.
+
+* [fix] Making debug level 2 to be also reported through
+  ValvulaLogHandler (so valvulad can also report them through syslog).
+
+* [fix] Updated mod-bwl to allow implement filter discard..
+
+* [fix] Fixing missing reference to exarg.h in libvalvula-server-dev
+  package (reported by Wouter Paesen)
+
+* [fix] Making sender-login-mismatch have by default same-domain
+  configured
+
+* [fix] Fixec check-valvulad cron (it was a wrong char in front of the
+  command preventing its execution).
+
+* [fix] Fixed check-valvulad and check-valvulad.py (included usr/sbin
+  into path and syslog reporting)
+
+* [fix] Updated check-valvulad.py to support checking those OS that do
+  not have "service" command
+
+* [fix] Adding support to Ubuntu 16.04 xenial xerus
+
+* [fix] Updated mod-ticket to allow disabling any of the limits by configuring
+  -1 so anual, month or day limits can be disabled.
+
+
+About Advanced Software Production Line, S.L. (ASPL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Advanced Software Production Line (ASPL) provides GNU/Linux support
+  and consulting services to enable organisation to introduce
+  GNU/Linux into their processes, making other platforms to properly
+  interact with it.
+
+  You can contact us, using English or Spanish, at:
+
+       http://www.aspl.es - info@aspl.es
+
+  We hope Valvula may be useful you. Enjoy Valvula!
+
+--
+Francis Brosnan Blázquez           - francis@aspl.es
+Advanced Software Production Line  - http://www.aspl.es
+9th May 2016, Madrid (Spain)
+
+
+
