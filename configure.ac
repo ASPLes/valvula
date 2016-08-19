@@ -252,7 +252,7 @@ AC_TRY_COMPILE([#include <mysql/mysql.h>
   [mysql_init(NULL);],
   mysql_devel_found=yes,
   mysql_devel_found=no)
-AC_MSG_RESULT([MySQL development headers status: $mysql_devel_found])
+AC_MSG_RESULT([MySQL/MariaDB development headers status: $mysql_devel_found])
 if test "x$mysql_devel_found" = "xno"; then
    AC_MSG_WARN([Cannot find mysql.h header or current MySQL development environment do not compile symbols required. On debian try to install libmysqlclient15-dev package.])
 fi
@@ -308,7 +308,7 @@ if test "x$mysql_devel_found" = "xno"; then
      mysql_msg=" (Support for MySQL, won't work)"
 fi
 
-echo "   Build with MySQL support:       [$mysql_devel_found]$mysql_msg"
+echo "   Build with MySQL/MariaDB support:       [$mysql_devel_found]$mysql_msg"
 if test "x$mysql_devel_found" = "xyes"; then
 echo "     flags: $MYSQL_CFLAGS"
 echo "     libs: $MYSQL_LIBS"
