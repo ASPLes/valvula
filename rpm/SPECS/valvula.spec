@@ -85,7 +85,7 @@ libvalvula core library developement headers
    /usr/include/valvula/valvula_thread.h
    /usr/include/valvula/valvula_thread_pool.h
    /usr/include/valvula/valvula_types.h
-   /usr/lib/pkgconfig/valvula.pc
+   /usr/lib64/pkgconfig/valvula.pc
 
 # libvalvula-server package
 %package -n libvalvula-server
@@ -118,7 +118,7 @@ libvalvula-server development headers
    /usr/include/valvula/valvulad_module.h
    /usr/include/valvula/valvulad_run.h
    /usr/include/valvula/exarg.h
-   /usr/lib/pkgconfig/valvulad.pc
+   /usr/lib64/pkgconfig/valvulad.pc
 
 # valvulad-server package
 %package -n valvulad-server
@@ -210,6 +210,21 @@ defined periods.
    /usr/lib/valvulad/modules/mod-mquota.so.0
    /usr/lib/valvulad/modules/mod-mquota.so.0.0.0
    /etc/valvula/mods-available/mod-mquota.xml
+
+# valvulad-mod-mquota package
+%package -n valvulad-mod-lmm
+Summary: mod-lmm support for valvulad-server
+Group: System Environment/Libraries
+Requires: valvulad-server
+%description  -n valvulad-mod-lmm
+Valvulad plugin to limit mail from use/forge from unauthorized sources
+%files -n valvulad-mod-lmm
+   /usr/lib/valvulad/modules/mod-lmm.a
+   /usr/lib/valvulad/modules/mod-lmm.so
+   /usr/lib/valvulad/modules/mod-lmm.so.0
+   /usr/lib/valvulad/modules/mod-lmm.so.0.0.0
+   /etc/valvula/mods-available/mod-lmm.xml
+
 
 %changelog
 %include rpm/SPECS/changelog.inc

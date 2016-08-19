@@ -3,7 +3,7 @@ VALVULA_DOC_DIR = doc
 endif
 
 SUBDIRS = lib server plugins test $(VALVULA_DOC_DIR)
-EXTRA_DIST = VERSION 
+EXTRA_DIST = VERSION  valvula.pc.in valvulad.pc.in
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valvula.pc valvulad.pc
