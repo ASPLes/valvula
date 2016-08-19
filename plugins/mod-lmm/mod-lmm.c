@@ -95,15 +95,15 @@ ValvulaState lmm_process_request (ValvulaCtx        * _ctx,
 				  char             ** message)
 {
 	/* sender and localpart */
-	const char    * sender_domain        = valvula_get_sender_domain (request);
+	/* const char    * sender_domain        = valvula_get_sender_domain (request); */
 	char          * sender_local_part    = valvula_get_sender_local_part (request);
 
 	/* recipient and local part */
-	const char    * recipient_domain     = valvula_get_recipient_domain (request);
+	/* const char    * recipient_domain     = valvula_get_recipient_domain (request);*/
 	char          * recipient_local_part = valvula_get_recipient_local_part (request);
 
-	const char    * sender           = request->sender;
-	const char    * recipient        = request->recipient;
+	/* const char    * sender           = request->sender; */
+	/* const char    * recipient        = request->recipient; */
 	ValvulaState    state            = VALVULA_STATE_DUNNO;
 
 
