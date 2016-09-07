@@ -401,7 +401,8 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 					__valvulad_run_get_key_decl (line, &key, &decl);
 
 					if (key && decl) {
-						msg ("Declaration found: (%s) [%s] -> [%s]", section, key, decl);
+						msg ("Declaration found: (%s) [%s] -> [%s]", 
+						     section, key, axl_cmp (decl, "password") ? "xxxxx" : decl );
 						if (axl_cmp (section, "virtual_mailbox_domains")) {
 							if (axl_cmp (key, "user"))
 								ctx->ld_user = axl_strdup (decl);
