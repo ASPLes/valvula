@@ -643,7 +643,7 @@ def socket_read_line (s):
 
 def test_server (options, args):
     # get all data to be sent
-    server_location = raw_input ("Input server location: ").strip ()
+    server_location = raw_input ("Input server location (like localhost:3579 or just 3579): ").strip ()
     source_account  = raw_input ("Source account: ").strip ()
 
     # get dest account
@@ -652,9 +652,11 @@ def test_server (options, args):
         dest_account = source_account
 
     # get sasl user
-    sasl_user       = raw_input ("Sasl user [%s]: " % source_account).strip ()
+    sasl_user       = raw_input ("Sasl user [%s] (none or . for no SASL): " % source_account).strip ()
     if not sasl_user:
         sasl_user = source_account
+    if sasl_user in [".", "none"]:
+        sasl_user = None
         
     test_operations = raw_input ("How many test operations? [1]: ").strip ()
     if not test_operations:
@@ -692,7 +694,8 @@ def test_server (options, args):
         s.send ("message_size=2819\n")
 
         s.send ("sasl_method=PLAIN\n")
-        s.send ("sasl_username=%s\n" % sasl_user)
+        if sasl_user:
+            s.send ("sasl_username=%s\n" % sasl_user)
         # s.send ("sasl_sender=%s\n" % queue_id)
 
         s.send ("\n")
