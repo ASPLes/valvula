@@ -277,6 +277,9 @@ ValvulaState bwl_check_status (ValvulaCtx          * _ctx,
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
+	if (__mod_bwl_enable_debug) 
+		msg ("(bwl) Running query: %s", query);
+
 	/* call to create the query */
 	result = valvulad_db_run_query_s (ctx, query);
 	axl_free (query);
@@ -288,7 +291,8 @@ ValvulaState bwl_check_status (ValvulaCtx          * _ctx,
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
-	/* msg ("Checking request from %s -> %s", request->sender, request->recipient); */
+	if (__mod_bwl_enable_debug) 
+		msg ("(bwl) Checking request from %s -> %s", request->sender, request->recipient); 
 
 	/* first check specific rules */
 	state = bwl_check_status_rules (_ctx, request, level, level_label, message, result, /* specific */ axl_true);
