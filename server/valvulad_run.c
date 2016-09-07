@@ -359,6 +359,7 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 {
 
 	char      ** items;
+	char      ** items2;
 	char       * key;
 	char       * decl;
 	const char * path;
@@ -385,95 +386,109 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 	msg ("Working with postfix declaration: %s (from %s)", items[1], ctx->postfix_file);
 	
 	/* mysql support */
-	if (axl_memcmp ("mysql:", items[1], 6)) {
-		path = items[1] + 6;
-		msg ("Found postfix mysql configuration, opening: %s..", path);
-		_file = fopen (path, "r");
-		if (_file) {
-			/* get first line */
-			line = __valvulad_read_line (_file);
-			while (line) {
-				/* check to find the right declaration */
-				axl_stream_trim (line);
-				
-				if (line[0] != '#') {
-					/* get key and decl */
-					__valvulad_run_get_key_decl (line, &key, &decl);
+	path = strstr (items[1], "mysql:");
+	if (path)
+		path = path + 6;
 
-					if (key && decl) {
-						msg ("Declaration found: (%s) [%s] -> [%s]", 
-						     section, key, axl_cmp (key, "password") ? "xxxxx" : decl);
-						if (axl_cmp (section, "virtual_mailbox_domains")) {
-							if (axl_cmp (key, "user"))
-								ctx->ld_user = axl_strdup (decl);
-							else if (axl_cmp (key, "password"))
-								ctx->ld_pass = axl_strdup (decl);
-							else if (axl_cmp (key, "hosts"))
-								ctx->ld_host = axl_strdup (decl);
-							else if (axl_cmp (key, "dbname"))
-								ctx->ld_dbname = axl_strdup (decl);
-							else if (axl_cmp (key, "query"))
-								ctx->ld_query  = axl_strdup (decl);
-						} else if (axl_cmp (section, "virtual_alias_maps")) {
-							if (axl_cmp (key, "user"))
-								ctx->ls_user = axl_strdup (decl);
-							else if (axl_cmp (key, "password"))
-								ctx->ls_pass = axl_strdup (decl);
-							else if (axl_cmp (key, "hosts"))
-								ctx->ls_host = axl_strdup (decl);
-							else if (axl_cmp (key, "dbname"))
-								ctx->ls_dbname = axl_strdup (decl);
-							else if (axl_cmp (key, "query"))
-								ctx->ls_query  = axl_strdup (decl);
-						} else if (axl_cmp (section, "virtual_mailbox_maps") || axl_cmp (section, "local_recipient_maps")) {
-							if (axl_cmp (key, "user")) {
-								if (ctx->la_user)
-									axl_free (ctx->la_user);
-								ctx->la_user = axl_strdup (decl);
-							} else if (axl_cmp (key, "password")) {
-								if (ctx->la_pass)
-									axl_free (ctx->la_pass);
-								ctx->la_pass = axl_strdup (decl);
-							} else if (axl_cmp (key, "hosts")) {
-								if (ctx->la_host)
-									axl_free (ctx->la_host);
-								ctx->la_host = axl_strdup (decl);
-							} else if (axl_cmp (key, "dbname")) {
-								if (ctx->la_dbname)
-									axl_free (ctx->la_dbname);
-								ctx->la_dbname = axl_strdup (decl);
-							} else if (axl_cmp (key, "query")) {
-								if (ctx->la_query)
-									axl_free (ctx->la_query);
-								ctx->la_query  = axl_strdup (decl);
-							} /* end if */
-						}
-					} /* end if */
-
-					/* key and decl */
-					axl_free (key);
-					axl_free (decl);
-					
-				} /* end if */
-				
-				/* get next line */
-				free (line);
-				line = __valvulad_read_line (_file);
-			} /* end while */
-		} /* end if */
-
-		if (! _file) {
-			error ("Unable to open file %s, errno=%d", path, errno);
-			result = axl_false;
-		} /* end if */
-
-		if (_file)
-			fclose (_file);
-
+	/* ensure we have a clean path to open */
+	items2 = axl_split (path, 1, ",");
+	if (items2 == NULL || items2[0] == NULL) {
+		error ("Split operation for %s failed and reported NULL, unable to continue", path);
+		axl_freev (items);
+		return axl_false;
 	} /* end if */
+
+	/* clean and assign path */
+	axl_stream_trim (items2[0]);
+	path   = items2[0];
+	
+	/* attempting to open the file */
+	msg ("Found postfix mysql configuration, opening: %s..", path);
+	_file = fopen (path, "r");
+	if (! _file) {
+		error ("Unable to open file %s, errno=%d", path, errno);
+		axl_freev (items);
+		axl_freev (items2);
+		return axl_false;
+	} /* end if */
+
+	/* get first line */
+	line = __valvulad_read_line (_file);
+	while (line) {
+		/* check to find the right declaration */
+		axl_stream_trim (line);
+				
+		if (line[0] != '#') {
+			/* get key and decl */
+			__valvulad_run_get_key_decl (line, &key, &decl);
+
+			if (key && decl) {
+				msg ("Declaration found: (%s) [%s] -> [%s]", 
+				     section, key, axl_cmp (key, "password") ? "xxxxx" : decl);
+				if (axl_cmp (section, "virtual_mailbox_domains")) {
+					if (axl_cmp (key, "user"))
+						ctx->ld_user = axl_strdup (decl);
+					else if (axl_cmp (key, "password"))
+						ctx->ld_pass = axl_strdup (decl);
+					else if (axl_cmp (key, "hosts"))
+						ctx->ld_host = axl_strdup (decl);
+					else if (axl_cmp (key, "dbname"))
+						ctx->ld_dbname = axl_strdup (decl);
+					else if (axl_cmp (key, "query"))
+						ctx->ld_query  = axl_strdup (decl);
+				} else if (axl_cmp (section, "virtual_alias_maps")) {
+					if (axl_cmp (key, "user"))
+						ctx->ls_user = axl_strdup (decl);
+					else if (axl_cmp (key, "password"))
+						ctx->ls_pass = axl_strdup (decl);
+					else if (axl_cmp (key, "hosts"))
+						ctx->ls_host = axl_strdup (decl);
+					else if (axl_cmp (key, "dbname"))
+						ctx->ls_dbname = axl_strdup (decl);
+					else if (axl_cmp (key, "query"))
+						ctx->ls_query  = axl_strdup (decl);
+				} else if (axl_cmp (section, "virtual_mailbox_maps") || axl_cmp (section, "local_recipient_maps")) {
+					if (axl_cmp (key, "user")) {
+						if (ctx->la_user)
+							axl_free (ctx->la_user);
+						ctx->la_user = axl_strdup (decl);
+					} else if (axl_cmp (key, "password")) {
+						if (ctx->la_pass)
+							axl_free (ctx->la_pass);
+						ctx->la_pass = axl_strdup (decl);
+					} else if (axl_cmp (key, "hosts")) {
+						if (ctx->la_host)
+							axl_free (ctx->la_host);
+						ctx->la_host = axl_strdup (decl);
+					} else if (axl_cmp (key, "dbname")) {
+						if (ctx->la_dbname)
+							axl_free (ctx->la_dbname);
+						ctx->la_dbname = axl_strdup (decl);
+					} else if (axl_cmp (key, "query")) {
+						if (ctx->la_query)
+							axl_free (ctx->la_query);
+						ctx->la_query  = axl_strdup (decl);
+					} /* end if */
+				}
+			} /* end if */
+
+			/* key and decl */
+			axl_free (key);
+			axl_free (decl);
+					
+		} /* end if */
+				
+		/* get next line */
+		free (line);
+		line = __valvulad_read_line (_file);
+	} /* end while */
+
+	/* close opened file */
+	fclose (_file);
 
 	/* release items */
 	axl_freev (items);
+	axl_freev (items2);
 	return result;
 }
 
@@ -798,6 +813,7 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 	const char * pass   = NULL;
 	const char * host   = NULL;
 	const char * dbname = NULL;
+	const char * label  = NULL;
 
 	if (ctx == NULL || item_name == NULL)
 		return axl_false;
@@ -813,6 +829,7 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 		pass    = ctx->ld_pass;
 		host    = ctx->ld_host;
 		dbname  = ctx->ld_dbname;
+		label   = "DOMAIN  -- local domain detection will not work -- rules depending on this will not work";
 		break;
 	case VALVULAD_OBJECT_ACCOUNT:
 		if (axl_hash_get (ctx->la_hash, (axlPointer) item_name))
@@ -823,6 +840,7 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 		pass    = ctx->la_pass;
 		host    = ctx->la_host;
 		dbname  = ctx->la_dbname;
+		label   = "ACCOUNT -- local account detection will not work -- rules depending on this will not work";
 		break;
 	case VALVULAD_OBJECT_ALIAS:
 		if (axl_hash_get (ctx->ls_hash, (axlPointer) item_name))
@@ -833,84 +851,90 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 		pass    = ctx->ls_pass;
 		host    = ctx->ls_host;
 		dbname  = ctx->ls_dbname;
+		label   = "ALIAS -- local alias detection will not work -- rules depending on this will not work";
 		break;
 	} /* end if */
 
-	if (query) {
+	if (! query) {
+		if (ctx->debug_queries) 
+			msg ("%s: no SQL query for (%s), returning false", __AXL_PRETTY_FUNCTION__, label);
 
-		/* mysql mode */
-		query = axl_strdup (query);
-		axl_replace (query, "%s", item_name);
-		axl_replace (query, "%d", valvula_get_domain (item_name));
+		/* if no query, no check is possible, return axl_false */
+	        return f_result;
+	}
 
-		if (ctx->debug_queries)
-			msg ("%s: running query (non-query=%d): %s", __AXL_PRETTY_FUNCTION__, axl_true, query);
+	/* mysql mode */
+	query = axl_strdup (query);
+	axl_replace (query, "%s", item_name);
+	axl_replace (query, "%d", valvula_get_domain (item_name));
 
-		/* create a mysql connection */
-		dbconn = mysql_init (NULL);
+	if (ctx->debug_queries)
+		msg ("%s: running query (non-query=%d): %s", __AXL_PRETTY_FUNCTION__, axl_true, query);
 
-		/* create a connection */
-		if (mysql_real_connect (dbconn, 
-					/* get host */
-					host,
-					/* get user */
-					user,
-					/* get password */
-					pass,
-					/* get database */
-					dbname,
-					port, NULL, 0) == NULL) {
-			error ("Mysql connect error: mysql_error(dbconn)=[%s], failed to run SQL command, mysql_real_connect() failed", mysql_error (dbconn));
-			return axl_false;
-		} /* end if */
+	/* create a mysql connection */
+	dbconn = mysql_init (NULL);
 
-		/* now run query */
-		if (mysql_query (dbconn, query)) {
-			axl_free (query);
-			error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
+	/* create a connection */
+	if (mysql_real_connect (dbconn, 
+				/* get host */
+				host,
+				/* get user */
+				user,
+				/* get password */
+				pass,
+				/* get database */
+				dbname,
+				port, NULL, 0) == NULL) {
+		error ("Mysql connect error: mysql_error(dbconn)=[%s], failed to run SQL command, mysql_real_connect() failed", mysql_error (dbconn));
+		return axl_false;
+	} /* end if */
+
+	/* now run query */
+	if (mysql_query (dbconn, query)) {
+		axl_free (query);
+		error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
 			
-			/* release the connection */
-			mysql_close (dbconn);
-			return axl_false;
-		} /* end if */
+		/* release the connection */
+		mysql_close (dbconn);
+		return axl_false;
+	} /* end if */
 
-		/* return result */
-		result = mysql_store_result (dbconn);
-		if (result == NULL) {
-			axl_free (query);
-			error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
+	/* return result */
+	result = mysql_store_result (dbconn);
+	if (result == NULL) {
+		axl_free (query);
+		error ("Failed to run SQL query, error was %u: %s\n", mysql_errno (dbconn), mysql_error (dbconn));
 			
-			/* release the connection */
-			mysql_close (dbconn);
-			return axl_false;
-		} /* end if */
+		/* release the connection */
+		mysql_close (dbconn);
+		return axl_false;
+	} /* end if */
 
-		row = mysql_fetch_row (result);
-		if (row == NULL || row[0] == NULL) {
-			/* release result */
-			mysql_free_result (result);
-
-			/* release query */
-			axl_free (query);
-		
-			/* close connection */
-			mysql_close (dbconn);
-			
-			return axl_false;
-		} /* end if */
-
-		/* compare result */
-		f_result = (row[0]) && strlen (row[0]) > 0;
-
+	row = mysql_fetch_row (result);
+	if (row == NULL || row[0] == NULL) {
 		/* release result */
 		mysql_free_result (result);
 
 		/* release query */
 		axl_free (query);
-
+		
 		/* close connection */
 		mysql_close (dbconn);
-	}
+			
+		return axl_false;
+	} /* end if */
+
+	/* compare result */
+	f_result = (row[0]) && strlen (row[0]) > 0;
+
+	/* release result */
+	mysql_free_result (result);
+
+	/* release query */
+	axl_free (query);
+
+	/* close connection */
+	mysql_close (dbconn);
 
 	return f_result;
 }
