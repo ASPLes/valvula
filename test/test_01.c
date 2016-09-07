@@ -617,10 +617,46 @@ axl_bool  test_02a (void)
 	return axl_true;
 }
 
+axl_bool  test_02b_check_parsed_values (ValvuladCtx * ctx)
+{
+	if (! axl_cmp (ctx->la_user, "pf_user_a811f78f")) {
+		printf ("ERROR: expected proper detection at (2) [%s] != [%s]..\n",
+			ctx->la_user, "pf_user_a811f78f");
+		return axl_false;
+	}
+
+	if (! axl_cmp (ctx->la_pass, "23d4692aaff3")) {
+		printf ("ERROR: expected proper detection at (3) [%s] != [%s]..\n",
+			ctx->la_pass, "23d4692aaff3");
+		return axl_false;
+	}
+
+	if (! axl_cmp (ctx->la_host, "127.0.0.1")) {
+		printf ("ERROR: expected proper detection at (4) [%s] != [%s]..\n",
+			ctx->la_host, "127.0.0.1");
+		return axl_false;
+	}
+
+	if (! axl_cmp (ctx->la_dbname, "postfix_db_d69cd5a23cc1")) {
+		printf ("ERROR: expected proper detection at (5) [%s] != [%s]..\n",
+			ctx->la_dbname, "postfix_db_d69cd5a23cc1");
+		return axl_false;
+	}
+
+	if (! axl_cmp (ctx->la_query, "SELECT username FROM mailbox WHERE username='%s' AND active = 1 AND domain = '%d'")) {
+		printf ("ERROR: expected proper detection at (6) [%s] != [%s]..\n",
+			ctx->la_query, "SELECT username FROM mailbox WHERE username='%%s' AND active = 1 AND domain = '%%d'");
+		return axl_false;
+	}
+	
+	return axl_true;
+}
+
 axl_bool  test_02b (void)
 {
 	ValvuladCtx    * ctx = axl_new (ValvuladCtx, 1);
 	ValvulaRequest * request;
+	const char     * ref;
 
 	/* init the library */
 	if (! valvulad_init_aux (ctx)) {
@@ -737,6 +773,73 @@ axl_bool  test_02b (void)
 	axl_free (request);
 
 	/* finish library */
+	common_finish (ctx);
+
+	/* TEST 02B-001: create references for testing */
+	ctx = axl_new (ValvuladCtx, 1);
+	ref = "local_recipient_maps = mysql:test-02b.cf";
+	printf ("Test 02-b: checking %s..\n", ref);
+	if (! valvulad_run_check_local_domains_config_detect_postfix_decl (ctx, ref, "local_recipient_maps")) {
+		printf ("ERROR: expected proper detection at (1)..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check parsed values */
+	if (! test_02b_check_parsed_values (ctx))
+		return axl_false;
+
+	/* finish library */
+	common_finish (ctx);
+
+	/* TEST 02B-002: create references for testing */
+	ctx = axl_new (ValvuladCtx, 1);
+	ref = "local_recipient_maps = hash:something-different.cf, mysql:test-02b.cf";
+	printf ("Test 02-b: checking %s..\n", ref);
+	if (! valvulad_run_check_local_domains_config_detect_postfix_decl (
+	     ctx, ref, "local_recipient_maps")) {
+		printf ("ERROR: expected proper detection at (1)..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check parsed values */
+	if (! test_02b_check_parsed_values (ctx))
+		return axl_false;
+
+	/* finish context */
+	common_finish (ctx);
+
+	/* TEST 02B-003: create references for testing */
+	ctx = axl_new (ValvuladCtx, 1);
+	ref = "local_recipient_maps = hash:something-different.cf, hash:more-different.cf, mysql:test-02b.cf";
+	printf ("Test 02-b: checking %s..\n", ref);
+	if (! valvulad_run_check_local_domains_config_detect_postfix_decl (
+	     ctx, ref, "local_recipient_maps")) {
+		printf ("ERROR: expected proper detection at (1)..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check parsed values */
+	if (! test_02b_check_parsed_values (ctx))
+		return axl_false;
+
+	/* finish context */
+	common_finish (ctx);
+
+	/* TEST 02B-003: create references for testing */
+	ctx = axl_new (ValvuladCtx, 1);
+	ref = "local_recipient_maps = mysql:test-02b.cf, hash:something-different.cf, hash:more-different.cf, mysql:test-02b.cf";
+	printf ("Test 02-b: checking %s..\n", ref);
+	if (! valvulad_run_check_local_domains_config_detect_postfix_decl (
+	     ctx, ref, "local_recipient_maps")) {
+		printf ("ERROR: expected proper detection at (1)..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check parsed values */
+	if (! test_02b_check_parsed_values (ctx))
+		return axl_false;
+
+	/* finish context */
 	common_finish (ctx);
 
 

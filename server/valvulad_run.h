@@ -50,4 +50,8 @@ void     valvulad_run_add_local_domain (ValvuladCtx * ctx, const char * domain);
 
 axl_bool valvulad_run_check_local_domains_config (ValvuladCtx * ctx);
 
+axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCtx * ctx, 
+								      const char  * postfix_decl, 
+								      const char  * section);
+
 #endif
