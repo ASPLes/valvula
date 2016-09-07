@@ -344,6 +344,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 				      const char        * recipient)
 {
 	ValvulaState    state;
+	axl_bool        is_local;
 
 	/* check if sasl user is blocked */
 	if (valvula_is_authenticated (request) && bwl_is_sasl_user_blocked (ctx, request))
@@ -361,11 +362,21 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 				   "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR source = '%s@' OR destination = '%s' OR destination = '%s' OR destination = '%s@')",
 				   sender_domain, sender, sender_local_part, recipient_domain, recipient, recipient_local_part);
 	/* check valvula state reported */
-	if (state != VALVULA_STATE_DUNNO) 
+	if (state != VALVULA_STATE_DUNNO) {
+	        if (__mod_bwl_enable_debug) 
+		       msg ("bwl : finishing %s -> %s reporting %s (state: %d) ", sender, recipient, valvula_support_state_str  (state), state);
 		return state;
+	} /* end if */
+
+	/* call to check if it is local delivery */
+	is_local = valvulad_run_is_local_delivery (ctx, request);
+	if (__mod_bwl_enable_debug) {
+	        msg ("bwl : checking local-delivery %s -> %s reporting (valvulad_run_is_local_delivery (%p, %p) = %d : %s", 
+		     sender, recipient, ctx, request, is_local, is_local ? "is-local" : "non-local");
+	} /* end if */
 
 	/* check if recipient_domain is for a local delivery */
-	if (valvulad_run_is_local_delivery (ctx, request)) {
+	if (is_local) {
 		if (__mod_bwl_enable_debug) {
 			msg ("bwl (2): working with sender_domain=%s", sender_domain);
 			msg ("bwl (2): working with sender=%s", sender);
