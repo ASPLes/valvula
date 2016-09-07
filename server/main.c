@@ -655,6 +655,7 @@ void valvulad_place_pidfile (ValvuladCtx * ctx)
 int main (int argc, char ** argv) 
 {
 	axl_bool      result;
+	axlNode     * node;
 
 	/* record a reference to arguments received */
 	__valvulad_ref_argv = argv;
@@ -732,7 +733,12 @@ int main (int argc, char ** argv)
 	if (! result) {
 		printf ("ERROR: Failed to load configuration file (run with %s -o -d to get more details)..\n", argv[0]);
 		exit (-1);
-	}
+	} /* end if */
+
+	/* get debug queries status */
+	node = axl_doc_get (ctx->config, "/valvula/global-settings/debug-queries");
+	if (HAS_ATTR_VALUE (node, "debug", "yes"))
+		ctx->debug_queries = axl_true;
 
 	/* install signal handling */
 	signal (SIGINT,  valvulad_signal); 		
