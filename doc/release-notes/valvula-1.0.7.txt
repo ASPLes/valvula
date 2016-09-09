@@ -1,0 +1,119 @@
+                      --\\ Valvula //--
+                        Mixed Bizness
+                           1.0.7
+
+Advanced Software Production Line is happy to announce a new stable
+release of the Valvula.
+
+Valvula is a OpenSource high performance mail policy daemon for
+Postfix, written in ANSI C, that provides out of the box support for
+sender login mismatch, mail quotas, per user/domain blacklists/white-lists 
+and much more.
+
+Valvula is fully extensible through plugins and it is composed by a
+base library (libValvula) that integrates into a ready to use server
+(valvulad) that is able to run different ports with different modules
+so you can connect same valvula process at different points inside
+Postfix policy restriction sections.
+
+Resources
+~~~~~~~~~
+
+   Valvula homepage
+   [ http://www.aspl.es/valvula ]
+
+   Commercial support
+   [ http://www.aspl.es/valvula/commercial.html ]
+
+   Advanced Software Production Line, S.L.
+   [ http://www.aspl.es ]
+
+   Featured project: Core-Admin
+   [ http://www.core-admin.com ]
+
+This release in short
+~~~~~~~~~~~~~~~~~~~~~ 
+
+  - Added official support for Jessie and Centos7
+
+  - Improved mysql postfix configuration detection (fixes several
+    issues with mod-bwl and other modules that relies on proper
+    postfix mysql detection to really provide good information about
+    if an account or domain is local).
+
+  - Updated valvulad-mgr.py to allow testing local servers with no
+    SASL indication. 
+
+  - Updated valvulad server and mod-bwl to provide more information
+    when debug is enabled.
+
+
+Changes from previous release
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* [fix] Adding support for jessie..
+
+* [fix] Updated buildrpm.sh and configure.ac to include additional
+  changes to improve Centos7 support.
+
+* [fix] Commented out some variables at mod-lmm to avoid compilation
+  failures in Centos7
+
+* [fix] Added missing changelog.inc to allow building for centos..
+
+* [fix] Updated mod-lmm.c code to flag it as still not finished..
+
+* [fix] Updated rpm files to have valvula compiled and packaged for
+  Centos7
+
+* [fix] Updated valvulad-mgr.py to allow setting no sasl account for
+  --test-server option. Updated option to provide some examples so the
+  user can better use the tool.
+
+* [fix] Added some additional debugging code to mod-bwl to help system
+  administrator know that's being executed..
+
+* [fix] Updated server code to allow enabling debug queries from
+  configuration file (not only with command line option). Updated
+  example configuration file to include a default indication to enable
+  debugging queries..
+
+* [fix] More updates to valvula.example.conf
+
+* [fix] Updated code for postfix mysql declarations to avoid posting
+  password found to the log...
+
+* [fix] Several updates to make mod-bwl to drop more log information
+  when an account is considering local or not when debug module is
+  enabled.
+
+* [fix] Fixed password hiding (was not working)
+
+* [fix] Updated valvulad_run module to make local domain detection
+  code more cleaner. Updated error notification to log to better
+  report when domain and account detection does not work.
+
+* [fix] Updated test-02b regression test to check different combinations for
+  postfix declatations where mysql indication can be found. 
+
+About Advanced Software Production Line, S.L. (ASPL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Advanced Software Production Line (ASPL) provides GNU/Linux support
+  and consulting services to enable organisation to introduce
+  GNU/Linux into their processes, making other platforms to properly
+  interact with it.
+
+  You can contact us, using English or Spanish, at:
+
+       http://www.aspl.es - info@aspl.es
+
+  We hope Valvula may be useful you. Enjoy Valvula!
+
+--
+Francis Brosnan Blázquez           - francis@aspl.es
+Advanced Software Production Line  - http://www.aspl.es
+9th Sep 2016, Madrid (Spain)
+
+
+
