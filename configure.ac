@@ -254,7 +254,7 @@ AC_TRY_COMPILE([#include <mysql/mysql.h>
   mysql_devel_found=no)
 AC_MSG_RESULT([MySQL/MariaDB development headers status: $mysql_devel_found])
 if test "x$mysql_devel_found" = "xno"; then
-   AC_MSG_WARN([Cannot find mysql.h header or current MySQL development environment do not compile symbols required. On debian try to install libmysqlclient15-dev package.])
+   AC_MSG_WARN([Cannot find mysql.h header or current MySQL development environment do not compile symbols required. On debian try to install libmysqlclient15-dev package. On centos/redhat try to install mariadb-devel or mysql-devel])
 fi
 AM_CONDITIONAL(ENABLE_MYSQL_SUPPORT, test "x$mysql_devel_found" = "xyes")
 
