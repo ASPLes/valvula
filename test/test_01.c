@@ -265,12 +265,14 @@ axl_bool  test_01 (void)
 	if (! ctx) {
 		printf ("ERROR: unable to load configuration file at %s\n", path);
 
+		printf ("****\n");
 		printf ("**** Remember, mysql server must have the following account to ensure reg tests works\n");
 		printf ("**** User: valvula\n");
 		printf ("**** Db:   valvula\n");
 		printf ("**** Pass: valvula\n");
 		printf ("****\n");
 		printf ("**** If you are getting mysql error then review these settings..\n");
+		printf ("****\n");
 
 		return axl_false;
 	} /* end if */
