@@ -555,6 +555,32 @@ axlPointer valvula_reader_process_request_proxy (axlPointer _connection)
 	return result;
 }
 
+axl_bool  valvula_reader_check_sql_injection_to_escape (ValvulaCtx * ctx, ValvulaConnection * connection, const char * key, const char * value)
+{
+	/* check if this is an address or a domain */
+	char       * local_part;
+	axl_bool     result = axl_false;
+
+	local_part = valvula_get_local_part (value);
+	if (local_part) {
+		/* local part detected, check if we have something to escape */
+		if (strstr (local_part, "'") || 
+		    strstr (local_part, ";") || 
+		    strstr (local_part, "$") || 
+		    strstr (local_part, "%") ||
+		    strstr (local_part, "`")) {
+			/* notify we have to escape */
+			result = axl_true;
+		} /* end if */
+		axl_free (local_part);
+		return result;
+	} /* end if */
+	
+
+
+	return axl_false; /* request clean, nothing to escape or replace */
+}
+
 #define valvula_reader_set_value(var,value_to_configure) do { \
 	if (var)                                             \
 		axl_free (var);                              \
@@ -696,11 +722,22 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 	/* parse line and attach to the connection request */	
 	items = __valvula_reader_get_items (buffer);
 	if (items == NULL || items[0] == NULL || items[1] == NULL) {
+		/* report error found */
 		axl_freev (items);
 		valvula_log (VALVULA_LEVEL_CRITICAL, "Failed to process line received, empty content found or malformed, closing connection");
 		/* close connection */
 		valvula_connection_close (connection);
 		return;
+	} /* end if */
+
+	/* check value is not a local part that can include escapable values */
+	if (valvula_reader_check_sql_injection_to_escape (ctx, connection, items[0], items[1])) {
+		/* escape/replace items */
+		axl_replace (items[1], "$", "\\$");
+		axl_replace (items[1], "'", "\\'");
+		axl_replace (items[1], ";", "\\;");
+		axl_replace (items[1], "%", "\\%");
+		axl_replace (items[1], "`", "\\`");
 	} /* end if */
 
 	if (axl_cmp (items[0], "request"))
@@ -715,7 +752,7 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 	else if (axl_cmp (items[0], "size") || axl_cmp (items[0], "message_size")) 
 		connection->request->size = (int) valvula_support_strtod (items[1], NULL);
 
-	else if (axl_cmp (items[0], "sender"))
+	else if (axl_cmp (items[0], "sender")) 
 		valvula_reader_set_value (connection->request->sender, items[1]);
 	else if (axl_cmp (items[0], "recipient"))
 		valvula_reader_set_value (connection->request->recipient, items[1]);
@@ -724,6 +761,7 @@ void __valvula_reader_process_socket (ValvulaCtx        * ctx,
 
 	else if (axl_cmp (items[0], "helo_name"))
 		valvula_reader_set_value (connection->request->helo_name, items[1]);
+
 	else if (axl_cmp (items[0], "client_address"))
 		valvula_reader_set_value (connection->request->client_address, items[1]);
 	else if (axl_cmp (items[0], "client_name"))
