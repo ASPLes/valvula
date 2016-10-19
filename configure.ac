@@ -282,6 +282,7 @@ plugins/mod-slm/Makefile
 plugins/mod-mquota/Makefile
 plugins/mod-mw/Makefile
 plugins/mod-lmm/Makefile
+plugins/mod-transport/Makefile
 test/Makefile
 doc/valvula.doxygen
 doc/Makefile

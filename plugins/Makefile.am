@@ -1,4 +1,4 @@
-SUBDIRS = mod-test mod-ticket mod-bwl mod-slm mod-mquota mod-mw mod-lmm
+SUBDIRS = mod-test mod-ticket mod-bwl mod-slm mod-mquota mod-mw mod-lmm mod-transport
 
 
 
