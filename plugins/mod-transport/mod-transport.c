@@ -108,6 +108,11 @@ ValvulaState transport_process_request_aux (ValvulaCtx        * _ctx,
 					    const char        * sender,
 					    const char        * recipient)
 {
+	axl_bool is_authenticated = valvula_is_authenticated (request);
+
+	/* build query with values received */
+
+	
 
 
 	/* by default report return dunno */
