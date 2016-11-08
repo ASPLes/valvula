@@ -56,11 +56,15 @@ os.system ("killall -9 valvulad  > /dev/null 2>&1")
 # now stop and start
 (status, output) = commands.getstatusoutput ("service --help")
 if status == 0:
+    # stop service (without checking outout)
     os.system ("service valvulad stop > /dev/null 2>&1")
+    # start service
     (status, output) = commands.getstatusoutput ("service valvulad start")
 else:
     if os.path.exists ("/etc/init.d/valvulad"):
+        # stop service (without checking outout)
         os.system ("/etc/init.d/valvulad stop")
+        # start service
         (status, output) = commands.getstatusoutput ("/etc/init.d/valvulad start")
     else:
         error ("Failed to recover valvula, unable to find service or /etc/init.d startup script to start the service")
