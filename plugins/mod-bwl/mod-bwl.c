@@ -191,14 +191,16 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 
 		/* ensure source matches */
 		if (! valvula_address_rule_match (ctx->ctx, source, request->sender)) {
-			wrn ("BWL: rule does not match(1) status=%s, source=%s, destination=%s", status, source, destination);
+			if (__mod_bwl_enable_debug) 
+				wrn ("BWL: rule does not match(1) status=%s, source=%s, destination=%s", status, source, destination);
 			/* get next row */
 			row = GET_ROW (result);
 			continue;
 		} /* end if */
 
 		if (! valvula_address_rule_match (ctx->ctx, destination, request->recipient)) {
-			wrn ("BWL: rule does not match(2) status=%s, source=%s, destination=%s", status, source, destination);
+			if (__mod_bwl_enable_debug) 
+				wrn ("BWL: rule does not match(2) status=%s, source=%s, destination=%s", status, source, destination);
 			/* get next row */
 			row = GET_ROW (result);
 			continue;
@@ -217,7 +219,8 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				 * it matches with a local delivery */
 				return VALVULA_STATE_OK;
 			} else {
-				wrn ("Skipping rule because it is not a local delivery..");
+				if (__mod_bwl_enable_debug) 
+					wrn ("Skipping rule because it is not a local delivery..");
 			} /* end if */
 		}
 		
