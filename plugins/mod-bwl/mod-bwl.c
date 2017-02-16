@@ -219,8 +219,15 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				 * it matches with a local delivery */
 				return VALVULA_STATE_OK;
 			} else {
-				if (__mod_bwl_enable_debug) 
-					wrn ("Skipping rule because it is not a local delivery..");
+				/* if (__mod_bwl_enable_debug) { */
+				/* do not make the following warning to be avoided if 
+				   debug is enabled because it confuses people: it is 
+				   better to drop some log when a rule is discarded to 
+				   help people track/trace the problem */
+				wrn ("Skipping rule because it is not a local delivery, rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s]",
+				     status, source, destination,
+				     request->sender, request->recipient); 
+				/* } */ /* end if */
 			} /* end if */
 		}
 		
