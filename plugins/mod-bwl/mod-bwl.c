@@ -217,6 +217,11 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				/* so, reached this point we have that
 				 * the rule (whitelist) was added and
 				 * it matches with a local delivery */
+				
+				/* ONLY ACCEPT OK: for rules that are
+				   directed to local delivery:
+				   otherwise, open-relay will be
+				   allowed */
 				return VALVULA_STATE_OK;
 			} else {
 				/* if (__mod_bwl_enable_debug) { */
