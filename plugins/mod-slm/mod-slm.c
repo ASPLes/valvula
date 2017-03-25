@@ -148,6 +148,12 @@ ValvulaState slm_process_request (ValvulaCtx        * _ctx,
 		return VALVULA_STATE_DUNNO;
 	} /* end if */
 
+	if (request && valvulad_run_is_local_address (ctx, request->recipient)) {
+		/* skip applying mod-slm for local deliveries : we don't care how it is used sasl+mail-from */
+		msg ("Skipping mod-slm for local delivery to <%s>", request->recipient);
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
 	if (__slm_mode == VALVULA_MOD_SLM_FULL) {
 		/* check if sender and sasl username look like a mail account */
 		if (strstr (request->sasl_username, "@") && strstr (request->sender, "@")) {
