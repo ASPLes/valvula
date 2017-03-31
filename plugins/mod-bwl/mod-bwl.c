@@ -210,8 +210,27 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 		/* msg ("BWL: checking status=%s, source=%s, destination=%s", status, source, destination);
 		   msg ("BWL:        with request source=%s, destination=%s", request->sender, request->recipient); */
 		
-		/* now check values */
-		if (axl_stream_casecmp (status, "ok", 2)) {
+		/* 
+		   NOTES about the following check:
+
+		   now check values: the following checks if an OK
+		   rule will create us Open Relay problems, what we
+		   check here is:
+		   
+		   1) Is a OK rule (which accepts everything and skips
+		   every possible check that postfix will do
+		   later). That is, it can create an OpenRelay
+		   situation.
+
+		   2) The operation is not authenticated because if it
+		   is, indeed we have to accept it because we have
+		   already authenticated this user so there is no
+		   point in blocking it: he/she already has the power
+		   to send to anyone without restriction.
+
+		*/
+		
+		if (axl_stream_casecmp (status, "ok", 2) && ! valvula_get_sasl_user (request)) {
 			/* accept it if the sender or reception domain is local */
 			if (valvulad_run_is_local_delivery (ctx, request)) {
 				/* so, reached this point we have that
@@ -229,7 +248,7 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				   debug is enabled because it confuses people: it is 
 				   better to drop some log when a rule is discarded to 
 				   help people track/trace the problem */
-				wrn ("Skipping rule because it is not a local delivery, rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s]",
+				wrn ("Skipping rule because it is not a local delivery and it is not SASL authenticated, rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s]",
 				     status, source, destination,
 				     request->sender, request->recipient); 
 				/* } */ /* end if */
