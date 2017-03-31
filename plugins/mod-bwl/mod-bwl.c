@@ -230,9 +230,10 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 
 		*/
 		
-		if (axl_stream_casecmp (status, "ok", 2) && ! valvula_get_sasl_user (request)) {
-			/* accept it if the sender or reception domain is local */
-			if (valvulad_run_is_local_delivery (ctx, request)) {
+		if (axl_stream_casecmp (status, "ok", 2)) {
+			/* accept it if the sender or reception domain
+			 * is local or operation is authenticated */
+			if (valvulad_run_is_local_delivery (ctx, request) || valvula_get_sasl_user (request)) {
 				/* so, reached this point we have that
 				 * the rule (whitelist) was added and
 				 * it matches with a local delivery */
