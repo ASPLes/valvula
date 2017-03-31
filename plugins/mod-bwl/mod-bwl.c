@@ -311,6 +311,9 @@ ValvulaState bwl_check_status (ValvulaCtx          * _ctx,
 
 	/* first check specific rules */
 	state = bwl_check_status_rules (_ctx, request, level, level_label, message, result, /* specific */ axl_true);
+	if (__mod_bwl_enable_debug)
+		msg ("(bwl) bwl_check_setatus_rules [source=%s, destination=%s, sasl-username=%s], reported status=%s  (specific rules)",
+		     request->sender, request->recipient, request->sasl_username ? request->sasl_username : "", valvula_support_state_str (state));
 	if (state != VALVULA_STATE_DUNNO) {
 		/* release result */
 		valvulad_db_release_result (result);
@@ -319,6 +322,9 @@ ValvulaState bwl_check_status (ValvulaCtx          * _ctx,
 
 	/* now check rest of rules */
 	state = bwl_check_status_rules (_ctx, request, level, level_label, message, result, /* generic */ axl_false);
+	if (__mod_bwl_enable_debug)
+		msg ("(bwl) bwl_check_setatus_rules [source=%s, destination=%s, sasl-username=%s], reported status=%s  (generic rules)",
+		     request->sender, request->recipient, request->sasl_username ? request->sasl_username : "", valvula_support_state_str (state));
 	if (state != VALVULA_STATE_DUNNO) {
 		/* release result */
 		valvulad_db_release_result (result);
