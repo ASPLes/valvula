@@ -557,7 +557,7 @@ void install_arguments (int argc, char ** argv)
 		printf ("%s\n", VERSION);
 		/* terminates exarg */
 		exarg_end ();
-		return;
+		exit (0);
 	}
 
 	if (exarg_is_defined ("status")) {
