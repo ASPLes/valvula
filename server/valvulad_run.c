@@ -355,6 +355,22 @@ void __valvulad_run_get_key_decl (char * line, char ** key, char ** decl)
 	return;
 }
 
+char * valvulad_run_release_and_copy (char * ref, char * decl, char * key, const char * key_to_check)
+{
+	/* check if we have to copy content in case key and reference
+	 * key to check matches */
+	if (! axl_cmp (key, key_to_check))
+		return ref;
+
+	/* if value hold previously matches, release because it is
+	 * going to be replaced... */
+	if (ref)
+		axl_free (ref);
+
+	/* copy content to update caller reference */
+	return axl_strdup (decl);
+}
+				      
 axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCtx * ctx, const char * postfix_decl, const char * section)
 {
 
@@ -441,74 +457,43 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 				     section, key, axl_cmp (key, "password") ? "xxxxx" : decl);
 
 				/* support for old interface */
-				if (axl_cmp (key, "select_field")) {
-					select_field = decl;
-					decl = NULL;
-				} else if (axl_cmp (key, "table")) {
-					table = decl;
-					decl = NULL;
-				} else if (axl_cmp (key, "where_field")) {
-					where_field = decl;
-					decl = NULL;
-				} else if (axl_cmp (key, "additional_conditions")) {
-					additional_conditions = decl;
-					decl = NULL;
-				}
-				
-				if (axl_cmp (section, "virtual_mailbox_domains")) {
-					
-					if (axl_cmp (key, "user"))
-						ctx->ld_user = axl_strdup (decl);
-					else if (axl_cmp (key, "password"))
-						ctx->ld_pass = axl_strdup (decl);
-					else if (axl_cmp (key, "hosts"))
-						ctx->ld_host = axl_strdup (decl);
-					else if (axl_cmp (key, "dbname"))
-						ctx->ld_dbname = axl_strdup (decl);
-					else if (axl_cmp (key, "query"))
-						ctx->ld_query  = axl_strdup (decl);
+				select_field           = valvulad_run_release_and_copy (select_field, decl, key, "select_field");
+				table                  = valvulad_run_release_and_copy (table, decl, key, "table");
+				where_field            = valvulad_run_release_and_copy (where_field, decl, key, "where_field");
+				additional_conditions  = valvulad_run_release_and_copy (additional_conditions, decl, key, "additional_conditions");
 
+				/* now check rest of fields */
+				if (axl_cmp (section, "virtual_mailbox_domains")) {
+
+					/* get values */
+					ctx->ld_user   = valvulad_run_release_and_copy (ctx->ld_user, decl, key, "user");
+					ctx->ld_pass   = valvulad_run_release_and_copy (ctx->ld_pass, decl, key, "password");
+					ctx->ld_host   = valvulad_run_release_and_copy (ctx->ld_host, decl, key, "hosts");
+					ctx->ld_dbname = valvulad_run_release_and_copy (ctx->ld_dbname, decl, key, "dbname");
+					ctx->ld_query  = valvulad_run_release_and_copy (ctx->ld_query, decl, key, "query");
+					
 					mysql_config = 1; /* domain indication */
 					
 				} else if (axl_cmp (section, "virtual_alias_maps")) {
 					
-					if (axl_cmp (key, "user"))
-						ctx->ls_user = axl_strdup (decl);
-					else if (axl_cmp (key, "password"))
-						ctx->ls_pass = axl_strdup (decl);
-					else if (axl_cmp (key, "hosts"))
-						ctx->ls_host = axl_strdup (decl);
-					else if (axl_cmp (key, "dbname"))
-						ctx->ls_dbname = axl_strdup (decl);
-					else if (axl_cmp (key, "query"))
-						ctx->ls_query  = axl_strdup (decl);
+					/* get values */
+					ctx->ls_user   = valvulad_run_release_and_copy (ctx->ls_user, decl, key, "user");
+					ctx->ls_pass   = valvulad_run_release_and_copy (ctx->ls_pass, decl, key, "password");
+					ctx->ls_host   = valvulad_run_release_and_copy (ctx->ls_host, decl, key, "hosts");
+					ctx->ls_dbname = valvulad_run_release_and_copy (ctx->ls_dbname, decl, key, "dbname");
+					ctx->ls_query  = valvulad_run_release_and_copy (ctx->ls_query, decl, key, "query");
 
 					mysql_config = 2; /* alias indication */
 					
 				} else if (axl_cmp (section, "virtual_mailbox_maps") || axl_cmp (section, "local_recipient_maps")) {
-					
-					if (axl_cmp (key, "user")) {
-						if (ctx->la_user)
-							axl_free (ctx->la_user);
-						ctx->la_user = axl_strdup (decl);
-					} else if (axl_cmp (key, "password")) {
-						if (ctx->la_pass)
-							axl_free (ctx->la_pass);
-						ctx->la_pass = axl_strdup (decl);
-					} else if (axl_cmp (key, "hosts")) {
-						if (ctx->la_host)
-							axl_free (ctx->la_host);
-						ctx->la_host = axl_strdup (decl);
-					} else if (axl_cmp (key, "dbname")) {
-						if (ctx->la_dbname)
-							axl_free (ctx->la_dbname);
-						ctx->la_dbname = axl_strdup (decl);
-					} else if (axl_cmp (key, "query")) {
-						if (ctx->la_query)
-							axl_free (ctx->la_query);
-						ctx->la_query  = axl_strdup (decl);
-					} /* end if */
 
+					/* get values */
+					ctx->la_user   = valvulad_run_release_and_copy (ctx->la_user, decl, key, "user");
+					ctx->la_pass   = valvulad_run_release_and_copy (ctx->la_pass, decl, key, "password");
+					ctx->la_host   = valvulad_run_release_and_copy (ctx->la_host, decl, key, "hosts");
+					ctx->la_dbname = valvulad_run_release_and_copy (ctx->la_dbname, decl, key, "dbname");
+					ctx->la_query  = valvulad_run_release_and_copy (ctx->la_query, decl, key, "query");
+					
 					mysql_config = 3; /* account indication */
 				}
 			} /* end if */
@@ -516,9 +501,9 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 			/* key and decl */
 			axl_free (key);
 			axl_free (decl);
-					
-		} /* end if */
-				
+			
+		} /* end if (line[0] != '#') */
+
 		/* get next line */
 		free (line);
 		line = __valvulad_read_line (_file);
@@ -533,12 +518,18 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 		msg ("Built virtual query because [old interface] -> [query] : %s", query);
 		switch (mysql_config) {
 		case 1:
+			if (ctx->ld_query)
+				axl_free (ctx->ld_query);
 			ctx->ld_query = query;
 			break;
 		case 2:
+			if (ctx->ls_query)
+				axl_free (ctx->ls_query);
 			ctx->ls_query = query;
 			break;
 		case 3:
+			if (ctx->la_query)
+				axl_free (ctx->la_query);
 			ctx->la_query = query;
 			break;
 		} /* end if */
@@ -548,7 +539,7 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 	axl_free (table);
 	axl_free (where_field);
 	axl_free (additional_conditions);
-
+	
 	/* release items */
 	axl_freev (items);
 	axl_freev (items2);
