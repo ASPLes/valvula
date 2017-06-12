@@ -129,6 +129,8 @@ long            valvulad_db_run_query_as_long (ValvuladCtx * ctx,
 					       const char * query, 
 					       ...);
 
-void            valvulad_db_release_result (ValvuladRes result);
+void            valvulad_db_release_result        (ValvuladRes result);
+
+axl_bool        valvulad_db_check_unallowed_chars (ValvuladCtx * ctx, const char * string_to_check);
 
 #endif 

@@ -791,3 +791,24 @@ void            valvulad_db_release_result (ValvuladRes result)
 	mysql_free_result (result);
 	return;
 }
+
+/** 
+ * @brief Allows to check if string provided has unallowed characters.
+ *
+ * @param ctx The context reference.
+ *
+ * @param string_to_check String to check.
+ *
+ * @return axl_true if the string is clean, otherwise axl_false is returned.
+ */
+axl_bool        valvulad_db_check_unallowed_chars (ValvuladCtx * ctx, const char * string_to_check)
+{
+	if (strstr (string_to_check, ";"))
+		return axl_false;
+	if (strstr (string_to_check, "'"))
+		return axl_false;
+	if (strstr (string_to_check, "--"))
+		return axl_false;
+	
+	return axl_true;
+}
