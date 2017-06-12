@@ -1,0 +1,163 @@
+# Main postfix configuration
+
+$postfix = /etc/postfix
+
+# banner
+smtpd_banner = $myhostname ESMTP ASPL MailServer XP#1
+
+# no biff notification (this is never used)
+biff = no
+
+# do not append server domains to local users withtout domain
+append_dot_mydomain = no
+
+# The coment to be used for recipients not defined
+undisclosed_recipients_header = To: Hidden recipients:;
+
+# Make all uncomplete address to be completed with domain.invalid to avoid
+# mixing with local address.
+# http://www.postfix.com/postconf.5.html#remote_header_rewrite_domain
+remote_header_rewrite_domain = domain.invalid
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+# main host name 
+myhostname = mysql.aspl.es
+
+# aliases configuration
+alias_maps = hash:/etc/aliases
+$variable = ../test
+virtual_alias_maps = mysql:$variable/test-02b-mysql-accounts.cf 
+
+# Domain used to complete local users (not activated)
+myorigin = /etc/mailname
+
+# List of hosts that are allowed to relay
+relayhost = 192.168.0.189
+
+# External domains that are allowed to perform relay operations
+# relay_domains = $mydestination, mysql:/etc/postfix/mysql-relaydomains.cf
+
+# destination addressess that are allowed to relay
+# relay_recipient_maps = hash:/etc/postfix/relayrecipients
+
+# local accounts
+local_recipient_maps = mysql:$postfix/mysql-accounts.cf
+
+# A configuration that allows to configure how is externally delivered a mail 
+# domain
+# transport_maps = hash:/etc/postfix/transports, hash:/etc/postfix/transports.especial
+transport_maps = hash:/etc/postfix/vacation
+
+# local network hosts (local machines that are trusted)
+mynetworks = 127.0.0.1/32
+
+inet_interfaces = loopback-only
+
+# message size limit (100M)
+message_size_limit = 104857600
+mailbox_size_limit = 0
+
+maximal_queue_lifetime = 1d
+bounce_queue_lifetime = 1d
+recipient_delimiter = +
+
+# do not slow down on errors
+smtpd_error_sleep_time = 0
+
+## Access control configuration
+smtpd_recipient_restrictions = 
+# lista de dominios y cuentas directamente rechazadas
+  check_recipient_access hash:/etc/postfix/domains.rejected,
+  check_client_access hash:/etc/postfix/client.access,
+  check_sender_access hash:/etc/postfix/sender.allowed,
+  permit_mynetworks,
+  permit_sasl_authenticated,
+  reject_non_fqdn_hostname,
+# reject_non_fqdn_sender,
+# reject_non_fqdn_recipient,
+  reject_unauth_destination,
+  reject_unauth_pipelining,
+  reject_invalid_hostname,
+  reject_unlisted_recipient,
+# No incluir la siguiente regla. Hace rechazar correos legitimos
+#  reject_unknown_hostname,
+#  reject_rbl_client sbl-xbl.spamhaus.org,
+#  reject_rbl_client dnsbl.sorbs.net,
+  reject_rbl_client bl.spamcop.net,
+  reject_rbl_client b.barracudacentral.org
+#  check_policy_service inet:127.0.0.1:2525
+
+## Control de acceso de correo recibido por 
+## remitente.
+## --------------------------
+smtpd_sender_restrictions = check_sender_access hash:/etc/postfix/sender.allowed, 
+   check_recipient_access hash:/etc/postfix/domains.rejected,       
+   permit
+
+# body_checks = pcre:/etc/postfix/body_checks.core-admin 
+# header_checks = pcre:/etc/postfix/header_checks.core-admin 
+
+
+# SASL activation
+smtpd_reject_unlisted_recipient = yes
+smtpd_sasl_auth_enable = yes
+broken_sasl_auth_clients = yes
+smtpd_sasl_local_domain = 
+smtpd_sasl_security_options = noanonymous
+smtpd_hard_error_limit = 50
+smtpd_sasl_authenticated_header = yes
+
+# do not request authenticate to my network
+smtpd_sasl_exceptions_networks = $mynetworks
+
+## Amavis
+## ------
+# content_filter=smtp-amavis:[localhost]:10024
+
+# temporal soft bounce
+soft_bounce = no
+
+readme_directory = no
+html_directory = no
+
+# TLS
+smtpd_tls_cert_file = /etc/postfix/ssl/postfix.crt
+smtpd_tls_key_file = /etc/postfix/ssl/postfix.key
+smtpd_use_tls = yes
+# smtpd_tls_auth_only = yes
+
+
+
+
+
+# BEGIN DOVECOT 
+# Set of domains that are considered local
+mydestination = $myhostname, localhost.localdomain, localhost, aspl-test.com, aspl-1234.com
+
+# SASL activation
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+
+virtual_transport = dovecot
+dovecot_destination_recipient_limit = 1
+virtual_mailbox_domains = mysql:$variable/test-02b-mysql-domains.cf 
+virtual_mailbox_maps = mysql:$variable/test-02b-mysql-accounts.cf 
+# END DOVECOT
+
+
+
+
+
+
+# mailbox_command = procmail -a "$EXTENSION"
+# inet_interfaces = loopback-only
+# inet_protocols = ipv4
+mailbox_command = procmail -a "$EXTENSION"
+inet_protocols = ipv4
+
+
+
+
+smtpd_data_restrictions = check_policy_service inet:127.0.0.1:3579
