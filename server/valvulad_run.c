@@ -492,11 +492,69 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 	return result;
 }
 
+/* update variables */
+char * __valvulad_process_update_line_with_variables (ValvuladCtx * ctx, axlHash * variables, char * line)
+{
+	axlHashCursor * cursor;
+	const char    * key;
+	const char    * value;
+	
+	/* no variables, no processing */
+	if (axl_hash_items (variables) == 0)
+		return line; /* return same reference */
+
+	/* create cursor to iterate and apply all variables found so
+	 * far */
+	cursor = axl_hash_cursor_new (variables);
+	while (axl_hash_cursor_has_item (cursor)) {
+		/* get key (variable name) and value (variable content) */
+		key   = axl_hash_cursor_get_key (cursor);
+		value = axl_hash_cursor_get_value (cursor);
+
+		/* only update in case it is needed */
+		if (strstr (line, key)) {
+
+			/* update variable */
+			axl_replace (line, key, value);
+			msg ("Updated %s -> %s : %s", key, value, line);
+			
+		} /* end if */
+		
+		axl_hash_cursor_next (cursor);
+	} /* end while */
+	
+	axl_hash_cursor_free (cursor);
+	return line;
+}
+
+void __valvulad_process_variable_line (ValvuladCtx * ctx, axlHash * variables, char * line)
+{
+	char * key = NULL;
+	char * value = NULL;
+
+	/* update variables */
+	line = __valvulad_process_update_line_with_variables (ctx, variables, line);
+
+	/* call to get value */
+	__valvulad_run_get_key_decl (line, &key, &value);
+	if (! key) {
+		error ("Unable to parse variable line [%s]", line);
+		axl_free (key);
+		axl_free (value);
+		return;
+	} /* end if */
+
+	/* store variable */
+	axl_hash_insert_full (variables, key, axl_free, value, axl_free);
+	
+	return;
+}
 
 axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 {
 	FILE       * _file;
 	char       * line;
+	axlHash    * variables;
 
 	/* open postfix configuration */
 	_file = fopen (ctx->postfix_file, "r");
@@ -506,10 +564,21 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 	} /* end if */
 
 	/* get first line */
-	line = __valvulad_read_line (_file);
+	variables = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+	line      = __valvulad_read_line (_file);
 	while (line) {
 		/* check to find the right declaration */
 		axl_stream_trim (line);
+
+		/* check if it is a variable to include it */
+		if (line[0] == '$' && line[1] != '$') {
+			msg ("Processing variable declaration: %s", line);
+			__valvulad_process_variable_line (ctx, variables, line);
+			goto free_and_continue;
+		} /* end if */
+
+		/* update variables */
+		line = __valvulad_process_update_line_with_variables (ctx, variables, line);
 		
 		if (line[0] != '#' && strstr (line, "virtual_mailbox_domains") != NULL) {
 			/* found virtual mailbox declaration */
@@ -526,11 +595,13 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 		} /* end if */
 
 		/* get next line */
+	free_and_continue:
 		free (line);
 		line = __valvulad_read_line (_file);
 	} /* end while */
 
 	fclose (_file);
+	axl_hash_free (variables);
 
 	return axl_true;
 }
@@ -795,9 +866,11 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 }
 
 typedef enum {
+	
 	VALVULAD_OBJECT_ACCOUNT = 1,
 	VALVULAD_OBJECT_DOMAIN = 2,
 	VALVULAD_OBJECT_ALIAS = 3
+	
 } ValvuladObjectRequest;
 
 axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * item_name, ValvuladObjectRequest request_type)
@@ -817,6 +890,12 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 
 	if (ctx == NULL || item_name == NULL)
 		return axl_false;
+
+	/* check unallowed characters */
+	if (! valvulad_db_check_unallowed_chars (ctx, item_name)) {
+		error ("Detected unallowed characters in [%s], reporting error", item_name);
+		return axl_false;
+	}
 
 	/* check item_name first it static hash table */
 	switch (request_type) {
