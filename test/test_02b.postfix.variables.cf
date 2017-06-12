@@ -1,6 +1,6 @@
 # Main postfix configuration
 
-$postfix = /etc/postfix
+postfix = /etc/postfix
 
 # banner
 smtpd_banner = $myhostname ESMTP ASPL MailServer XP#1
@@ -27,7 +27,7 @@ myhostname = mysql.aspl.es
 
 # aliases configuration
 alias_maps = hash:/etc/aliases
-$variable = ../test
+variable = ../test
 virtual_alias_maps = mysql:$variable/test-02b-mysql-accounts.cf 
 
 # Domain used to complete local users (not activated)

@@ -334,6 +334,8 @@ void __valvulad_run_get_key_decl (char * line, char ** key, char ** decl)
 {
 	int iterator = 0;
 
+	line = axl_strdup (line);
+
 	/* set default values */
 	(*key)  = NULL;
 	(*decl) = NULL;
@@ -342,8 +344,10 @@ void __valvulad_run_get_key_decl (char * line, char ** key, char ** decl)
 		iterator++;
 	
 	/* value not found inside string */
-	if (line[iterator] != '=')
+	if (line[iterator] != '=') {
+		axl_free (line);
 		return;
+	} /* end if */
 
 	line[iterator] = 0;
 	axl_stream_trim (line);
@@ -351,6 +355,9 @@ void __valvulad_run_get_key_decl (char * line, char ** key, char ** decl)
 
 	(*key)  = axl_strdup (line);
 	(*decl) = axl_strdup (line + iterator + 1);
+
+	/* release */
+	axl_free (line);
 	
 	return;
 }
@@ -552,10 +559,14 @@ char * __valvulad_process_update_line_with_variables (ValvuladCtx * ctx, axlHash
 	axlHashCursor * cursor;
 	const char    * key;
 	const char    * value;
+	char          * temp;
 	
 	/* no variables, no processing */
 	if (axl_hash_items (variables) == 0)
 		return line; /* return same reference */
+
+	if (strstr (line, "$") == NULL)
+		return line; /* no variable */
 
 	/* create cursor to iterate and apply all variables found so
 	 * far */
@@ -569,7 +580,13 @@ char * __valvulad_process_update_line_with_variables (ValvuladCtx * ctx, axlHash
 		if (strstr (line, key)) {
 
 			/* update variable */
-			axl_replace (line, key, value);
+			temp = axl_strdup_printf ("${%s}", key);
+			axl_replace (line, temp, value);
+			axl_free (temp);
+			
+			temp = axl_strdup_printf ("$%s", key);
+			axl_replace (line, temp, value);
+			axl_free (temp);
 			msg ("Updated %s -> %s : %s", key, value, line);
 			
 		} /* end if */
@@ -581,10 +598,16 @@ char * __valvulad_process_update_line_with_variables (ValvuladCtx * ctx, axlHash
 	return line;
 }
 
-void __valvulad_process_variable_line (ValvuladCtx * ctx, axlHash * variables, char * line)
+char * __valvulad_process_variable_line (ValvuladCtx * ctx, axlHash * variables, char * line)
 {
 	char * key = NULL;
 	char * value = NULL;
+
+	if (line[0] == '#')
+		return line;
+
+	if (strstr (line, "=") == NULL)
+		return line;
 
 	/* update variables */
 	line = __valvulad_process_update_line_with_variables (ctx, variables, line);
@@ -592,16 +615,16 @@ void __valvulad_process_variable_line (ValvuladCtx * ctx, axlHash * variables, c
 	/* call to get value */
 	__valvulad_run_get_key_decl (line, &key, &value);
 	if (! key) {
-		error ("Unable to parse variable line [%s]", line);
+		error ("Unable to parse variable line [%s]", line); 
 		axl_free (key);
 		axl_free (value);
-		return;
+		return line;
 	} /* end if */
 
 	/* store variable */
 	axl_hash_insert_full (variables, key, axl_free, value, axl_free);
 	
-	return;
+	return line;
 }
 
 axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
@@ -624,12 +647,13 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 		/* check to find the right declaration */
 		axl_stream_trim (line);
 
-		/* check if it is a variable to include it */
-		if (line[0] == '$' && line[1] != '$') {
-			msg ("Processing variable declaration: %s", line);
-			__valvulad_process_variable_line (ctx, variables, line);
-			goto free_and_continue;
-		} /* end if */
+		if (strlen (line) == 0)
+			goto next_line;
+
+		if (line[0] == '#')
+			goto next_line;
+
+		line = __valvulad_process_variable_line (ctx, variables, line);
 
 		/* update variables */
 		line = __valvulad_process_update_line_with_variables (ctx, variables, line);
@@ -649,7 +673,7 @@ axl_bool valvulad_run_check_local_domains_config_autodetect (ValvuladCtx * ctx)
 		} /* end if */
 
 		/* get next line */
-	free_and_continue:
+	next_line:
 		free (line);
 		line = __valvulad_read_line (_file);
 	} /* end while */
