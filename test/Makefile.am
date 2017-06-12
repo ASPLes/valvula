@@ -1,7 +1,7 @@
 EXTRA_DIST = \
 	test_01.conf \
 	test_03.conf \
-	test_02b.postfix.cf test_02b.postfix.variables.cf \
+	test_02b.postfix.cf test_02b.postfix.variables.cf test_02b.postfix.variables.old-interface.cf \
 	test_02b.conf \
 	test_03.conf \
 	test_05.conf \

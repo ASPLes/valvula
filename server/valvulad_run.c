@@ -367,6 +367,20 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 	char       * line;
 	axl_bool     result = axl_true;
 	
+	char       * select_field          = NULL;
+	char       * table                 = NULL;
+	char       * where_field           = NULL;
+	char       * additional_conditions = NULL;
+	char       * query;
+
+	/** 
+	 * mysql_config = 1 : domain  : ld_query
+	 * mysql_config = 2 : alias   : ls_query
+	 * mysql_config = 3 : account : la_query
+	 */
+	int          mysql_config = 0;
+	
+	
 	/* split content */
 	items = axl_split (postfix_decl, 1, "=");
 
@@ -403,7 +417,7 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 	path   = items2[0];
 	
 	/* attempting to open the file */
-	msg ("Found postfix mysql configuration, opening: %s..", path);
+	msg ("Found postfix mysql configuration, opening: %s", path);
 	_file = fopen (path, "r");
 	if (! _file) {
 		error ("Unable to open file %s, errno=%d", path, errno);
@@ -425,7 +439,24 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 			if (key && decl) {
 				msg ("Declaration found: (%s) [%s] -> [%s]", 
 				     section, key, axl_cmp (key, "password") ? "xxxxx" : decl);
+
+				/* support for old interface */
+				if (axl_cmp (key, "select_field")) {
+					select_field = decl;
+					decl = NULL;
+				} else if (axl_cmp (key, "table")) {
+					table = decl;
+					decl = NULL;
+				} else if (axl_cmp (key, "where_field")) {
+					where_field = decl;
+					decl = NULL;
+				} else if (axl_cmp (key, "additional_conditions")) {
+					additional_conditions = decl;
+					decl = NULL;
+				}
+				
 				if (axl_cmp (section, "virtual_mailbox_domains")) {
+					
 					if (axl_cmp (key, "user"))
 						ctx->ld_user = axl_strdup (decl);
 					else if (axl_cmp (key, "password"))
@@ -436,7 +467,11 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 						ctx->ld_dbname = axl_strdup (decl);
 					else if (axl_cmp (key, "query"))
 						ctx->ld_query  = axl_strdup (decl);
+
+					mysql_config = 1; /* domain indication */
+					
 				} else if (axl_cmp (section, "virtual_alias_maps")) {
+					
 					if (axl_cmp (key, "user"))
 						ctx->ls_user = axl_strdup (decl);
 					else if (axl_cmp (key, "password"))
@@ -447,7 +482,11 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 						ctx->ls_dbname = axl_strdup (decl);
 					else if (axl_cmp (key, "query"))
 						ctx->ls_query  = axl_strdup (decl);
+
+					mysql_config = 2; /* alias indication */
+					
 				} else if (axl_cmp (section, "virtual_mailbox_maps") || axl_cmp (section, "local_recipient_maps")) {
+					
 					if (axl_cmp (key, "user")) {
 						if (ctx->la_user)
 							axl_free (ctx->la_user);
@@ -469,6 +508,8 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 							axl_free (ctx->la_query);
 						ctx->la_query  = axl_strdup (decl);
 					} /* end if */
+
+					mysql_config = 3; /* account indication */
 				}
 			} /* end if */
 
@@ -485,6 +526,28 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 
 	/* close opened file */
 	fclose (_file);
+
+	if (select_field && table && where_field) {
+		/* create query */
+		query = axl_strdup_printf ("SELECT %s FROM %s WHERE %s = '%%s' %s", select_field, table, where_field, additional_conditions ? additional_conditions : "");
+		msg ("Built virtual query because [old interface] -> [query] : %s", query);
+		switch (mysql_config) {
+		case 1:
+			ctx->ld_query = query;
+			break;
+		case 2:
+			ctx->ls_query = query;
+			break;
+		case 3:
+			ctx->la_query = query;
+			break;
+		} /* end if */
+	}
+
+	axl_free (select_field);
+	axl_free (table);
+	axl_free (where_field);
+	axl_free (additional_conditions);
 
 	/* release items */
 	axl_freev (items);

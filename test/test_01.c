@@ -668,6 +668,8 @@ axl_bool  test_02b_aux (const char * postfix_file)
 	ValvulaRequest * request;
 	const char     * ref;
 
+	printf ("Test 02-b :: Checking test with %s\n", postfix_file);
+
 	/* init the library */
 	if (! valvulad_init_aux (ctx)) {
 		printf ("ERROR: failed to initialize Valvulad context..\n");
@@ -863,6 +865,8 @@ axl_bool  test_02b (void)
 		return axl_false;
 	if (! test_02b_aux ("test_02b.postfix.variables.cf"))
 		return axl_false;
+	if (! test_02b_aux ("test_02b.postfix.variables.old-interface.cf"))
+		return axl_false; 
 
 	/* call to report ok */
 	return axl_true;

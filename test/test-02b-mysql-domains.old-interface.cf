@@ -1,0 +1,14 @@
+# User account location
+# More information: 
+# http://www.postfix.com/mysql_table.5.html
+user     = valvula
+password = valvula
+hosts    = 127.0.0.1
+dbname   = valvula
+
+select_field = domain
+table = domain
+where_field = domain
+additional_conditions = and active = 1
+
+
