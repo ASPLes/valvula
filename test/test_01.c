@@ -2462,7 +2462,7 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	if (! axl_cmp (limit->label, "day quota")) {
-		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		printf ("ERROR (1.4): expected to find [day quota] label but found: [%s]\n", limit->label);
 		return axl_false;
 	} /* end if */
 
@@ -2475,20 +2475,20 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	if (! axl_cmp (limit->label, "day quota")) {
-		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		printf ("ERROR (1.4.2): expected to find [day quota] label but found: [%s]\n", limit->label);
 		return axl_false;
 	} /* end if */
 
 	/****** 22:00 -> day quota *******/
-	printf ("Test 07: detect period right at 22:00 -> night quota..\n");
-	limit = mod_mquota_get_current_period (0, 22);
+	printf ("Test 07: detect period right at 23:20 -> night quota..\n");
+	limit = mod_mquota_get_current_period (20, 23);
 	if (limit == NULL) {
 		printf ("ERROR (1.3): unable to get current limits...NULL pointer was received..\n");
 		return axl_false;
 	} /* end if */
 
 	if (! axl_cmp (limit->label, "night quota")) {
-		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		printf ("ERROR (1.4.3): expected to find [night quota] label but found: [%s]\n", limit->label);
 		return axl_false;
 	} /* end if */
 
@@ -2501,7 +2501,7 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	if (! axl_cmp (limit->label, "night quota")) {
-		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		printf ("ERROR (1.4.4): expected to find [night quota] label but found: [%s]\n", limit->label);
 		return axl_false;
 	} /* end if */
 
@@ -2514,7 +2514,7 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	if (! axl_cmp (limit->label, "night quota")) {
-		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		printf ("ERROR (1.4.5): expected to find [night quota] label but found: [%s]\n", limit->label);
 		return axl_false;
 	} /* end if */
 
@@ -2527,7 +2527,7 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	if (! axl_cmp (limit->label, "night quota")) {
-		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		printf ("ERROR (1.4.6): expected to find [night quota] label but found: [%s]\n", limit->label);
 		return axl_false;
 	} /* end if */
 
@@ -2540,7 +2540,7 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	if (! axl_cmp (limit->label, "night quota")) {
-		printf ("ERROR (1.4): expected to find day quota label but found: %s\n", limit->label);
+		printf ("ERROR (1.4.7): expected to find [night quota] label but found: [%s]\n", limit->label);
 		return axl_false;
 	} /* end if */
 
