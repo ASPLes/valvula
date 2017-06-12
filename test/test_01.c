@@ -662,7 +662,7 @@ axl_bool  test_02b_check_parsed_values (ValvuladCtx * ctx)
 	return axl_true;
 }
 
-axl_bool  test_02b (void)
+axl_bool  test_02b_aux (const char * postfix_file)
 {
 	ValvuladCtx    * ctx = axl_new (ValvuladCtx, 1);
 	ValvulaRequest * request;
@@ -675,7 +675,8 @@ axl_bool  test_02b (void)
 	} /* end if */
 
 	/* load configuration */
-	test_valvula_load_config_aux ("Test 02-b", "test_02b.conf", axl_true, ctx, "test_02b.postfix.cf");
+	if (! test_valvula_load_config_aux ("Test 02-b", "test_02b.conf", axl_true, ctx, postfix_file))
+		return axl_false;
 
 	/* create some tables */
 	if (! valvulad_db_ensure_table (ctx, "domain", "domain", "text", "active", "int", NULL)) {
@@ -854,6 +855,18 @@ axl_bool  test_02b (void)
 
 
 	return axl_true;
+}
+
+axl_bool  test_02b (void)
+{
+	if (! test_02b_aux ("test_02b.postfix.cf"))
+		return axl_false;
+	if (! test_02b_aux ("test_02b.postfix.variables.cf"))
+		return axl_false;
+
+	/* call to report ok */
+	return axl_true;
+	
 }
 
 axl_bool  test_02c (void)
@@ -1280,11 +1293,11 @@ axl_bool test_sending_limit_and_final_reject (const char * label, const char * a
 	if (state != VALVULA_STATE_REJECT) {
 		/* check state to better configure the state */
 		if (state == VALVULA_STATE_DUNNO) 
-			printf ("ERROR (03.2): %s -- expected valvula state %d but found %d (should have received REJECT but received DUNNO)\n", 
-				label, VALVULA_STATE_REJECT, state);
+			printf ("%s ERROR (03.2): %s -- expected valvula state %d but found %d (should have received REJECT but received DUNNO)\n", 
+				label, label, VALVULA_STATE_REJECT, state);
 		else
-			printf ("ERROR (03.2): %s -- expected valvula state %d but found %d\n", 
-				label, VALVULA_STATE_REJECT, state);
+			printf ("%s ERROR (03.2): %s -- expected valvula state %d but found %d\n", 
+				label, label, VALVULA_STATE_REJECT, state);
 		return axl_false;
 	} /* end if */
 
@@ -1799,8 +1812,8 @@ axl_bool test_05 (void) {
 		/* sasl method, sasl username, sasl sender */
 		"plain", "francis@aspl.es", NULL);
 
-	if (state != VALVULA_STATE_REJECT) {
-		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+	if (state != VALVULA_STATE_OK) {
+		printf ("ERROR (4.3): expected valvula state %d but found %d\n", VALVULA_STATE_OK, state);
 		return axl_false;
 	}
 
@@ -2527,7 +2540,7 @@ axl_bool test_07 (void) {
 		return axl_false;
 	} /* end if */
 
-	printf ("Test 07: test basic minute limites..\n");
+	printf ("Test 07: test basic minute limites (07.10)..\n");
 
 	/* call to send content */
 	/* SHOULD WORK */
@@ -2547,9 +2560,11 @@ axl_bool test_07 (void) {
 		return axl_false;
 	} /* end if */
 
-	printf ("Test 07: now test to reach current limit..\n");
+	printf ("Test 07: now test to reach current limit (07.11)..\n");
 	if (! test_sending_limit_and_final_reject ("Test 07-1", "test@limited.com", 4, axl_true))
 		return axl_false;
+
+	printf ("Test 07: now test to reach current limit (07.12)..\n");
 
 	/* perfect, limit reached, now "manually" change time */
 	module         = valvulad_module_find_by_name (ctx, "mod-mquota");
