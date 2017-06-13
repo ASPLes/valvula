@@ -2441,8 +2441,8 @@ axl_bool test_07 (void) {
 	} /* end if */
 
 	/***** 08:00 -> night quota *****/
-	printf ("Test 07: detect period right at 08:00 -> night quota..\n");
-	limit = mod_mquota_get_current_period (0, 8);
+	printf ("Test 07: detect period right at 06:00 -> night quota..\n");
+	limit = mod_mquota_get_current_period (0, 6);
 	if (limit == NULL) {
 		printf ("ERROR (1.1): unable to get current limits...NULL pointer was received..\n");
 		return axl_false;
