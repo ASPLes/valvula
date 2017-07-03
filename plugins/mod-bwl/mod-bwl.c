@@ -81,7 +81,7 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  /* stamp: when this rule was added (not used by valvula but useful for management) */
 				  "stamp", "int",
 				  /* who: who added this rule (not used by valvula but useful for management) */
-				  "varchar(1024)", "varchar(1024)",
+				  "who", "varchar(1024)",
 				  NULL);
 
 	/* create databases to be used by the module */
@@ -103,7 +103,7 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  /* stamp: when this rule was added (not used by valvula but useful for management) */
 				  "stamp", "int",
 				  /* who: who added this rule (not used by valvula but useful for management) */
-				  "varchar(1024)", "varchar(1024)",
+				  "who", "varchar(1024)",
 				  NULL);
 
 	/* create databases to be used by the module */
@@ -125,7 +125,7 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  /* stamp: when this rule was added (not used by valvula but useful for management) */
 				  "stamp", "int",
 				  /* who: who added this rule (not used by valvula but useful for management) */
-				  "varchar(1024)", "varchar(1024)",
+				  "who", "varchar(1024)",
 				  NULL);
 
 	/** 
@@ -146,7 +146,7 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  /* stamp: when this rule was added (not used by valvula but useful for management) */
 				  "stamp", "int",
 				  /* who: who added this rule (not used by valvula but useful for management) */
-				  "varchar(1024)", "varchar(1024)",
+				  "who", "varchar(1024)",
 				  NULL);
 
 	/* get debug status */
