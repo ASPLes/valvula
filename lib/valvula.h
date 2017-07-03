@@ -403,6 +403,8 @@ const char * valvula_get_domain (const char * address);
 
 char       * valvula_get_local_part (const char * address);
 
+const char * valvula_get_tld_extension  (const char * address);
+
 long         valvula_now (void);
 
 long         valvula_get_day (void);

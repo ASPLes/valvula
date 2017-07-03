@@ -746,6 +746,7 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
  * rule=test@test.com   address=test@test.com   MATCH       -- match by domain
  * rule=test2@test.com  address=test@test.com   NOT MATCH
  * rule=test@           address=test@test.com   MATCH       -- match by local-part
+ * rule=com             address=test@test.com   MATCH       -- match TLD .com with @test.com
  * \endcode
  *    
  * @return The function returns axl_true in the case everything
@@ -764,9 +765,14 @@ axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, co
 		return axl_true;
 	if (axl_casecmp (rule, address))
 		return axl_true;
-	
-	if (!strstr (rule, "@")) {
-		/* rule not has @ in in */
+
+	if (!strstr (rule, "@") && !strstr(rule, ".")) {
+		/* rule not has @ and . in it, so we have a TLD case */
+		/* check if domain matches: that is rule=aspl.es == get_domain(test@aspl.es) */
+		if (axl_casecmp (rule, valvula_get_tld_extension (address)))
+			return axl_true;
+	} else if (!strstr (rule, "@")) {
+		/* rule not has @ in it */
 		/* check if domain matches: that is rule=aspl.es == get_domain(test@aspl.es) */
 		if (axl_casecmp (rule, valvula_get_domain (address)))
 			return axl_true;
@@ -792,7 +798,7 @@ axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, co
 }
 
 /** 
- * @brief Allows to get the domain part of the provided adderss.
+ * @brief Allows to get the domain part of the provided address.
  *
  * @param address The address that is being queried to report its domain part.
  *
@@ -810,6 +816,38 @@ const char * valvula_get_domain (const char * address)
 		iterator++;
 
 	if (address[iterator] == '@')
+		return address + iterator + 1;
+
+	return address;
+}
+
+/** 
+ * @brief Allows to get the domain extension part of the provided
+ * address (TLD).
+ *
+ * Examples:
+ * 
+ * \code
+ * valvula_get_tld_extension (someaccount@domain-example.com) -> com
+ * valvula_get_tld_extension (domain-example.org) -> org
+ * \endcode
+ *
+ * @param address The address/domain that is being queried to report its domain extension (TLD)
+ *
+ * @return A reference to the domain or NULL if it fails. If the
+ * function receives a domain, the function reports a domain.
+ */
+const char * valvula_get_tld_extension  (const char * address)
+{
+	int iterator = 0;
+	if (! address)
+		return NULL;
+
+	/* find the end of the string or @ */
+	while (address[iterator] && address[iterator] != '.')
+		iterator++;
+
+	if (address[iterator] == '.')
 		return address + iterator + 1;
 
 	return address;
