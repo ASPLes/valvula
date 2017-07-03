@@ -157,6 +157,7 @@ axl_bool  test_00 (void) {
 	/*** check valvula_get_domain ***/
 
 	/* check valvula_get_domain */
+	printf ("Test 00: checking valvula_get_domain...\n");
 	if (! axl_cmp (valvula_get_domain ("francis@aspl.es"), "aspl.es")) {
 		printf ("ERROR 0.1: expected different value: %s..\n", valvula_get_domain ("francis@aspl.es"));
 		return axl_false;
@@ -174,8 +175,58 @@ axl_bool  test_00 (void) {
 		return axl_false;
 	} /* end if */
 
-	/*** check valvula_address_rule_match ***/
+	/* check valvula_get_tld_domain */
+	printf ("Test 00: checking valvula_get_tld_extension...\n");
+	if (! axl_cmp (valvula_get_tld_extension ("aspl.es"), "es")) {
+		printf ("ERROR 0.4: expected equal values..\n");
+		return axl_false;
+	} /* end if */
 
+	/* check valvula_get_tld_domain */
+	if (! axl_cmp (valvula_get_tld_extension ("aspl.com"), "com")) {
+		printf ("ERROR 0.5: expected equal values..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_tld_domain */
+	if (! axl_cmp (valvula_get_tld_extension ("com"), "com")) {
+		printf ("ERROR 0.5: expected equal values..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_tld_domain */
+	if (axl_cmp (valvula_get_tld_extension (NULL), "com")) {
+		printf ("ERROR 0.6: expected different values..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_tld_domain */
+	if (axl_cmp (valvula_get_tld_extension ("aspl.es"), "com")) {
+		printf ("ERROR 0.7: expected different values..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_tld_domain */
+	if (axl_cmp (valvula_get_tld_extension (".es"), "com")) {
+		printf ("ERROR 0.7: expected different values..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_tld_domain */
+	if (axl_cmp (valvula_get_tld_extension (""), "com")) {
+		printf ("ERROR 0.8: expected different values..\n");
+		return axl_false;
+	} /* end if */
+
+	/* check valvula_get_tld_domain */
+	if (! axl_cmp (valvula_get_tld_extension ("aspl@domain.com"), "com")) {
+		printf ("ERROR 0.10: expected equal values..\n");
+		return axl_false;
+	} /* end if */
+
+	/*** check valvula_address_rule_match ***/
+	printf ("Test 00: checking valvula_address_rule_match..\n");
+	
 	/* check address rule match */
 	if (! valvula_address_rule_match (ctx, NULL, "francis@aspl.es")) {
 		printf ("ERROR 0.4: expected positive..\n");
@@ -245,6 +296,12 @@ axl_bool  test_00 (void) {
 	/* check address rule match */
 	if (! valvula_address_rule_match (ctx, "francis@", "francis@")) {
 		printf ("ERROR 0.12: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 00: checking valvula_address_rule_match with TLDs (single domain)\n");
+	if (! valvula_address_rule_match (ctx, "com", "test@test.com")) {
+		printf ("ERROR 0.13: expected positive..\n");
 		return axl_false;
 	} /* end if */
 
@@ -1982,6 +2039,63 @@ axl_bool test_05 (void) {
 
 	if (state != VALVULA_STATE_REJECT) {
 		printf ("ERROR (4.8): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	printf ("Test --: checking (TLD) .com -> rmandro@aspl.es (reject) (account level)\n");
+	/** delete current rules **/
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM bwl_domain")) {
+		printf ("ERROR: unable to remove all global rules..\n");
+		return axl_false;
+	} /* end if */
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM bwl_account")) {
+		printf ("ERROR: unable to remove all global rules..\n");
+		return axl_false;
+	} /* end if */
+
+	/* now insert a rule to allow especific deliveries even when
+	 * we have a more generic rule (the one we inserted before) */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_account (is_active, rules_for, source, status) VALUES ('1', 'rmandro@aspl.es', 'com', 'reject')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+	
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	printf ("Test --: checking anything@test4.com -> rmandro@aspl.es (should be rejected)..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything@test4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.9): expected valvula state (REJECT) %d but found %d\n", VALVULA_STATE_REJECT, state);
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"anything@whatevertest4.com", "rmandro@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR (4.10): expected valvula state %d but found %d\n", VALVULA_STATE_REJECT, state);
 		return axl_false;
 	} /* end if */
 
