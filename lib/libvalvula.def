@@ -80,6 +80,7 @@ valvula_get_recipient_local_part
 valvula_get_sasl_user
 valvula_get_sender_domain
 valvula_get_sender_local_part
+valvula_get_tld_extension
 valvula_gethostbyname
 valvula_hash_clear
 valvula_hash_clear_allways_true
