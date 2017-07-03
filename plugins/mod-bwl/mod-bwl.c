@@ -78,6 +78,10 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "description", "varchar(500)",
 				  /* status: reject, discard, ok */
 				  "status", "varchar(32)",
+				  /* stamp: when this rule was added (not used by valvula but useful for management) */
+				  "stamp", "int",
+				  /* who: who added this rule (not used by valvula but useful for management) */
+				  "varchar(1024)", "varchar(1024)",
 				  NULL);
 
 	/* create databases to be used by the module */
@@ -96,6 +100,10 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "description", "varchar(500)",
 				  /* status: reject, discard, ok */
 				  "status", "varchar(32)",
+				  /* stamp: when this rule was added (not used by valvula but useful for management) */
+				  "stamp", "int",
+				  /* who: who added this rule (not used by valvula but useful for management) */
+				  "varchar(1024)", "varchar(1024)",
 				  NULL);
 
 	/* create databases to be used by the module */
@@ -114,6 +122,10 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "description", "varchar(500)",
 				  /* status: reject, discard, ok */
 				  "status", "varchar(32)",
+				  /* stamp: when this rule was added (not used by valvula but useful for management) */
+				  "stamp", "int",
+				  /* who: who added this rule (not used by valvula but useful for management) */
+				  "varchar(1024)", "varchar(1024)",
 				  NULL);
 
 	/** 
@@ -131,6 +143,10 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  /* source domain or account to apply restriction */
 				  "sasl_user", "varchar(1024)",
 				  "description", "varchar(500)",
+				  /* stamp: when this rule was added (not used by valvula but useful for management) */
+				  "stamp", "int",
+				  /* who: who added this rule (not used by valvula but useful for management) */
+				  "varchar(1024)", "varchar(1024)",
 				  NULL);
 
 	/* get debug status */
@@ -400,8 +416,10 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 
 	/* get current status at server level */
 	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", message,
-				   "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR source = '%s@' OR destination = '%s' OR destination = '%s' OR destination = '%s@')",
-				   sender_domain, sender, sender_local_part, recipient_domain, recipient, recipient_local_part);
+				   "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR source = '%s@' OR source = '%s' OR destination = '%s' OR destination = '%s' OR destination = '%s@' OR destination = '%s')",
+				   sender_domain, sender, sender_local_part, valvula_get_tld_extension (sender_domain),
+				   recipient_domain, recipient, recipient_local_part, valvula_get_tld_extension (recipient_domain));
+	
 	/* check valvula state reported */
 	if (state != VALVULA_STATE_DUNNO) {
 	        if (__mod_bwl_enable_debug) 
@@ -428,8 +446,8 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
 		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_DOMAIN, "domain lists", message,
-					   "SELECT status, source, '%s' as destination FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s')",
-					   recipient, recipient_domain, sender, sender_domain);
+					   "SELECT status, source, '%s' as destination FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
+					   recipient, recipient_domain, sender, sender_domain, valvula_get_tld_extension (sender_domain));
 		/* check valvula state reported */
 		if (state != VALVULA_STATE_DUNNO) 
 			return state;
@@ -437,8 +455,8 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
 		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_ACCOUNT, "account lists", message,
-					   "SELECT status, source, '%s' as destination FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s')",
-					   recipient, recipient, sender, sender_domain);
+					   "SELECT status, source, '%s' as destination FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
+					   recipient, recipient, sender, sender_domain, valvula_get_tld_extension (sender_domain));
 		/* check valvula state reported */
 		if (state != VALVULA_STATE_DUNNO) 
 			return state;
@@ -648,6 +666,16 @@ END_C_DECLS
  * -- Block  * -> webmaster@*
  * INSERT INTO bwl_global (is_active, destination, status) VALUES ('1', 'webmaster@', 'reject')
  * \endcode
+ *
+ * You can also block globally, or domain or account level generic top level domains like:
+ *
+ * \code
+ * -- Block all .top domains  *.top -> *
+ * -- Block all .top domains  *.us -> *
+ * INSERT INTO bwl_global (is_active, source, status) VALUES ('1', 'top', 'reject')
+ * INSERT INTO bwl_global (is_active, source, status) VALUES ('1', 'us', 'reject')
+ * \endcode
+ *
  *
  *
  * 
