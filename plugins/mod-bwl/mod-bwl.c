@@ -208,7 +208,9 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 		/* ensure source matches */
 		if (! valvula_address_rule_match (ctx->ctx, source, request->sender)) {
 			if (__mod_bwl_enable_debug) 
-				wrn ("BWL: rule does not match(1) status=%s, source=%s, destination=%s", status, source, destination);
+				wrn ("BWL: rule does not match(1) !valvula_address_rule_match(source=%s, request->sender=%s) :: status=%s, source=%s, sender=%s, destination=%s",
+				     source, request->sender,
+				     status, source, request->sender, destination);
 			/* get next row */
 			row = GET_ROW (result);
 			continue;
@@ -216,7 +218,9 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 
 		if (! valvula_address_rule_match (ctx->ctx, destination, request->recipient)) {
 			if (__mod_bwl_enable_debug) 
-				wrn ("BWL: rule does not match(2) status=%s, source=%s, destination=%s", status, source, destination);
+				wrn ("BWL: rule does not match(2) !valvula_address_rule_match(destination=%s, request->recipient=%s) :: status=%s, source=%s, sender=%s, destination=%s",
+				     destination, request->recipient,
+				     status, source, request->sender, destination);
 			/* get next row */
 			row = GET_ROW (result);
 			continue;
