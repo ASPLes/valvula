@@ -224,6 +224,12 @@ axl_bool  test_00 (void) {
 		return axl_false;
 	} /* end if */
 
+	/* check valvula_get_tld_domain */
+	if (! axl_cmp (valvula_get_tld_extension ("US.Weekly.News@tillp.us"), "us")) {
+		printf ("ERROR 0.10.1: expected equal values..\n");
+		return axl_false;
+	} /* end if */
+
 	/*** check valvula_address_rule_match ***/
 	printf ("Test 00: checking valvula_address_rule_match..\n");
 	
@@ -302,6 +308,11 @@ axl_bool  test_00 (void) {
 	printf ("Test 00: checking valvula_address_rule_match with TLDs (single domain)\n");
 	if (! valvula_address_rule_match (ctx, "com", "test@test.com")) {
 		printf ("ERROR 0.13: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! valvula_address_rule_match (ctx, "us", "US.Weekly.News@tillp.us")) {
+		printf ("ERROR 0.14: expected positive..\n");
 		return axl_false;
 	} /* end if */
 
