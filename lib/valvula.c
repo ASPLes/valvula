@@ -843,9 +843,12 @@ const char * valvula_get_tld_extension  (const char * address)
 	if (! address)
 		return NULL;
 
+	/* startup iterator */
+	iterator = strlen (address) - 1;
+
 	/* find the end of the string or @ */
 	while (address[iterator] && address[iterator] != '.')
-		iterator++;
+		iterator--;
 
 	if (address[iterator] == '.')
 		return address + iterator + 1;
