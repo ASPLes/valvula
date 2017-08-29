@@ -424,6 +424,11 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 	
 	/* mysql support */
 	path = strstr (items[1], "mysql:");
+	if (path == NULL) {
+		wrn ("Unable to find mysql: declaration inside postfix declaration: %s (skipping mysql detection to next)", postfix_decl);
+		return axl_false;
+	} /* end if */
+	
 	if (path)
 		path = path + 6;
 
