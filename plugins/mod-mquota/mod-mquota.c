@@ -173,7 +173,8 @@ ModMquotaLimit * mod_mquota_get_current_period (int current_minute, int current_
 		limit = axl_list_get_nth (__mod_mquota_limits, 0);
 
 		if (__mod_mquota_enable_debug) {
-			msg ("No match found, reporting first period: %s (hour-limit=%d, minute-limit=%d)", limit->label, limit->hour_limit, limit->minute_limit);
+			msg ("No match found, reporting first period (current_hour=%d, current_minute=%d): %s (hour-limit=%d, minute-limit=%d)",
+			     current_hour, current_minute, limit->label, limit->hour_limit, limit->minute_limit);
 		} /* end if */
 
 		/* get the first limit found */
