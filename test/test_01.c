@@ -2842,6 +2842,68 @@ axl_bool test_07a (void) {
 	/* finish test */
 	common_finish (ctx);
 
+	/* get reference */
+	ctx = axl_new (ValvuladCtx, 1);
+
+	printf ("Test 07-a: checking mod-mquota (more tests) SECOND PHASE\n");
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 07", "test_07a2.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* ctx  = test_valvula_load_config ("Test 06: ", path, axl_true);  */
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test07.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/***** 16:46 -> day quota *****/
+	printf ("Test 07-a: detect period right at 16:46:00 -> day quota..\n");
+	limit = mod_mquota_get_current_period (46, 16);
+	if (limit == NULL) {
+		printf ("ERROR (1.1): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "day quota")) {
+		printf ("ERROR (1.2): expected to find night quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/***** 16:46 -> day quota *****/
+	printf ("Test 07-a: detect period right at 08:16:00 -> day quota (by selecting first)..\n");
+	limit = mod_mquota_get_current_period (16, 8);
+	if (limit == NULL) {
+		printf ("ERROR (1.1): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "day quota")) {
+		printf ("ERROR (1.2): expected to find night quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/***** 23:12 -> night quota *****/
+	printf ("Test 07-a: detect period right at 23:12:00 -> night quota (by direct selection)..\n");
+	limit = mod_mquota_get_current_period (12, 23);
+	if (limit == NULL) {
+		printf ("ERROR (1.1): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "night quota")) {
+		printf ("ERROR (1.2): expected to find night quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/* finish test */
+	common_finish (ctx);
+
 	return axl_true;	
 }
 

@@ -19,7 +19,8 @@ EXTRA_DIST = \
 	test_06.same-domain.02.conf \
 	test_06.valid-from.conf \
 	test_07.conf \
-	test_07a.conf
+	test_07a.conf \
+	test_07a2.conf
 
 
 if ENABLE_POLL_SUPPORT
