@@ -2801,6 +2801,51 @@ axl_bool test_07 (void) {
 }
 
 /* test mod mquota */
+axl_bool test_07a (void) {
+
+	ModMquotaLimit       * limit;
+	ValvuladCtx          * ctx;
+
+	/* get reference */
+	ctx = axl_new (ValvuladCtx, 1);
+
+	printf ("Test 07-a: checking mod-mquota (more tests)\n");
+
+	/* init the library */
+	if (! valvulad_init_aux (ctx)) {
+		printf ("ERROR: failed to initialize Valvulad context..\n");
+		return axl_false;
+	} /* end if */
+
+	/* load configuration */
+	test_valvula_load_config_aux ("Test 07", "test_07a.conf", axl_true, ctx, "test_02b.postfix.cf");
+
+	/* ctx  = test_valvula_load_config ("Test 06: ", path, axl_true);  */
+	if (! ctx) {
+		printf ("ERROR (1): unable to load configuration file at test07.conf\n");
+		return axl_false;
+	} /* end if */
+
+	/***** 16:46 -> day quota *****/
+	printf ("Test 07-a: detect period right at 16:46:00 -> day quota..\n");
+	limit = mod_mquota_get_current_period (46, 16);
+	if (limit == NULL) {
+		printf ("ERROR (1.1): unable to get current limits...NULL pointer was received..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! axl_cmp (limit->label, "day quota")) {
+		printf ("ERROR (1.2): expected to find night quota label but found: %s\n", limit->label);
+		return axl_false;
+	} /* end if */
+
+	/* finish test */
+	common_finish (ctx);
+
+	return axl_true;	
+}
+
+/* test mod mquota */
 axl_bool test_08 (void) {
 
 	ValvuladCtx          * ctx;
@@ -2878,7 +2923,7 @@ int main (int argc, char ** argv)
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
 	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_02e,\n");
 	printf ("**                  test_02f, test_03, test_03a, test_04, test_05,\n");
-	printf ("**                  test_06, test_07, test_08\n");
+	printf ("**                  test_06, test_07, test_07a, test_08\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
 	printf ("**     <valvula@lists.aspl.es> Valvula Mailing list\n**\n");
@@ -2960,6 +3005,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_07")
 	run_test (test_07, "Test 07: test mod-mquota");
+
+	/* run tests */
+	CHECK_TEST("test_07a")
+	run_test (test_07a, "Test 07a: test mod-mquota (more tests)");
 
 	/* run tests */
 	CHECK_TEST("test_08")
