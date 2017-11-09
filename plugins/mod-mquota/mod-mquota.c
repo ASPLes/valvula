@@ -110,6 +110,12 @@ ModMquotaLimit * mod_mquota_get_current_period (int current_minute, int current_
 	ModMquotaLimit * limit;
 	int              iterator;
 
+	/* some debug */
+	if (__mod_mquota_enable_debug) {
+		msg ("mod_mquota_get_current_period (current_minute=%d, current_hour=%d) :: axl_list_length (__mod_mquota_limits) = %d",
+		     current_minute, current_hour, axl_list_length (__mod_mquota_limits));
+	}
+
 	/* for all default registered period, find the right value */
 	iterator = 0;
 	while (iterator < axl_list_length (__mod_mquota_limits)) {
@@ -167,7 +173,7 @@ ModMquotaLimit * mod_mquota_get_current_period (int current_minute, int current_
 		limit = axl_list_get_nth (__mod_mquota_limits, 0);
 
 		if (__mod_mquota_enable_debug) {
-			msg ("Reporting first period: %p", limit);
+			msg ("No match found, reporting first period: %s (hour-limit=%d, minute-limit=%d)", limit->label, limit->hour_limit, limit->minute_limit);
 		} /* end if */
 
 		/* get the first limit found */
