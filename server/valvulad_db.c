@@ -39,6 +39,21 @@
 /* mysql flags */
 #include <mysql.h>
 
+#if defined(ENABLE_SQLITE3_SUPPORT)
+/* include sqlite headers only if they are available */
+#include <sqlite3.h>
+
+/*
+ * @internal structure used by valvula to track sqlite database pointed by a ValvuladRes
+ */
+struct _ValvuladDbSqlite3 {
+	sqlite3      * db;
+	sqlite3_stmt * res;
+};
+typedef struct _ValvuladDbSqlite3  ValvuladDbSqlite3;
+
+#endif
+
 char * __valvulad_db_escape_query (const char * query)
 {
 	int iterator;
@@ -331,6 +346,253 @@ ValvuladRes     valvulad_db_run_query_s   (ValvuladCtx * ctx, const char  * quer
 	axl_free (local_query);
 
 	return result;
+}
+
+axl_bool __valvulad_sqlite_run_query_is_ddl (const char * complete_query)
+{
+	char buffer[10];
+
+	/* copy for comparison and lower them to catch all cases */
+	memset (buffer, 0, 10);
+	memcpy (buffer, complete_query, 10);
+	axl_stream_to_lower (buffer);
+	
+	/* basic case :: SELECT :: not ddl :: data definition language or update language */
+	if (axl_memcmp ("select", buffer, 6))
+		return axl_false;
+
+	/* rest of cases :: modification instructions */
+	if (axl_memcmp ("insert", buffer, 6))
+		return axl_true;
+	if (axl_memcmp ("delete", buffer, 6))
+		return axl_true;
+	if (axl_memcmp ("update", buffer, 6))
+		return axl_true;
+	if (axl_memcmp ("create", buffer, 5))
+		return axl_true;
+	if (axl_memcmp ("drop", buffer, 5))
+		return axl_true;
+	if (axl_memcmp ("alter", buffer, 5))
+		return axl_true;
+
+	/* ddl */
+	return axl_false;
+}
+
+/** 
+ * @brief Optional SQL API to support running queries to the provided
+ * path.
+ *
+ * @param ctx Context where the operation takes place.
+ *
+ * @param sqlite_path Path to the SQlite database where the query will be executed.
+ *
+ * @param query The query to run along with the rest of arguments.
+ *
+ * @return NULL or a reference to a ValvuladRes to get data from.
+ */
+ValvuladRes     valvulad_db_sqlite_run_query (ValvuladCtx * ctx,
+					      const char * sqlite_path,
+					      const char * query,
+					      ...)
+{
+#if defined(ENABLE_SQLITE3_SUPPORT)
+	ValvuladDbSqlite3 * res;
+	int                 rc;
+	char              * complete_query;
+	va_list             args;
+	char              * error_msg = NULL;
+
+	/* allocate memory for data to be reported */
+	res = axl_new (ValvuladDbSqlite3, 1);
+	if (res == NULL) {
+		/* failed to allocate memory */
+		return NULL;
+	} /* end if */
+	
+	/* call to open sqlite */
+	rc = sqlite3_open (sqlite_path, &res->db);
+	if (rc != SQLITE_OK) {
+		/* release memory */
+		axl_free (res);
+		
+		error ("Failed to initialize SQLite backend sqlite3_open (%s) failed with rc=%d", sqlite_path, rc);
+		return NULL;
+	} /* end if */
+
+	/* open std args */
+	va_start (args, query);
+
+	/* create complete query */
+	complete_query = axl_stream_strdup_printfv (query, args);
+
+	/* close std args */
+	va_end (args);
+
+	if (__valvulad_sqlite_run_query_is_ddl (complete_query))
+		rc = sqlite3_exec (res->db, complete_query, 0, 0, &error_msg);
+	else
+		rc = sqlite3_prepare_v2 (res->db, complete_query, -1, &res->res, 0);
+
+	if (rc != SQLITE_OK) {
+		error ("Failed run query (%s) with path (%s) failed with rc=%d :: %s\n",
+		       complete_query, sqlite_path, rc, error_msg ? error_msg : sqlite3_errmsg (res->db));
+
+		/* release query */
+		axl_free (complete_query);
+	
+		sqlite3_close (res->db);
+		axl_free (res);
+		return NULL;
+	} /* end if */
+
+	/* release query */
+	axl_free (complete_query);
+	
+	/* return databse reference */
+	return res;
+#else
+	/* some code for undefined functions */
+	error ("Calling SQlite3 API (valvulad_db_sqlite_run_query) with a valvulvad without SQLite3 support.");
+	return NULL;
+#endif	
+
+}
+
+/** 
+ * @brief Runs SQLite query discarding result. This function is
+ * useful for running UPDATE, DELETE, INSERT, CREATE, ALTER, and any
+ * modification query.
+ *
+ * @param ctx The context where the operation takes place.
+ *
+ * @param sqlite_path Path where database can be found.
+ *
+ * @param query The query to be executed.
+ *
+ * @return axl_true if the query was executed without error, otherwise
+ * axl_false is returned.
+ */
+axl_bool            valvulad_db_sqlite_run_sql  (ValvuladCtx * ctx,
+						 const char  * sqlite_path,
+						 const char  * query,
+						 ...)
+{
+	char              * complete_query;
+	va_list             args;
+	ValvuladRes         res;
+	
+	/* open std args */
+	va_start (args, query);
+
+	/* create complete query */
+	complete_query = axl_stream_strdup_printfv (query, args);
+
+	/* close std args */
+	va_end (args);
+
+	/* run query */
+	res = valvulad_db_sqlite_run_query (ctx, sqlite_path, complete_query);
+
+	/* release complete query and then check results */
+	axl_free (complete_query);
+	
+	if (res == NULL) 
+		return axl_false;
+	/* release */
+	valvulad_db_sqlite_release_result (res);
+	return axl_true;
+}
+
+/** 
+ * @brief Allows to get the next row on the provided database result.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param result The result pointer that was received from \ref valvulad_db_run_query
+ *
+ * @return A reference to the row or NULL if it fails.
+ */
+ValvuladRow     valvulad_db_sqlite_get_row   (ValvuladCtx * ctx, ValvuladRes result)
+{
+#if defined(ENABLE_SQLITE3_SUPPORT)
+	ValvuladDbSqlite3 * res = result;
+	int                 rc;
+	
+	/* check input parameters */
+	if (result == NULL)
+		return NULL;
+
+	/* get next row */
+	rc = sqlite3_step (res->res);
+	if (rc == SQLITE_ROW) {
+		/* return same reference so get cell will receive
+		   everything */
+		return result;
+	} /* end if */
+
+	/* nothind found */
+	return NULL;
+#else
+	/* some code for undefined functions */
+	error ("Calling SQlite3 API (valvulad_db_sqlite_get_row) with a valvulvad without SQLite3 support.");
+	return NULL;
+#endif	
+}	
+
+/** 
+ * @brief Allows to get the content of the cell at the provided
+ * position.
+ *
+ * @param ctx The context where the operation will take place.
+ *
+ * @param row The result object query. This reference is get from \ref valvulad_db_run_query.
+ *
+ * @param position The cell position inside the row from 0 to n - 1
+ *
+ * @return string value or NULL if it fails.
+ */
+const char  *   valvulad_db_sqlite_get_cell  (ValvuladCtx * ctx, ValvuladRow row, int position)
+{
+#if defined(ENABLE_SQLITE3_SUPPORT)
+	ValvuladDbSqlite3 * res = row;
+	
+	/* check input parameters */
+	if (res == NULL)
+		return NULL;
+	
+	return (const char *) sqlite3_column_text (res->res, position);
+#else
+	/* some code for undefined functions */
+	error ("Calling SQlite3 API (valvulad_db_sqlite_get_cell) with a valvulvad without SQLite3 support.");
+	return NULL;
+#endif		
+}
+
+
+/** 
+ * @brief Allows to release result reported by \ref valvulad_db_sqlite_run_query
+ *
+ * @param params Result to release, reported by \ref valvulad_db_sqlite_run_query
+ */
+void     valvulad_db_sqlite_release_result (ValvuladRes result)
+{
+#if defined(ENABLE_SQLITE3_SUPPORT)
+	ValvuladDbSqlite3 * _result = result;
+	
+	if (result == NULL)
+		return;
+	
+	/* release and nullify everything */
+	sqlite3_finalize (_result->res);
+	_result->res = NULL;
+	sqlite3_close (_result->db);
+	_result->db  = NULL;
+	axl_free (_result);
+#else	
+	return;
+	
+#endif
 }
 
 /** 

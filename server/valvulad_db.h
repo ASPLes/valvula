@@ -78,6 +78,23 @@ ValvuladRes     valvulad_db_run_query     (ValvuladCtx * ctx,
 ValvuladRes     valvulad_db_run_query_s   (ValvuladCtx * ctx, 
 					   const char  * query);
 
+/** SQlite interface **/
+ValvuladRes     valvulad_db_sqlite_run_query (ValvuladCtx * ctx,
+					      const char  * sqlite_path,
+					      const char  * query,
+					      ...);
+
+axl_bool        valvulad_db_sqlite_run_sql  (ValvuladCtx * ctx,
+					      const char  * sqlite_path,
+					      const char  * query,
+					      ...);
+
+ValvuladRow     valvulad_db_sqlite_get_row   (ValvuladCtx * ctx, ValvuladRes result);
+
+const char  *   valvulad_db_sqlite_get_cell  (ValvuladCtx * ctx, ValvuladRow row, int position);
+
+void            valvulad_db_sqlite_release_result (ValvuladRes result);
+
 /** 
  * @brief Get the next row from a result object.
  *
@@ -102,7 +119,7 @@ void             valvulad_db_first_row     (ValvuladCtx * ctx, ValvuladRes resul
  */
 #define GET_CELL(row,pos) valvulad_db_get_cell(ctx,row,pos)
 
-const char  *   valvulad_db_get_cell         (ValvuladCtx * ctx, ValvuladRow row, int posisition);
+const char  *   valvulad_db_get_cell         (ValvuladCtx * ctx, ValvuladRow row, int position);
 
 /** 
  * @brief Get the cell inside a particular a particular row at the given position.
@@ -115,7 +132,7 @@ const char  *   valvulad_db_get_cell         (ValvuladCtx * ctx, ValvuladRow row
  */
 #define GET_CELL_AS_LONG(row,pos) valvulad_db_get_cell_as_long(ctx,row,pos)
 
-long            valvulad_db_get_cell_as_long (ValvuladCtx * ctx, ValvuladRow row, int posisition);
+long            valvulad_db_get_cell_as_long (ValvuladCtx * ctx, ValvuladRow row, int position);
 
 axl_bool        valvulad_db_boolean_query (ValvuladCtx * ctx, 
 					   const char * query, 
