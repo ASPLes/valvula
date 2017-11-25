@@ -709,6 +709,9 @@ int main (int argc, char ** argv)
 			exit (-1);
 		} /* end if */
 
+		/* load modules */
+		valvulad_run_load_modules (ctx, ctx->config);
+
 		/* check local-domains configuration */
 		if (! valvulad_run_check_local_domains_config (ctx)) {
 			error ("Unable to startup local domains configuration");
