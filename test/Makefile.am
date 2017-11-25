@@ -38,11 +38,11 @@ endif
 
 noinst_PROGRAMS = test_01
 
-INCLUDES = -I$(top_srcdir)/lib -I$(top_srcdir)/server -I$(top_srcdir)/plugins/mod-mquota  $(AXL_CFLAGS)  $(PTHREAD_CFLAGS) \
+INCLUDES = -I$(top_srcdir)/lib -I$(top_srcdir)/server -I$(top_srcdir)/plugins/mod-mquota  $(AXL_CFLAGS)  $(PTHREAD_CFLAGS) $(SQLITE3_CFLAGS) \
 	-I$(READLINE_PATH)/include $(compiler_options) -D__axl_disable_broken_bool_def__   \
         -DVERSION=\""$(VALVULA_VERSION)"\" -I$(top_srcdir)/src $(INCLUDE_VALVULA_POLL) $(INCLUDE_VALVULA_EPOLL) $(INCLUDE_VALVULA_LOG) $(EXARG_FLAGS)
 
-LIBS            = $(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS) $(NOPOLL_LIBS)
+LIBS            = $(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS) $(NOPOLL_LIBS) $(SQLITE3_LIBS)
 
 test_01_SOURCES = test_01.c
 test_01_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) $(top_srcdir)/server/libvalvulad.la $(top_srcdir)/lib/libvalvula.la $(top_srcdir)/plugins/mod-mquota/mod-mquota.la

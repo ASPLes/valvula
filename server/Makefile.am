@@ -18,11 +18,15 @@ if ENABLE_VALVULA_LOG
 INCLUDE_VALVULA_LOG=-DENABLE_VALVULA_LOG
 endif
 
+if ENABLE_SQLITE3_SUPPORT
+INCLUDE_SQLITE_SUPPORT=-DENABLE_SQLITE3_SUPPORT
+endif
+
 noinst_PROGRAMS = valvulad
 
-INCLUDES = -I$(top_srcdir)/lib  $(AXL_CFLAGS)  $(PTHREAD_CFLAGS) $(MYSQL_CFLAGS) \
+INCLUDES = -I$(top_srcdir)/lib  $(AXL_CFLAGS)  $(PTHREAD_CFLAGS) $(MYSQL_CFLAGS) $(SQLITE3_CFLAGS) \
 	-I$(READLINE_PATH)/include $(compiler_options) -D__axl_disable_broken_bool_def__   \
-        -DVERSION=\""$(VALVULA_VERSION)"\" -I$(top_srcdir)/src $(INCLUDE_VALVULA_POLL) $(INCLUDE_VALVULA_EPOLL) $(INCLUDE_VALVULA_LOG) $(EXARG_FLAGS)
+        -DVERSION=\""$(VALVULA_VERSION)"\" -I$(top_srcdir)/src $(INCLUDE_VALVULA_POLL) $(INCLUDE_VALVULA_EPOLL) $(INCLUDE_VALVULA_LOG) $(INCLUDE_SQLITE_SUPPORT) $(EXARG_FLAGS)
 
 LIBS            = $(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS) $(NOPOLL_LIBS)
 
@@ -34,7 +38,7 @@ valvulad_SOURCES = main.c
 
 valvulad_LDFLAGS = -Wl,-export-dynamic -ldl
 
-valvulad_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) $(MYSQL_LIBS) libvalvulad.la ../lib/libvalvula.la
+valvulad_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) $(MYSQL_LIBS) $(SQLITE3_LIBS) libvalvulad.la ../lib/libvalvula.la
 
 lib_LTLIBRARIES  = libvalvulad.la
 

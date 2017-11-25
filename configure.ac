@@ -190,6 +190,14 @@ PKG_CHECK_MODULES(AXL, axl >= 0.6.4)
 AC_SUBST(AXL_CFLAGS)
 AC_SUBST(AXL_LIBS)
 
+PKG_CHECK_MODULES([SQLITE3], [sqlite3],
+   [sqlite_support_found="yes"],
+   [sqlite_support_found="no"]
+])
+AC_SUBST(SQLITE3_CFLAGS)
+AC_SUBST(SQLITE3_LIBS)
+AM_CONDITIONAL(ENABLE_SQLITE3_SUPPORT, test "x$sqlite_support_found" = "xyes")
+
 dnl general libries subsitution
 dnl AC_SUBST(LIBRARIES_CFLAGS)
 dnl AC_SUBST(LIBRARIES_LIBS)
@@ -313,6 +321,11 @@ echo "   Build with MySQL/MariaDB support:       [$mysql_devel_found]$mysql_msg"
 if test "x$mysql_devel_found" = "xyes"; then
 echo "     flags: $MYSQL_CFLAGS"
 echo "     libs: $MYSQL_LIBS"
+fi
+echo "   Build with SQlite3 support:       [$sqlite_support_found]"
+if test "x$sqlite_support_found" = "xyes"; then
+echo "     flags: $SQLITE3_CFLAGS"
+echo "     libs: $SQLITE3_LIBS"
 fi
 echo ""
 echo "   Axl installation: "
