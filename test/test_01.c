@@ -99,15 +99,6 @@ int          test_readline (ValvulaCtx * ctx, VALVULA_SOCKET session, char  * bu
 ValvuladCtx *  test_valvula_load_config_aux (const char * label, const char * path, axl_bool run_config, 
 					     ValvuladCtx * result, const char * postfix_file) {
 
-	/* enable debug */
-	if (test_common_enable_debug) {
-		valvulad_log_enable (result, axl_true);
-		valvulad_log2_enable (result, axl_true);
-		valvulad_log3_enable (result, axl_true);
-		valvulad_color_log_enable (result, axl_true);
-		result->debug_queries = axl_true;
-	}
-
 	/* configure postfix file */
 	result->postfix_file = postfix_file;
 
@@ -126,18 +117,33 @@ ValvuladCtx *  test_valvula_load_config_aux (const char * label, const char * pa
 	return result;
 }
 
-ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, axl_bool run_config)
-{
+ValvuladCtx *  test_valvula_create_ctx (void) {
 	ValvuladCtx * result;
-
-	/* show a message */
-	printf ("%s: loading configuration file at: %s\n", label, path);
 
 	if (! valvulad_init (&result)) {
 		printf ("ERROR: failed to initialize Valvulad context..\n");
 		printf ("   Maybe mysql database is failing? Please create user valvula, password valvula\n");
 		return NULL;
 	}
+
+	/* enable debug */
+	if (test_common_enable_debug) {
+		valvulad_log_enable (result, axl_true);
+		valvulad_log2_enable (result, axl_true);
+		valvulad_log3_enable (result, axl_true);
+		valvulad_color_log_enable (result, axl_true);
+		result->debug_queries = axl_true;
+	}
+
+	return result;
+}
+
+ValvuladCtx *  test_valvula_load_config (const char * label, const char * path, axl_bool run_config)
+{
+	ValvuladCtx * result = test_valvula_create_ctx ();
+
+	/* show a message */
+	printf ("%s: loading configuration file at: %s\n", label, path);
 
 	return test_valvula_load_config_aux (label, path, run_config, result, "/etc/postfix/main.cf");
 }
@@ -1308,6 +1314,122 @@ axl_bool  test_02f (void)
 		printf ("ERROR (01-a.1): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
 		return axl_false;
 	}
+
+	/* free valvula server context */
+	printf ("Test 02-f: finishing configuration..\n");
+	common_finish (ctx);
+
+	return axl_true;
+}
+
+axl_bool test_02g_check_position (ValvuladCtx * ctx, ValvuladRow row, int position, const char * reference_content) {
+	/* print some information */
+	printf ("Test 02-g: value received (position=%d): %s\n", position, valvulad_db_sqlite_get_cell (ctx, row, position));
+	
+	if (! axl_cmp (valvulad_db_sqlite_get_cell (ctx, row, position), reference_content)) {
+		printf ("ERROR: expected to find [%s] but found [%s] inside position=%d\n", reference_content,
+			valvulad_db_sqlite_get_cell (ctx, row, position), position);
+		return axl_false;
+	}
+
+	return axl_true;
+}
+
+axl_bool  test_02g (void)
+{
+	ValvuladCtx   * ctx;
+	const char    * path = "test_02g.sql";
+	ValvuladRes     res;
+	ValvuladRow     row; 
+
+	/* create context */
+	ctx = test_valvula_create_ctx ();
+
+	/* remove file if it does exists */
+	unlink (path);
+	
+	/* init database */
+	if (! valvulad_db_sqlite_run_sql (ctx, path, "CREATE TABLE users (username TEXT, domain TEXT)")) {
+		printf ("ERROR: expected reference defined, NULL pointer received...\n");
+		return axl_false;
+	} /* end if */
+
+	/* run query to insert some data */
+	if (! valvulad_db_sqlite_run_sql (ctx, path, "INSERT INTO users (username, domain) VALUES ('francis.test.1234', 'aspl.es')")) {
+		printf ("ERROR: failed to insert data ...\n");
+		return axl_false;
+	}
+	if (! valvulad_db_sqlite_run_sql (ctx, path, "INSERT INTO users (username, domain) VALUES ('testprueba', 'asplhosting.com')")) {
+		printf ("ERROR: failed to insert data ...\n");
+		return axl_false;
+	}
+	if (! valvulad_db_sqlite_run_sql (ctx, path, "INSERT INTO users (username, domain) VALUES ('test1234', 'asplhosting.com')")) {
+		printf ("ERROR: failed to insert data ...\n");
+		return axl_false;
+	}
+
+	/* run queries to check data */
+	res = valvulad_db_sqlite_run_query (ctx, path, "SELECT * FROM users WHERE username = 'testprueba'");
+	if (res == NULL) {
+		printf ("ERROR: expected no failure for SQL Query...\n");
+		return axl_false;
+	} /* end if */
+
+	row = valvulad_db_sqlite_get_row (ctx, res);
+	if (! row) {
+		printf ("ERROR: expected to find one row but found NULL reference..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! test_02g_check_position (ctx, row, 0, "testprueba"))
+		return axl_false;
+	if (! test_02g_check_position (ctx, row, 1, "asplhosting.com"))
+		return axl_false;
+
+	valvulad_db_sqlite_release_result (res);
+
+	/* run queries to check data */
+	res = valvulad_db_sqlite_run_query (ctx, path, "SELECT * FROM users");
+	if (res == NULL) {
+		printf ("ERROR: expected no failure for SQL Query...\n");
+		return axl_false;
+	} /* end if */
+
+	row = valvulad_db_sqlite_get_row (ctx, res);
+	if (! row) {
+		printf ("ERROR: expected to find one row but found NULL reference..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! test_02g_check_position (ctx, row, 0, "francis.test.1234"))
+		return axl_false;
+	if (! test_02g_check_position (ctx, row, 1, "aspl.es"))
+		return axl_false;
+
+	/** NEXT ROW **/
+	row = valvulad_db_sqlite_get_row (ctx, res);
+	if (! row) {
+		printf ("ERROR: expected to find one row but found NULL reference..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! test_02g_check_position (ctx, row, 0, "testprueba"))
+		return axl_false;
+	if (! test_02g_check_position (ctx, row, 1, "asplhosting.com"))
+		return axl_false;
+
+	row = valvulad_db_sqlite_get_row (ctx, res);
+	if (! row) {
+		printf ("ERROR: expected to find one row but found NULL reference..\n");
+		return axl_false;
+	} /* end if */
+
+	if (! test_02g_check_position (ctx, row, 0, "test1234"))
+		return axl_false;
+	if (! test_02g_check_position (ctx, row, 1, "asplhosting.com"))
+		return axl_false;
+
+	valvulad_db_sqlite_release_result (res);
 
 	/* free valvula server context */
 	printf ("Test 02-f: finishing configuration..\n");
@@ -3093,7 +3215,7 @@ int main (int argc, char ** argv)
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
 	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_02e,\n");
-	printf ("**                  test_02f, test_03, test_03a, test_04, test_05,\n");
+	printf ("**                  test_02f, test_02g, test_03, test_03a, test_04, test_05,\n");
 	printf ("**                  test_06, test_07, test_07a, test_08\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
@@ -3152,6 +3274,10 @@ int main (int argc, char ** argv)
 
 	CHECK_TEST("test_02f")
 	run_test (test_02f, "Test 02-f: accounts with characters that can be used for SQL injection");
+
+	/* run tests */
+	CHECK_TEST("test_02g")
+	run_test (test_02g, "Test 02-g: database functions (SQLite3)");
 
 	/* run tests */
 	CHECK_TEST("test_03")
