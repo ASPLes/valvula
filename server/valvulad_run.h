@@ -54,4 +54,7 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 								      const char  * postfix_decl, 
 								      const char  * section);
 
+/**** private api ****/
+void valvulad_run_load_modules (ValvuladCtx * ctx, axlDoc * doc);
+
 #endif
