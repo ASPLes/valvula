@@ -1438,6 +1438,67 @@ axl_bool  test_02g (void)
 	return axl_true;
 }
 
+axl_bool test_02h_resolver (ValvuladCtx * ctx, const char * item_name, ValvuladObjectRequest request_type, axlPointer data)
+{
+	if (request_type == VALVULAD_OBJECT_DOMAIN) {
+		/* report valid local domain */
+		if (axl_cmp  (item_name, "somedomain.asplhosting.com"))
+			return axl_true;
+	} /* end if */
+	if (request_type == VALVULAD_OBJECT_ACCOUNT) {
+		if (axl_cmp (item_name, "francis.test.aspl@somedomain.asplhosting.com"))
+			return axl_true;
+	}
+		
+	return axl_false; /* not a local object */
+}
+
+axl_bool  test_02h (void)
+{
+	ValvuladCtx   * ctx;
+	const char    * path;
+
+	/* load basic configuration */
+	path = "test_01.conf";
+	ctx  = test_valvula_load_config ("Test 02-g: ", path, axl_true);
+	if (! ctx) {
+		printf ("ERROR: unable to load configuration file at %s\n", path);
+		return axl_false;
+	} /* end if */
+
+	/* check if local account is valid */
+	printf ("Test 02-h: checking local addresses that are not recognized without object resolver..\n");
+	if (valvulad_run_is_local_address (ctx, "francis.test.aspl@somedomain.asplhosting.com")) {
+		printf ("ERROR: expected to find local address NOT to be recognized as such...\n");
+		return axl_false;
+	}
+	if (valvulad_run_is_local_domain (ctx, "somedomain.asplhosting.com")) {
+		printf ("ERROR: expected to find local domain NOT to be recognized as such...\n");
+		return axl_false;
+	}
+
+	/* add resolver */
+	printf ("Test 02-h: installing object resolver..\n");
+	valvulad_run_add_object_resolver (ctx, test_02h_resolver, NULL);
+
+	/* check if local account is valid */
+	printf ("Test 02-h: checking same local addresses that should be now recognized with object resolver..\n");
+	if (! valvulad_run_is_local_address (ctx, "francis.test.aspl@somedomain.asplhosting.com")) {
+		printf ("ERROR: expected to find local address to be recognized as such...\n");
+		return axl_false;
+	}
+	if (! valvulad_run_is_local_domain (ctx, "somedomain.asplhosting.com")) {
+		printf ("ERROR: expected to find local domain to be recognized as such...\n");
+		return axl_false;
+	}
+	
+	/* free valvula server context */
+	printf ("Test 02-g: finishing configuration..\n");
+	common_finish (ctx);
+
+	return axl_true;
+}
+
 
 axl_bool test_sending_limit_and_final_reject (const char * label, const char * auth_user, int allowed_sending_item, axl_bool check_final_error) {
 	int            iterator;
@@ -3215,7 +3276,7 @@ int main (int argc, char ** argv)
 	printf ("**     >> libtool --mode=execute valgrind --leak-check=yes --show-reachable=yes --error-limit=no ./test_01 [--debug]\n**\n");
 	printf ("** Providing --run-test=NAME will run only the provided regression test.\n");
 	printf ("** Available tests: test_00, test_01, test_02, test_02a, test_02b, test_02c, test_02d, test_02e,\n");
-	printf ("**                  test_02f, test_02g, test_03, test_03a, test_04, test_05,\n");
+	printf ("**                  test_02f, test_02g, test_02h, test_03, test_03a, test_04, test_05,\n");
 	printf ("**                  test_06, test_07, test_07a, test_08\n");
 	printf ("**\n");
 	printf ("** Report bugs to:\n**\n");
@@ -3278,6 +3339,10 @@ int main (int argc, char ** argv)
 	/* run tests */
 	CHECK_TEST("test_02g")
 	run_test (test_02g, "Test 02-g: database functions (SQLite3)");
+
+	/* run tests */
+	CHECK_TEST("test_02h")
+	run_test (test_02h, "Test 02-h: test object resolver");
 
 	/* run tests */
 	CHECK_TEST("test_03")
