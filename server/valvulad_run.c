@@ -39,6 +39,16 @@
 #include <dirent.h>
 
 /** 
+ * @internal Structure used to hold data about a function resolver and
+ * a user defined pointer used by the resolver.
+ */
+struct _ValvuladObjectResolverData {
+	ValvuladObjectResolver resolver;
+	axlPointer data;
+};
+typedef struct _ValvuladObjectResolverData ValvuladObjectResolverData;
+
+/** 
  * \defgroup valvulad_run Valvulad Run: run-time functions provided by valvulad server.
  */
 
@@ -948,13 +958,41 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	return axl_true; 
 }
 
-typedef enum {
+/* check for resolvers here */
+axl_bool __valvulad_run_request_common_object_resolve_via_resolver (ValvuladCtx * ctx, const char * item_name, ValvuladObjectRequest request_type)
+{
+	axl_bool                     result = axl_false;
+	int                          iterator;
+	ValvuladObjectResolverData * ref;
 	
-	VALVULAD_OBJECT_ACCOUNT = 1,
-	VALVULAD_OBJECT_DOMAIN = 2,
-	VALVULAD_OBJECT_ALIAS = 3
-	
-} ValvuladObjectRequest;
+	/* check if no resolver is defined */
+	if (axl_list_length (ctx->object_resolvers) <= 0)
+		return axl_false;
+
+	valvula_mutex_lock (&ctx->object_resolvers_mutex);
+
+	/* check if this revolver was already added */
+	iterator = 0;
+	while (iterator < axl_list_length (ctx->object_resolvers)) {
+		/* get resolver */
+		ref = axl_list_get_nth (ctx->object_resolvers, iterator);
+		if (ref && ref->resolver (ctx, item_name, request_type, ref->data)) {
+			/* flag that resolver was found and break */
+			result = axl_true;
+			break;
+		} /* end if */
+			
+		/* next position */
+		iterator++;
+	} /* end while */
+
+	/* release lock */
+	valvula_mutex_unlock (&ctx->object_resolvers_mutex);
+
+	/* return resolver result */
+	return result;
+
+}
 
 axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * item_name, ValvuladObjectRequest request_type)
 {
@@ -979,6 +1017,10 @@ axl_bool __valvulad_run_request_common_object (ValvuladCtx * ctx, const char * i
 		error ("Detected unallowed characters in [%s], reporting error", item_name);
 		return axl_false;
 	}
+
+	/* check for resolvers here */
+	if (__valvulad_run_request_common_object_resolve_via_resolver (ctx, item_name, request_type))
+		return axl_true;
 
 	/* check item_name first it static hash table */
 	switch (request_type) {
@@ -1197,6 +1239,65 @@ void     valvulad_run_add_local_domain (ValvuladCtx * ctx, const char * domain)
 	return;
 }
 
+/** 
+ * @brief Allows to add an object resolver handler, a function that
+ * provides support to valvula engine to resolve and identify if a
+ * domain, account or alias is local to current server.
+ *
+ * @param ctx The context where the operation happens.
+ *
+ * @param resolver A handler called every time it is required to
+ * resolver a object (check if it is a domain, alias or account).
+ *
+ * @param data Reference to user defined data.
+ *
+ * Function does nothing if ctx or resolver references are NULL.
+ */
+void     valvulad_run_add_object_resolver (ValvuladCtx * ctx, ValvuladObjectResolver resolver, axlPointer data)
+{
+	ValvuladObjectResolverData * ref;
+	int                          iterator;
+	axl_bool                     found;
+	
+	if (ctx == NULL || resolver == NULL)
+		return;
+
+	valvula_mutex_lock (&ctx->object_resolvers_mutex);
+
+	/* check if this revolver was already added */
+	iterator = 0;
+	found    = axl_false;
+	while (iterator < axl_list_length (ctx->object_resolvers)) {
+		/* get resolver */
+		ref = axl_list_get_nth (ctx->object_resolvers, iterator);
+		if (ref && ref->resolver == resolver) {
+			/* flag that resolver was found and break */
+			found = axl_true;
+			break;
+		} /* end if */
+			
+		
+		/* next position */
+		iterator++;
+	} /* end while */
+
+	/* if handler was not found, add it */
+	if (! found) {
+		ref = axl_new (ValvuladObjectResolverData, 1);
+		if (ref) {
+			/* only add resolver if allocation was ok */
+			ref->resolver = resolver;
+			ref->data     = data;
+			/* add resolver */
+			axl_list_append (ctx->object_resolvers, ref);
+		} /* end if */
+	} /* end if */
+	
+	/* release lock */
+	valvula_mutex_unlock (&ctx->object_resolvers_mutex);
+	
+	return;
+}
 
 /** 
  * @}
