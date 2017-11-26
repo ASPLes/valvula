@@ -590,6 +590,10 @@ axl_bool valvulad_init_aux (ValvuladCtx * ctx) {
 	/* configure final state handler */
 	valvula_ctx_set_final_state_handler (ctx->ctx, valvulad_report_final_state, ctx);
 
+	/* init object resolvers */
+	valvula_mutex_create (&ctx->object_resolvers_mutex);
+	ctx->object_resolvers = axl_list_new (axl_list_always_return_1, axl_free);
+
 	return axl_true;
 }
 
@@ -634,9 +638,12 @@ void valvulad_exit (ValvuladCtx * ctx)
 	axl_free (ctx->la_query);
 	axl_hash_free (ctx->la_hash);
 	
-
 	/* release listeners */
 	axl_list_free (ctx->listeners);
+
+	/* release resolver */
+	valvula_mutex_destroy (&ctx->object_resolvers_mutex);
+	axl_list_free (ctx->object_resolvers);
 
 	/* release all context resources */
 	axl_doc_free (ctx->config);

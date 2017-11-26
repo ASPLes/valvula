@@ -135,6 +135,19 @@ typedef struct _ValvuladCtx {
 	 */
 	axlList       *  listeners;
 
+	/** 
+	 * Optional list of object resolvers. An object resolver is a
+	 * handler optionally configured by a module or external
+	 * software that is called to resolve if a domain, account or
+	 * alias is local to current valvulad server installation.
+	 * 
+	 * This object is used by __valvulad_run_request_common_object
+	 * (see that function inside valvulad_run for more
+	 * information).
+	 */
+	axlList       * object_resolvers;
+	ValvulaMutex    object_resolvers_mutex;
+
 } ValvuladCtx;
 
 typedef struct _ValvuladHandlePtr {
