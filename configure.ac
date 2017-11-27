@@ -198,12 +198,12 @@ AC_SUBST(SQLITE3_CFLAGS)
 AC_SUBST(SQLITE3_LIBS)
 AM_CONDITIONAL(ENABLE_SQLITE3_SUPPORT, test "x$sqlite_support_found" = "xyes")
 
-dnl check for support for sqlite3_errmsg
-sqlite3_errmsg_supported=no
+dnl check for support for sqlite3_errstr
+sqlite3_errstr_supported=no
 if test x$sqlite_support_found == xyes ; then
-    AC_CHECK_LIB([sqlite3], [sqlite3_errmsg], [sqlite3_errmsg_supported="yes"], [sqlite3_errmsg_supported="no"])
+    AC_CHECK_LIB(sqlite3, sqlite3_errstr, sqlite3_errstr_supported="yes", sqlite3_errstr_supported="no")
 fi
-AM_CONDITIONAL(ENABLE_SQLITE3_ERRMSG_SUPPORT, test "x$sqlite3_errmsg_supported" = "xyes")
+AM_CONDITIONAL(ENABLE_SQLITE3_ERRSTR_SUPPORT, test "x$sqlite3_errstr_supported" = "xyes")
 
 dnl general libries subsitution
 dnl AC_SUBST(LIBRARIES_CFLAGS)
@@ -334,7 +334,7 @@ echo "   Build with SQlite3 support:       [$sqlite_support_found]"
 if test "x$sqlite_support_found" = "xyes"; then
 echo "     flags: $SQLITE3_CFLAGS"
 echo "     libs: $SQLITE3_LIBS"
-echo "     with sqlite3_errmsg support: [$sqlite3_errmsg_supported]"
+echo "     with sqlite3_errstr support: [$sqlite3_errstr_supported]"
 fi
 echo ""
 echo "   Axl installation: "
