@@ -891,6 +891,28 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 		node = axl_node_get_next_called (node, "listen");
 	} /* end while */
 
+	/* load what users are going to be used before loading modules
+	   :: BUT WITHOUT changing anything yet */
+	node = axl_doc_get (ctx->config, "/valvula/global-settings/running");
+	if (node && ATTR_VALUE (node, "user") && ATTR_VALUE (node, "group") && HAS_ATTR_VALUE (node, "enabled", "yes")) {
+		/* change group first */
+		gid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "group"), axl_false);
+		if (gid == -1) {
+			error ("Group defined is not present: %s", ATTR_VALUE (node, "group"));
+			return axl_false;
+		}
+		ctx->running_gid = gid;
+
+		/* change user last */
+		pid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "user"), axl_true);
+		if (pid == -1) {
+			error ("User defined is not present: %s", ATTR_VALUE (node, "user"));
+			return axl_false;
+		}
+		ctx->running_uid = pid;
+
+	} /* end if */
+
 	/* load modules */
 	valvulad_run_load_modules (ctx, ctx->config);
 
@@ -914,36 +936,22 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 	 * so any root operation won't be possible */
 
 	/* check for running user */
-	node = axl_doc_get (ctx->config, "/valvula/global-settings/running");
-	if (node && ATTR_VALUE (node, "user") && ATTR_VALUE (node, "group") && HAS_ATTR_VALUE (node, "enabled", "yes")) {
-		/* change chroot before everything */
-
-		/* change group first */
-		gid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "group"), axl_false);
-		if (gid == -1) {
-			error ("Group defined is not present: %s", ATTR_VALUE (node, "group"));
-			return axl_false;
-		}
-		msg ("Changing process to gid %d (%s)", gid, ATTR_VALUE (node, "group"));
-		if (setgid (gid) == -1) {
+	if (ctx->running_uid > 0 && ctx->running_gid > 0) {
+		/* get node where user and group is defined */
+		node = axl_doc_get (ctx->config, "/valvula/global-settings/running");
+		msg ("Changing process to gid %d (%s)", ctx->running_gid, ATTR_VALUE (node, "group"));
+		/* change group */
+		if (setgid (ctx->running_gid) == -1) {
 			error ("Failed to change process group. setgid() call failed with errno=%d", errno);
 			return axl_false;
 		}
-		ctx->running_gid = gid;
 
-		/* change user last */
-		pid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "user"), axl_true);
-		if (pid == -1) {
-			error ("User defined is not present: %s", ATTR_VALUE (node, "user"));
-			return axl_false;
-		}
-		msg ("Changing process to pid %d (%s)", pid, ATTR_VALUE (node, "user"));
-		if (setuid (pid) == -1) {
+		/* change user */
+		msg ("Changing process to pid %d (%s)", ctx->running_uid, ATTR_VALUE (node, "user"));
+		if (setuid (ctx->running_uid) == -1) {
 			error ("Failed to change user group. setuid() call failed with errno=%d", errno);
 			return axl_false;
 		}
-		ctx->running_uid = pid;
-
 	} /* end if */
 
 	/* set default request limit if defined */
