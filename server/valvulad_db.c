@@ -496,7 +496,7 @@ ValvuladRes     valvulad_db_sqlite_run_query (ValvuladCtx * ctx,
 		/* report error message why we weren't able to open that file */
 	        error ("Failed to initialize SQLite backend sqlite3_open (%s) failed with rc=%d :: %s (running uid=%d, euid=%d, gid=%d, errno=%d)",
 		       sqlite_path, rc, __valvulad_sqlite3_get_error_code (rc),
-		       getuid (), geteuid (), errno);
+		       getuid (), geteuid (), getgid (), errno);
 		
 		/* release memory */
 		axl_free (res);
