@@ -211,7 +211,23 @@ defined periods.
    /usr/lib/valvulad/modules/mod-mquota.so.0.0.0
    /etc/valvula/mods-available/mod-mquota.xml
 
-# valvulad-mod-mquota package
+# valvulad-mod-object-resolver package
+%package -n valvulad-mod-object-resolver
+Summary: mod-object-resolver support for valvulad-server
+Group: System Environment/Libraries
+Requires: valvulad-server
+%description  -n valvulad-mod-object-resolver
+mod-object-resolver tries to aid valvulad engine to detect local domain
+and sasl user accounts that are not available using normal configurations
+with MySQL.
+%files -n valvulad-mod-object-resolver
+   /usr/lib/valvulad/modules/mod-object-resolver.a
+   /usr/lib/valvulad/modules/mod-object-resolver.so
+   /usr/lib/valvulad/modules/mod-object-resolver.so.0
+   /usr/lib/valvulad/modules/mod-object-resolver.so.0.0.0
+   /etc/valvula/mods-available/mod-object-resolver.xml
+   
+# valvulad-mod-lmm package
 %package -n valvulad-mod-lmm
 Summary: mod-lmm support for valvulad-server
 Group: System Environment/Libraries
