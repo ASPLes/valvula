@@ -929,6 +929,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 			error ("Failed to change process group. setgid() call failed with errno=%d", errno);
 			return axl_false;
 		}
+		ctx->running_gid = gid;
 
 		/* change user last */
 		pid = valvulad_get_system_id (ctx, ATTR_VALUE (node, "user"), axl_true);
@@ -941,6 +942,7 @@ axl_bool valvulad_run_config (ValvuladCtx * ctx)
 			error ("Failed to change user group. setuid() call failed with errno=%d", errno);
 			return axl_false;
 		}
+		ctx->running_uid = pid;
 
 	} /* end if */
 
