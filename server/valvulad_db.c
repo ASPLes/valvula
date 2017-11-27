@@ -245,7 +245,7 @@ ValvuladRes valvulad_db_run_query (ValvuladCtx * ctx, const char * query, ...)
 	if (complete_query == NULL)  {
 		/* escape query to be printed */
 		complete_query = __valvulad_db_escape_query (query);
-			error ("Query failed to be created at valvulad_db_run_query (axl_stream_strdup_printfv failed): %s\n", complete_query);
+		error ("Query failed to be created at valvulad_db_run_query (axl_stream_strdup_printfv failed): %s\n", complete_query);
 		axl_free (complete_query);
 		return NULL;
 	}
@@ -381,6 +381,7 @@ axl_bool __valvulad_sqlite_run_query_is_ddl (const char * complete_query)
 
 const char * __valvulad_sqlite3_get_error_code (int error_code)
 {
+#if defined(ENABLE_SQLITE3_SUPPORT)
 #if defined(SQLITE3_WITH_ERRSTR)
         return sqlite3_errstr (error_code);
 #else
@@ -388,71 +389,72 @@ const char * __valvulad_sqlite3_get_error_code (int error_code)
 	case 0:
 	       return "SQLITE_OK :: Successful result";
 	case 1:
-	  return "SQLITE_ERROR :: SQL error or missing database";
+		return "SQLITE_ERROR :: SQL error or missing database";
 	case 2:
-	    return "SQLITE_INTERNAL :: Internal logic error in SQLite";
+		return "SQLITE_INTERNAL :: Internal logic error in SQLite";
 	case 3:
-	    return "SQLITE_PERM :: Access permission denied";
+		return "SQLITE_PERM :: Access permission denied";
 	case 4:
-	    return "SQLITE_ABORT :: Callback routine requested an abort";
+		return "SQLITE_ABORT :: Callback routine requested an abort";
 	case 5:
-	    return "SQLITE_BUSY :: The database file is locked";
+		return "SQLITE_BUSY :: The database file is locked";
 	case 6:
-	    return "SQLITE_LOCKED :: A table in the database is locked";
+		return "SQLITE_LOCKED :: A table in the database is locked";
 	case 7:
-	    return "SQLITE_NOMEM :: A malloc() failed";
+		return "SQLITE_NOMEM :: A malloc() failed";
 	case 8:
-	    return "SQLITE_READONLY :: Attempt to write a readonly database";
+		return "SQLITE_READONLY :: Attempt to write a readonly database";
 	case 9:
-	    return "SQLITE_INTERRUPT :: Operation terminated by sqlite3_interrupt()";
+		return "SQLITE_INTERRUPT :: Operation terminated by sqlite3_interrupt()";
 	case 10:
-	    return "SQLITE_IOERR :: Some kind of disk I/O error occurred";
+		return "SQLITE_IOERR :: Some kind of disk I/O error occurred";
 	case 11:
-	    return "SQLITE_CORRUPT :: The database disk image is malformed";
+		return "SQLITE_CORRUPT :: The database disk image is malformed";
 	case 12:
-	    return "SQLITE_NOTFOUND :: Unknown opcode in sqlite3_file_control()";
+		return "SQLITE_NOTFOUND :: Unknown opcode in sqlite3_file_control()";
 	case 13:
-	    return "SQLITE_FULL :: Insertion failed because database is full";
+		return "SQLITE_FULL :: Insertion failed because database is full";
 	case 14:
-	    return "SQLITE_CANTOPEN :: Unable to open the database file";
+		return "SQLITE_CANTOPEN :: Unable to open the database file";
 	case 15:
-	    return "SQLITE_PROTOCOL :: Database lock protocol error";
+		return "SQLITE_PROTOCOL :: Database lock protocol error";
 	case 16:
-	    return "SQLITE_EMPTY :: Database is empty";
+		return "SQLITE_EMPTY :: Database is empty";
 	case 17:
-	    return "SQLITE_SCHEMA :: The database schema changed";
+		return "SQLITE_SCHEMA :: The database schema changed";
 	case 18:
-	    return "SQLITE_TOOBIG :: String or BLOB exceeds size limit";
+		return "SQLITE_TOOBIG :: String or BLOB exceeds size limit";
 	case 19:
-	    return "SQLITE_CONSTRAINT :: Abort due to constraint violation";
+		return "SQLITE_CONSTRAINT :: Abort due to constraint violation";
 	case 20:
-	    return "SQLITE_MISMATCH :: Data type mismatch";
+		return "SQLITE_MISMATCH :: Data type mismatch";
 	case 21:
-	    return "SQLITE_MISUSE :: Library used incorrectly";
+		return "SQLITE_MISUSE :: Library used incorrectly";
 	case 22:
-	    return "SQLITE_NOLFS :: Uses OS features not supported on host";
+		return "SQLITE_NOLFS :: Uses OS features not supported on host";
 	case 23:
-	    return "SQLITE_AUTH :: Authorization denied";
+		return "SQLITE_AUTH :: Authorization denied";
 	case 24:
-	    return "SQLITE_FORMAT :: Auxiliary database format error";
+		return "SQLITE_FORMAT :: Auxiliary database format error";
 	case 25:
-	    return "SQLITE_RANGE :: 2nd parameter to sqlite3_bind out of range";
+		return "SQLITE_RANGE :: 2nd parameter to sqlite3_bind out of range";
 	case 26:
-	    return "SQLITE_NOTADB :: File opened that is not a database file";
+		return "SQLITE_NOTADB :: File opened that is not a database file";
 	case 27:
-	    return "SQLITE_ROW :: sqlite3_step() has another row ready";
+		return "SQLITE_ROW :: sqlite3_step() has another row ready";
 	case 28:
-	    return "SQLITE_DONE :: sqlite3_step() has finished executing";
+		return "SQLITE_DONE :: sqlite3_step() has finished executing";
 	default:
-	  break;
+		break;
 	}
-
+	
 	/* reached this point, error code to registered, let user know
 	   where to find more codes. This function is only provided in
 	   case sqlite3_errstr is not available so it might not be
 	   complete.  */
 	return "Unknown code, check https://sqlite.org/rescode.html#extrc for reference";
 #endif
+#endif	
 	
 }
 
