@@ -99,7 +99,7 @@ void object_resolver_change_group_uid (const char * path) {
 	int result;
 
 	/* avoid changing anything if running_gid is not defined */
-	if (ctx->running_gid > 0)
+	if (ctx->running_gid <= 0)
 		return;
 	
 	result = chown (path, -1, ctx->running_gid);
