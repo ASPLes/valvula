@@ -1957,6 +1957,24 @@ axl_bool test_04 (void) {
 	return axl_true;
 }
 
+axl_bool test_05_resolver (ValvuladCtx * ctx, const char * item_name, ValvuladObjectRequest request_type, axlPointer data)
+{
+	switch (request_type) {
+	case VALVULAD_OBJECT_ACCOUNT:
+		if (axl_cmp (item_name, "alise@aspl.es"))
+			return axl_true;
+		break;
+	case VALVULAD_OBJECT_DOMAIN:
+		if (axl_cmp (item_name, "aspl.es"))
+			return axl_true;
+		break;
+	default:
+		break;
+	}
+	
+	return axl_false;
+}
+
 /* test mod bwl */
 axl_bool test_05 (void) {
 
@@ -2076,7 +2094,52 @@ axl_bool test_05 (void) {
 	/* register aspl.es as local */
 	valvulad_run_add_local_domain (ctx, "aspl.es");
 
+
 	printf ("Test --: added aspl.es as local domain, checking again..\n");
+
+	printf ("Test --: checking for deny-unknown-local-mail-from :: we should be able to reject mail from unknown accounts");
+	
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"unknown.account.test@aspl.es", "alise@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+	if (state != VALVULA_STATE_REJECT) {
+		printf ("ERROR: 4.3.0: expected to find reject operation..\n");
+		return axl_false;
+	} /* end if */
+
+	valvulad_run_add_object_resolver (ctx, test_05_resolver, NULL);
+
+	printf ("Test --: checking for deny-unknown-local-mail-from :: the following should work because alise@aspl.es is a valid mail from");
+
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"alise@aspl.es", "alise@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR: 4.3.0.1: expected to find DUNNO operation..\n");
+		return axl_false;
+	} /* end if */
+
+	valvulad_run_remove_object_resolver (ctx, test_05_resolver, NULL);
 
 	/* SHOULD WORK because aspl.es IS local: now try to run some
 	 * requests. The following should work by allowing unlimited
