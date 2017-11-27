@@ -413,10 +413,11 @@ ValvuladRes     valvulad_db_sqlite_run_query (ValvuladCtx * ctx,
 	/* call to open sqlite */
 	rc = sqlite3_open (sqlite_path, &res->db);
 	if (rc != SQLITE_OK) {
+		/* report error message why we weren't able to open that file */
+		error ("Failed to initialize SQLite backend sqlite3_open (%s) failed with rc=%d :: %s", sqlite_path, rc, sqlite3_errstr (rc));
+		
 		/* release memory */
 		axl_free (res);
-		
-		error ("Failed to initialize SQLite backend sqlite3_open (%s) failed with rc=%d", sqlite_path, rc);
 		return NULL;
 	} /* end if */
 
