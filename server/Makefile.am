@@ -63,7 +63,7 @@ libvalvulad_la_SOURCES   = \
 	exarg.c
 
 
-libvalvulad_la_LIBADD  = $(LIBS) $(MYSQL_LIBS) ../lib/libvalvula.la  -ldl 
+libvalvulad_la_LIBADD  = $(LIBS) $(MYSQL_LIBS) $(SQLITE3_LIBS) ../lib/libvalvula.la  -ldl 
 libvalvulad_la_LDFLAGS = -no-undefined -export-symbols-regex '^(valvulad|__valvulad|_valvulad|exarg).*'
 
 
