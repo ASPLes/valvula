@@ -95,6 +95,23 @@ axl_bool object_resolver_plesk_accounts (ValvuladCtx * ctx, const char * item_na
 	return result;
 }
 
+void object_resolver_change_group_uid (const char * path) {
+	/* run chown operation */
+	int result;
+
+	/* avoid changing anything if running_gid is not defined */
+	if (ctx->running_gid > 0)
+		return;
+	
+	result = chown (path, -1, ctx->running_gid);
+	if (result != 0)
+		error ("Failed to change group gid=%d to %s", ctx->running_gid, path);
+	else
+		msg ("Changed gid=%d to %s", ctx->running_gid, path);
+	return;
+}
+
+
 /** 
  * @brief Init function, perform all the necessary code to register
  * profiles, configure Vortex, and any other init task. The function
@@ -108,7 +125,11 @@ static int  object_resolver_init (ValvuladCtx * _ctx)
 	
 		/* register resolver */
 		valvulad_run_add_object_resolver (_ctx, object_resolver_plesk_accounts, NULL);
-		
+
+		/* configure permissions */
+		/* change group permissions for folder and file */
+		object_resolver_change_group_uid ("/var/spool/postfix/plesk/passwd.db");
+		object_resolver_change_group_uid ("/var/spool/postfix/plesk/");
 	} /* end if */
 	
 	return axl_true;
