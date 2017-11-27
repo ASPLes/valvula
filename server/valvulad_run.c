@@ -1266,8 +1266,48 @@ void     valvulad_run_add_local_domain (ValvuladCtx * ctx, const char * domain)
 void     valvulad_run_add_object_resolver (ValvuladCtx * ctx, ValvuladObjectResolver resolver, axlPointer data)
 {
 	ValvuladObjectResolverData * ref;
+	
+	if (ctx == NULL || resolver == NULL)
+		return;
+
+	/* remove previous configuration */
+	valvulad_run_remove_object_resolver (ctx, resolver, data);
+
+	/* lock */
+	valvula_mutex_lock (&ctx->object_resolvers_mutex);
+
+	/* add reference */
+	ref = axl_new (ValvuladObjectResolverData, 1);
+	if (ref) {
+		/* only add resolver if allocation was ok */
+		ref->resolver = resolver;
+		ref->data     = data;
+		/* add resolver */
+		axl_list_append (ctx->object_resolvers, ref);
+	} /* end if */
+	
+	/* release lock */
+	valvula_mutex_unlock (&ctx->object_resolvers_mutex);
+	
+	return;
+}
+
+/** 
+ * @brief Allows to remove an object resolver handler previous
+ * installed using \ref valvulad_run_add_object_resolver.
+ *
+ * @param ctx The context where the operation happens.
+ *
+ * @param resolver A handler to remove.
+ *
+ * @param data Reference to user defined data.
+ *
+ * Function does nothing if ctx or resolver references are NULL.
+ */
+void     valvulad_run_remove_object_resolver (ValvuladCtx * ctx, ValvuladObjectResolver resolver, axlPointer data)
+{
+	ValvuladObjectResolverData * ref;
 	int                          iterator;
-	axl_bool                     found;
 	
 	if (ctx == NULL || resolver == NULL)
 		return;
@@ -1276,13 +1316,12 @@ void     valvulad_run_add_object_resolver (ValvuladCtx * ctx, ValvuladObjectReso
 
 	/* check if this revolver was already added */
 	iterator = 0;
-	found    = axl_false;
 	while (iterator < axl_list_length (ctx->object_resolvers)) {
 		/* get resolver */
 		ref = axl_list_get_nth (ctx->object_resolvers, iterator);
-		if (ref && ref->resolver == resolver) {
-			/* flag that resolver was found and break */
-			found = axl_true;
+		if (ref && ref->resolver == resolver && ref->data == data) {
+			/* remove reference from the list  */
+			axl_list_remove (ctx->object_resolvers, ref);
 			break;
 		} /* end if */
 			
@@ -1291,18 +1330,6 @@ void     valvulad_run_add_object_resolver (ValvuladCtx * ctx, ValvuladObjectReso
 		iterator++;
 	} /* end while */
 
-	/* if handler was not found, add it */
-	if (! found) {
-		ref = axl_new (ValvuladObjectResolverData, 1);
-		if (ref) {
-			/* only add resolver if allocation was ok */
-			ref->resolver = resolver;
-			ref->data     = data;
-			/* add resolver */
-			axl_list_append (ctx->object_resolvers, ref);
-		} /* end if */
-	} /* end if */
-	
 	/* release lock */
 	valvula_mutex_unlock (&ctx->object_resolvers_mutex);
 	

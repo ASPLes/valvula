@@ -111,6 +111,8 @@ axl_bool valvulad_run_check_local_domains_config_detect_postfix_decl (ValvuladCt
 								      const char  * section);
 void     valvulad_run_add_object_resolver (ValvuladCtx * ctx, ValvuladObjectResolver resolver, axlPointer data);
 
+void     valvulad_run_remove_object_resolver (ValvuladCtx * ctx, ValvuladObjectResolver resolver, axlPointer data);
+
 /**** private api ****/
 void valvulad_run_load_modules (ValvuladCtx * ctx, axlDoc * doc);
 
