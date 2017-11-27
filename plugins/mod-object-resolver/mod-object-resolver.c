@@ -171,9 +171,31 @@ END_C_DECLS
  *
  * \section valvulad_mod_object_resolver_intro Introduction
  *
+ * Mod-Object-Resolver is a module that tries to aid valvulad engine
+ * to detect local domain and sasl user accounts that are not
+ * available using normal configurations with MySQL.
+ *
+ * In context, the module attempts to detect known configurations
+ * (like Plesk Postfix configuration), reading in each case databases
+ * with different format than MySQL, and inyecting that information
+ * into the Valvulad engine (by registering a object resolver handler
+ * \ref valvulad_run_add_object_resolver).
+ *
+ *
  *
  * \section valvulad_mod_object_resolver_how_it_works How mod-object_resolver works
  *
+ * For know module function is pretty simple. Just enable it by running:
+ *
+ * \code
+ * >> valvulad-mgr.py -e mod-object-resolver
+ * \endcode
+ *
+ * Then, restart valvula:
+ *
+ * \code
+ * >> service valvulad restart
+ * \endcode
  *
  * 
  */

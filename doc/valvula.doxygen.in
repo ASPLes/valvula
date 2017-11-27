@@ -762,6 +762,7 @@ INPUT                  = @top_srcdir@/server/valvulad.c \
                          @top_srcdir@/plugins/mod-slm \
                          @top_srcdir@/plugins/mod-ticket \
                          @top_srcdir@/plugins/mod-mw \
+                         @top_srcdir@/plugins/mod-object-resolver \
                          @top_srcdir@/lib
 
 # This tag can be used to specify the character encoding of the source files
