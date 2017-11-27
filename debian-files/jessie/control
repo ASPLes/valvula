@@ -81,6 +81,15 @@ Description: mod-mquota support for valvulad-server
   to control sending rate by minute, hour, and globally within administrator 
   defined periods.
 
+Package: valvulad-mod-object-resolver
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${Source-Version})
+Description: mod-object-resolver support to load external databases
+  mod-object-resolver tries to aid valvulad engine to detect local domain
+  and sasl user accounts that are not available using normal configurations
+  with MySQL.
+
 Package: valvula-doc
 Section: libs
 Architecture: any
