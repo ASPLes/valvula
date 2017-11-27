@@ -84,7 +84,7 @@ Description: mod-mquota support for valvulad-server
 Package: valvulad-mod-object-resolver
 Section: libs
 Architecture: any
-Depends: valvulad-server (>= ${Source-Version})
+Depends: valvulad-server (>= ${Source-Version}), libsqlite3-0
 Description: mod-object-resolver support to load external databases
   mod-object-resolver tries to aid valvulad engine to detect local domain
   and sasl user accounts that are not available using normal configurations
