@@ -1462,7 +1462,37 @@ int valvulad_get_system_id  (ValvuladCtx * ctx, const char * value, axl_bool get
  * \endcode
  * 
  * Please, read each module documentation to know more about them and
- * their features. Assuming you know what modules you want you have to:
+ * their features. 
+ *
+ * <h3>2.1 Types of module activation: with or without port association</h3>
+ *
+ * There are two types of module activation in valvula:
+ *
+ * 1) Enabling module without port association (for example: <b>valvulad-mgr.py -e mod-object-resolver</b>)
+ *
+ * 2) Enabling module with port association (for example: <b>valvulad-mgr.py -m mod-slm 3080</b>)
+ *
+ *
+ * The difference is that valvula allows you to associate different
+ * modules to different TCP policy ports. This way you can have a
+ * blacklisting module in some port and a policy limit in another. You
+ * can also combine them in different orders to achieve different
+ * results. 
+ *
+ * For all these cases we are talking about activating modules with
+ * port association, that is, modules that are enabled and registered
+ * to be called when the request is received in such port.
+ *
+ * However, there are modules, like <b>mod-object-resolver</b> which
+ * adds handlers and configures valvulad engine. That is, they are not
+ * meant to be run at certain port or to process request. They are
+ * just modules that can be enabled or disabled (using
+ * <b>valvulad-mgr.py -e</b> to enable and <b>valvulad-mgr.py -d</b>
+ * to disable).
+ *
+ * <h3>2.2 Enabling modules with port association</h3>
+ *
+ * Assuming you know what modules you want you have to:
  *
  * 1) Run the following command to list all modules available:
  *
