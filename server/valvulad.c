@@ -492,9 +492,9 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	if (VALVULA_STATE_REJECT == state)
 		return;
 
-	/*          q=queue, ca=client address, ep=encryption protocol, ec=encryption cipher, ek=encryption keysize, m=message */
-	/*                                                           q|ca |ep |ec |ek  |m */
-	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s%s%s%s%s%s%s",
+	/*          q=queue, ca=client address, ep=encryption protocol, ec=encryption cipher, ek=encryption keysize, ldi, m=message */
+	/*                                                           q|ca |ep |ec |ek  |ldi|m */
+	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s%s%s%s%s%s%s%s",
 	     valvula_support_state_str (state),
 	     request->sender, request->recipient, 
 	     /* drop SASL information */
@@ -520,6 +520,10 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	     (request->encryption_keysize && strlen (request->encryption_keysize) > 1) ? ", keysize=" : "",
 	     (request->encryption_keysize && strlen (request->encryption_keysize) > 1)  ? request->encryption_keysize : "",
 	     
+	     /* ldi : local delivery indication */
+	     valvulad_run_is_local_delivery (ctx, request) ? ", local-delivery" : ", no-local-delivery",
+
+	     /* message */
 	     message ? ": " : "",
 	     message ? message : "");
 

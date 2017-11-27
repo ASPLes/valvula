@@ -58,6 +58,8 @@ typedef struct _ValvuladCtx {
 	axl_bool         debug_queries;
 
 	int              pid;
+	int              running_uid;
+	int              running_gid;
 
 	char           * config_path;
 
