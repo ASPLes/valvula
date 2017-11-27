@@ -233,7 +233,49 @@ def add_module (options, args):
 
     # add module finished without problem
     sys.exit (0)
-    return 
+    return
+
+def enable_module (module_name, disable = False):
+    """Allows to enable the module, just to be loaded by valvula. 
+
+    In valvula you can just load a module so it is loaded and started
+    at the beginning of valvula initialization. This is what this
+    function does.
+    
+    Also, you can associate a module with a listener (using
+    add_module_complete or -m|--add-module command line option) so
+    this module is associated to that listener. In such case, if the
+    listener receives a request, a call to process_request handler is done. 
+
+    This process_request handler is defined by the module. 
+    
+    See for more information:
+    http://www.aspl.es/valvula/html/valvulad_administration_manual.html#valvulad_server_configuring_modules
+    http://www.aspl.es/valvula/html/valvulad_plugin_development_manual.html
+
+    """
+    enable_link    = "%s/mods-enabled/%s.xml" % (base_directory, module_name)
+    available_link = "%s/mods-available/%s.xml" % (base_directory, module_name)
+    ## DISABLE
+    if disable:
+        if os.path.exists (enable_link):
+            os.unlink (enable_link)
+        # end if
+        return (True, None)
+    # end if
+    
+
+    ## ENABLE
+    # add link if missing
+    if not os.path.exists (enable_link):
+        if os.path.exists (available_link):
+            if os.path.exists ("%s/mods-enabled" % base_directory):
+                os.symlink (available_link, enable_link)
+            # end if
+        # end if
+    # end if
+
+    return (True, None)
 
 def add_module_complete (module_name, host_decl):
     
@@ -264,14 +306,8 @@ def add_module_complete (module_name, host_decl):
 
     save_config ()
 
-    # add link if missing
-    if not os.path.exists ("%s/mods-enabled/%s.xml" % (base_directory, module_name)):
-        if os.path.exists ("%s/mods-available/%s.xml" % (base_directory, module_name)):
-            if os.path.exists ("%s/mods-enabled" % base_directory):
-                os.symlink ("%s/mods-available/%s.xml" % (base_directory, module_name), "%s/mods-enabled/%s.xml" % (base_directory, module_name))
-            # end if
-        # end if
-    # end if
+    # call to enable module
+    enable_module (module_name)
 
     print "INFO: module added, now you have to restart valvula!"
     return True
@@ -725,6 +761,10 @@ parser.add_option("-a", "--add-listener", action="store_true", dest="add_listene
                   help="Allows to add a listener to the current configuration. You can add just port or host:port. Note host must be an address running on this server.", metavar="HOST:PORT PORT")
 parser.add_option("-m", "--add-module", action="store_true", dest="add_module", default=False,
                   help="Allows to add a module into a listener located at host:port. Use %s -l to list current listeners and then, use %s -m mod_name host:port to add it." % (sys.argv[0], sys.argv[0]), metavar="module_name HOST:PORT PORT" )
+parser.add_option("-e", "--enable-module", dest="enable_module", metavar="MODULE-NAME",
+                  help="Allows to enable a module. Just enabling module will cause init/reload/close handler of such module to be called. If you want to use this module associated to a listener user -m|--add-module option. See https://www.aspl.es/valvula/html/valvulad_administration_manual.html#valvulad_server_configuring_modules" )
+parser.add_option("-d", "--disable-module", dest="disable_module", metavar="MODULE-NAME",
+                  help="Allows to disable a module. " )
 parser.add_option("-c", "--connect-postfix", action="store_true", dest="connect_postfix", default=False,
                   help="Usage: %s -c postfix_section host:port|port first|last. Allows to connect a valvula listener to postfix at some of its restriction sections. You can list current postfix sections by running %s -s. Here is an example %s -c smtpd_recipient_restrictions 3579 first" % (sys.argv[0], sys.argv[0], sys.argv[0]), metavar="postfix_section HOST:PORT" )
 parser.add_option("-s", "--show-postfix-sections", action="store_true", dest="show_postfix_sections", default=False,
@@ -761,6 +801,24 @@ elif options.set_user:
     set_user (options, args)
 elif options.test_server:
     test_server (options, args)
+elif options.enable_module:
+    # call to enable module
+    mod_name       = options.enable_module
+    (status, info) = enable_module (mod_name)
+    if not status:
+        print "ERROR: failed to enable module %s, error was: %s" % (mod_name, info)
+        sys.exit (-1)
+    print "INFO: module enabled (%s)" % mod_name
+    sys.exit (0)
+elif options.disable_module:
+    # call to enable module
+    mod_name       = options.disable_module
+    (status, info) = enable_module (mod_name, disable = True)
+    if not status:
+        print "ERROR: failed to disable module %s, error was: %s" % (mod_name, info)
+        sys.exit (-1)
+    print "INFO: module disabled (%s)" % mod_name
+    sys.exit (0)
 else:
     print "INFO: run %s --help to get additional information" % sys.argv[0]
 
