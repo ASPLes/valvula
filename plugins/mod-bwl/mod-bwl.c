@@ -43,6 +43,8 @@ ValvuladCtx * ctx = NULL;
 
 /* debug status */
 axl_bool      __mod_bwl_enable_debug = axl_false;
+/* by default support to deny-unknown-mail-local-from is enabled */
+axl_bool      __mod_bwl_enable_deny_unknown_local_mail_from = axl_true;
 
 /** 
  * @brief Init function, perform all the necessary code to register
@@ -153,6 +155,13 @@ static int  bwl_init (ValvuladCtx * _ctx)
 	node = axl_doc_get (_ctx->config, "/valvula/enviroment/mod-bwl");
 	if (HAS_ATTR_VALUE (node, "debug", "yes"))
 		__mod_bwl_enable_debug = axl_true;
+	
+	/* support to deny unknown mail froms that has destinations
+	   for valid domain accounts:
+	   DUNNO: VoiceMessage@valid.domain.com -> info@valid.domain.com
+	*/
+	if (HAS_ATTR_VALUE (node, "disable-deny-unknown-local-mail-from", "yes"))
+		__mod_bwl_enable_deny_unknown_local_mail_from = axl_false;
 
 	return axl_true;
 }
@@ -389,6 +398,68 @@ axl_bool bwl_is_sasl_user_blocked (ValvuladCtx * ctx, ValvulaRequest * request)
 	return axl_false; /* not rejected */
 }
 
+ValvulaState bwl_process_check_for_deny_unknown_local_mail_from (ValvulaCtx        * _ctx, 
+								 ValvulaRequest    * request,
+								 axlPointer          request_data,
+								 char             ** message,
+								 const char        * sender_domain,
+								 const char        * sender_local_part,
+								 const char        * recipient_domain,
+								 const char        * recipient_local_part,
+								 const char        * sender,
+								 const char        * recipient)
+{
+	/* This function attempts to reject unknown accounts that are
+	   attempting to send content to valid local domains but using
+	   as mail from unknown accounts, which is a sign of spam and
+	   forgery. 
+	   
+	   The classical example is:
+	   
+	   mail from: unknown-mail-account@aspl.es
+	   rcpt to: info@aspl.es
+
+	   In this case, info@aspl.es is valid and local. We want to
+	   reject unknown-mail-account@aspl.es because it is known to
+	   be an account that is not valid.
+	   
+	   If the user wants to receive this message, then two
+	   options are available:
+	   
+	   1) Make mail from: to be a valid account
+	   2) Add a rule into bwl to accept this content.
+	*/
+
+	/* authenticated operations (valid customers and users) do not apply for deny-unknown-local-mail-from */
+	if (valvula_is_authenticated (request))
+		return VALVULA_STATE_DUNNO;
+
+	/* check sender domain to be valid */
+	if (! valvulad_run_is_local_domain (ctx, sender_domain)) {
+		/* sender domain is not local, so this check cannot be
+		   applied */
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* reached this point, domain is a local valid domain, then
+	   check remote sender to be valid too */
+	if (valvulad_run_is_local_address (ctx, sender)) {
+
+		if (__mod_bwl_enable_debug) 
+			msg ("bwl :: deny-unknown-local-mail-from :: check OK %s -> %s", sender, recipient);
+		
+		/* found mail-from value which is a valid
+		   local-address */ 
+		return VALVULA_STATE_DUNNO;
+	} /* end if */
+
+	/* reject :: deny-unknown-local-mail-from :: found */
+	valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting remote mail-from (%s) because it is using an unknown local-address for local domain %s to deliver to %s (deny-unknown-local-mail-from)",
+			 sender, sender_domain, recipient);
+	return VALVULA_STATE_REJECT;
+}
+
+
 /** 
  * @brief Process request for the module.
  */
@@ -464,6 +535,12 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		/* check valvula state reported */
 		if (state != VALVULA_STATE_DUNNO) 
 			return state;
+
+		/* NOTE :: THIS FUNCTION :: must be called only when is_local=axl_true :: check for deny-unknown-local-mail-from */
+		state = bwl_process_check_for_deny_unknown_local_mail_from (_ctx, request, request_data, message, sender_domain, sender_local_part, recipient_domain, recipient_local_part, sender, recipient);
+		if (state != VALVULA_STATE_DUNNO)
+			return state;
+		
 	} /* end if */
 
 	/* by default report return dunno */
@@ -544,7 +621,16 @@ END_C_DECLS
 /** 
  * \page valvulad_mod_bwl mod-bwl : Valvula blacklisting module
  *
- * \section valvulad_mod_bwl_intro Introduction
+ * \section valvulad_mod_bwl_index mod-bwl Index
+ *
+ * - \ref valvulad_mod_bwl_intro
+ * - \ref valvulad_mod_bwl_how_it_works
+ * - \ref valvulad_mod_bwl_how_rules_are_differenciated
+ * - \ref valvulad_mod_bwl_how_to_block_sasl_user
+ * - \ref valvulad_mod_bwl_how_rules
+ * - \ref valvulad_mod_bwl_deny_unknown_local_mail_from
+ *
+ * \section valvulad_mod_bwl_intro mod-bwl Introduction
  *
  * mod-bwl is a handy module that allows implementing blacklisting
  * rules that are based on source and destination at the same time. As
@@ -681,8 +767,33 @@ END_C_DECLS
  * \endcode
  *
  *
+ * \section valvulad_mod_bwl_deny_unknown_local_mail_from mod-bwl Support to deny unknown accounts attempting to deliver to known local accounts (deny-unknown-local-mail-from)
  *
+ *
+ * <b>mod-bwl</b> includes by default enabled, a protection to deny
+ * spoofed mail from accounts for valid local domains, targeting valid
+ * local addresses.
+ *
+ * A typical example are forged accounts like:
+ *
+ * \code
+ * Sep  6 04:41:19 mailserver02 valvulad[21581]: info: DUNNO: VoiceMessage@asplhosting.com -> info@asplhosting.com (sasl_user=), port 3579, rcpt count=0, queue-id , from 11X.Y.Z.W1, no-tls
+ * \endcode
  * 
+ * In this case, <b>info@asplhosting.com</b> exists, but <b>VoiceMessage@asplhosting.com</b> doesn't. 
+ *
+ * For such situations, if you enable <b>mod-bwl</b>, it will activate
+ * by default <b>deny-unknown-local-mail-from</b> protection,
+ * rejecting this account.
+ *
+ * Of course, you still have choice to configure an exception using
+ * regular bwl rules (with this module) or make remote software to use
+ * a valid mail account as mail-from, or to create such account.
+ *
+ * Protection provided by <b>deny-unknown-local-mail-from</b> do no
+ * apply to authenticated users. In such situations you must use
+ * <b>mod-bwl</b> rules, or <b>mod-slm</b> to track and control send
+ * operations.
  * 
  * 
  *
