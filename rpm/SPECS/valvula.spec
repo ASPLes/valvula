@@ -215,7 +215,7 @@ defined periods.
 %package -n valvulad-mod-object-resolver
 Summary: mod-object-resolver support for valvulad-server
 Group: System Environment/Libraries
-Requires: valvulad-server
+Requires: valvulad-server, sqlite
 %description  -n valvulad-mod-object-resolver
 mod-object-resolver tries to aid valvulad engine to detect local domain
 and sasl user accounts that are not available using normal configurations
