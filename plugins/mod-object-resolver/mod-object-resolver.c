@@ -42,8 +42,7 @@ BEGIN_C_DECLS
 ValvuladCtx * ctx = NULL;
 
 /* debug status */
-axl_bool      __mod_object_resolver_enable_debug = axl_false;
-
+axl_bool     __mod_object_resolver_enable_debug    = axl_false;
 const char * __object_resolver_plesk_accounts_file = "/var/spool/postfix/plesk/passwd.db";
 
 axl_bool object_resolver_plesk_accounts (ValvuladCtx * ctx, const char * item_name, ValvuladObjectRequest request_type, axlPointer data)
@@ -54,7 +53,7 @@ axl_bool object_resolver_plesk_accounts (ValvuladCtx * ctx, const char * item_na
 	ValvuladRow  row;
 	axl_bool     result       = axl_false;
 	
-
+	
 	/* run query */
 	switch (request_type) {
 	case VALVULAD_OBJECT_ACCOUNT:
