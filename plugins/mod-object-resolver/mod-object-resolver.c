@@ -99,7 +99,7 @@ void object_resolver_change_group_uid (const char * path) {
 	int result;
 
 	/* avoid changing anything if running_gid is not defined */
-	if (ctx->running_gid <= 0)
+	if (ctx->running_gid <= 0 || ctx->running_uid <= 0)
 		return;
 	
 	result = chown (path, -1, ctx->running_gid);
@@ -110,6 +110,34 @@ void object_resolver_change_group_uid (const char * path) {
 	return;
 }
 
+void object_resolver_add_exec_to_dir (const char * path) {
+	int         result;
+	struct stat value;
+
+	/* avoid changing anything if running_gid is not defined */
+	if (ctx->running_gid <= 0 || ctx->running_uid <= 0)
+		return;
+
+	/* get stat */
+	result = stat (path, &value);
+	if (result != 0) {
+		error ("Failed to get stat for %s, errno=%d, errocode=%d", path, errno, result);
+		return;
+	} /* end if */
+
+	/* clear read and write to others (chmod o-rw) */
+	value.st_mode = value.st_mode & 0xfff8;
+	/* add exec to others (chmod o+x) */
+	value.st_mode = value.st_mode | 0x0001;
+	
+	msg ("Changed mode=%o to path %s", value.st_mode, path);
+	result = chmod (path, value.st_mode);
+	if (result != 0) {
+		error ("Failed to configure permissions (%o) to folder %s, errno=%d, errorcode=%d", value.st_mode, path, errno, result);
+		return;
+	} /* end if */
+	return;
+}
 
 /** 
  * @brief Init function, perform all the necessary code to register
@@ -129,6 +157,7 @@ static int  object_resolver_init (ValvuladCtx * _ctx)
 		/* change group permissions for folder and file */
 		object_resolver_change_group_uid ("/var/spool/postfix/plesk/passwd.db");
 		object_resolver_change_group_uid ("/var/spool/postfix/plesk/");
+		object_resolver_add_exec_to_dir ("/var/spool/postfix/plesk/");
 	} /* end if */
 	
 	return axl_true;
