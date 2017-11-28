@@ -1,0 +1,319 @@
+                      --\\ Valvula //--
+                         The trooper
+                            1.0.8
+
+Advanced Software Production Line is happy to announce a new stable
+release of the Valvula.
+
+Valvula is a OpenSource high performance mail policy daemon for
+Postfix, written in ANSI C, that provides out of the box support for
+sender login mismatch, mail quotas, per user/domain blacklists/white-lists 
+and much more.
+
+Valvula is fully extensible through plugins and it is composed by a
+base library (libValvula) that integrates into a ready to use server
+(valvulad) that is able to run different ports with different modules
+so you can connect same valvula process at different points inside
+Postfix policy restriction sections.
+
+Resources
+~~~~~~~~~
+
+   Valvula homepage
+   [ http://www.aspl.es/valvula ]
+
+   Commercial support
+   [ http://www.aspl.es/valvula/commercial.html ]
+
+   Advanced Software Production Line, S.L.
+   [ http://www.aspl.es ]
+
+   Featured project: Core-Admin
+   [ http://www.core-admin.com ]
+
+This release in short
+~~~~~~~~~~~~~~~~~~~~~ 
+
+ - Added new module (mod-object-resolver) to help valvulad engine to
+   detect local addresses and domains for especific configurations not
+   using MySQL like Plesk.
+
+ - Added new policy (deny-unknown-local-mail-from='yes') to mod-bwl
+   that allows to deny transactions using valid local domains to
+   create forged mail-from addresses. This policy applies by default
+   and can be controlled using regular mod-bwl rules.
+
+ - Added new API interface that allows registering generic functions
+   that are called to resolve if a domain or local address is a valid
+   local destination.
+
+ - Added generic SQLite interface to allow writing modules using this
+   backend (used by mod-object-resolver).
+
+ - Several corrections, improvements, doc updates...
+
+
+Changes from previous release
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* [fix] Making mod-object-resolver to also reconfigure
+  /var/spool/postfix/plesk/ directory to ensure (chmod o-rwx && chmod
+  o+x) so applications can read virtual.db and other root 644 files.
+
+* [fix] Updated regression test (test_05) to check new API added:
+
+   - valvulad_run_remove_object_resolver  
+
+  ..and to test new function introduced into mod-bwl to reject unknown
+  accounts targetting known local accounts (deny_unknown_local_mail_from).
+
+
+* [fix] Updated valvula to include a new type of protection to reject
+  unknown accounts targetting to known local accounts ::
+  deny_unknown_local_mail_from
+
+* [fix] Reorganized valvulad_run_add_object_resolver function to use
+  code provided by new function (to remove handler) and make it
+  cleaner. API added:
+
+  - valvulad_run_remove_object_resolver
+
+* [fix] Updated code to preread and check uid and gid to be used so
+  modules can use this information to prepare itself...then, once
+  everything is loaded, valvula changes running uid and gid.
+
+* [fix] Fixed mod-object-resolver to avoid changing permissions when
+  running uid and gid is 0
+
+* [fix] Updated valvula engine to keep track about running uid and gid.
+* [fix] Updated log reporting to state if a delivery is local or non-local.
+
+* [fix] Updated mod-object-resolver to configure permissions on
+  startup to ensure passwd.db from plesk is correctly accessed by
+  valvula.
+
+* [fix] Fixed gid reporting..
+
+* [fix] Updated valvulad_db_sqlite run query to report uid=, euid= and
+  errno in case of sqlite error
+
+* [fix] More updates to fix sqlite3_errstr detection
+
+* [fix] Indented code inside __valvulad_sqlite3_get_error_code and
+  added ENABLE_SQLITE_SUPPORT macro to avoid including this code.
+
+* [fix] Updated configure process to detect if sqlite_errstr is available.
+
+* [fix] Added initial code to substitute sqlite3_errstr with
+   __valvulad_sqlite3_get_error_code because the former is not always
+   available (ubuntu precise, squeeze and lenny has no support for
+   such function).
+
+* [fix] Improved error message when valvulad is not able to open
+  sqlite3 database..
+
+* [fix] Updated valvula.spec to include reference to sqlite package
+  for centos.
+
+* [fix] More updates to control files (debian/ubuntu).
+
+* [fix] Updated server/Makefile.am to include references to
+  sqlite3_libs for libvalvulad (seems to be causing problems in ubuntu
+  precise).
+
+* [fix] Updated valvulad to support building mod-object-resolver for
+  Centos
+
+* [fix] Adding install file for valvulad-mod-object-resolver
+  (debian/ubuntu).
+
+* [fix] Adding initial support for valvulad-mod-object-resolver.
+
+* [fix] added initial documentation explaining how to use valvulad's
+  mod-object-resolver.
+
+* [fix] Added additional documentation to explain module activation
+  with and without port association.
+
+* [fix] Updated valvulad-mgr.py to support two new functions to enable
+  and disable modules without port association.
+
+* [fix] Added initial complete implementation for mod-object-resolver
+  (a module that uses new API to add object resolutions that enables
+  valvulad to be able to detect domains and accounts that do not use
+  mysql interface).
+
+* [fix] Added new regression test (test_02h) to check external object
+  resolvers (functions that allows providing resolution support to
+  valvulad engine about accounts and domains that are local).
+
+* [fix] Added new functions to support registering an external handler
+  that works as an object resolver (account or domain that are
+  detected as local).  API added:
+
+  - ValvuladObjectResolver (handler)
+  - valvulad_run_add_object_resolver
+  - ValvuladObjectRequest (enum)
+    |    VALVULAD_OBJECT_ACCOUNT
+    |    VALVULAD_OBJECT_DOMAIN
+    |    VALVULAD_OBJECT_ALIAS
+
+  
+
+* [fix] Added initial working initialization code to have support for
+  object resolvers at valvulad (external handlers that tells if an
+  object is a local domain or a local account).
+
+* [fix] Added complete regression test (test_02g) to check new Sqlite
+  API added..
+
+* [fix] Exported hidden function for valvulad main server..
+
+* [fix] Updated valvulad server to also load modules when requested to
+  check for local domain or local account (-l option).
+
+* [fix] added initial working support for valvula SQLite library API.
+  Added functions:
+
+   - valvulad_db_sqlite_run_query 
+   - valvulad_db_sqlite_run_sql
+   - valvulad_db_sqlite_get_row
+   - valvulad_db_sqlite_get_cell
+   - valvulad_db_sqlite_release_result
+
+* [fix] Added support to detect and compile valvula with SQLIte
+  support.
+  
+
+* [fix] Updated regression test_01.c (test_07a) to include new file
+  reported but no error was found..
+
+* [fix] adding test_07a3.conf configuration example to improve
+  regression test (test_07a) but no failure found.
+
+* [fix] Upgraded version to compilation..
+
+* [fix] Adding some more additional debug to mod-mquota to better
+  report what is doing when no match was found..
+
+* [fix] Added more regression tests to test_07 to check mod-mquota..
+
+* [fix] Added new regression test to check bug reported. Everything ok
+  so far..
+
+* [fix] Added some debug to mod-mquota module to better report what's
+  doing.
+
+* [fix] Updated valvulad mysql configuration detection to better
+  report it is not able to find right indication (instead of failing
+  with a split error).
+
+* [fix] Updated valvula regression test to add more checks to check
+  valvula address matching for tld domains
+
+* [fix] Fixed valvula_get_tld_extension to support domains with more
+  dots than one ... making implementation more robust
+
+* [fix] Adding additional debug to mod-bwl to trace when rules does
+  not match and what parameters were passed..
+
+* [fix] Updated mod-bwl (varchar(1024) -> "who")
+
+* [fix] Updated regression test (test_00) to check new api to get top
+  level extensions. Updated test_05 to check new support included in
+  mod-bwl to allow rejecting/accepting top level domains..
+
+* [fix] Making valvula mod-bwl to allow creating rules for top level
+  domains (.com, .org, .us, .top ... for example). This allow
+  rejecting or accepting globally, domain level or account level
+  complete domain zones...
+
+* [fix] Updated libValvula to include new function to get domain
+  extension (to level extension). API added:
+
+  - valvula_get_tld_extension
+
+* [fix] More regression test updates..
+
+* [fix] Corrected postfix configuration variables handling. Updated
+  regression test files to ensure it is working right.
+
+* [fix] Fixed memory leaks at postfix configuration parse to
+  support/resist those configurations with repeated declarations..
+
+* [fix] Added additional code to support old mysql postfix interface
+  based on select_field/where_field/table/additional. Updated test_02b
+  to include a regression test to check this.
+
+* [fix] Updated valvula support to read postfix variables (to load
+  mysql indications).
+
+* [fix] Updated __valvulad_run_request_common_object to check
+  unallowed characters..
+
+* [fix] Updated valvulad-db module to include new functions to detect
+  unallowed characters:
+
+  - valvulad_db_check_unallowed_chars
+
+* [fix] Updated valvula.example.conf to include a good example about
+  how to enable mod-bwl debug..
+
+* [fix] More fixings applied to mod-bwl..
+
+* [fix] Making mod-bwl to only skip rules that are not local delivery
+  they they have "OK" as status to also check if the request we are
+  matching to is not authenticated.
+
+* [fix] Added additional debug information to mod-bwl to explain what
+  does mod-bwl with generic and specific rules..
+
+* [fix] Updated mod-slm/mod-slm.c to avoid applying its rules when it
+  is found request is a local delivery
+
+* [fix] Updated valvula plugins/Makefile.am to avoid building
+  mod-transport for now..
+
+* [fix] Adding more documentation to about whey OK rules are skipped
+  by mod-bwl when it is not targeted to a local delivery..
+
+* [fix] Updated mod-bwl to report skip rule when non local delivery
+  was detected..
+
+* [fix] Updated mod-bwl to avoid logging some messages if debug is not
+  enabled..
+
+* [fix] Fixed valvula cron to include all needed PATH elements to make
+  it find "sed" command (failure found at jessie platform).
+
+* [fix] Updated mod-transport.c (few lines)..
+
+* [fix] Added initial code to implement mod-transport: a flexible
+  Postfix map module that helps to create rules that, if matches, a
+  particular postfix transport will be applied.
+
+* [fix] Several updates to valvula core to improve sql injection
+  protection
+  
+
+About Advanced Software Production Line, S.L. (ASPL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Advanced Software Production Line (ASPL) provides GNU/Linux support
+  and consulting services to enable organisation to introduce
+  GNU/Linux into their processes, making other platforms to properly
+  interact with it.
+
+  You can contact us, using English or Spanish, at:
+
+       http://www.aspl.es - info@aspl.es
+
+  We hope Valvula may be useful you. Enjoy Valvula!
+
+--
+Francis Brosnan Blázquez           - francis@aspl.es
+Advanced Software Production Line  - http://www.aspl.es
+28th Nov 2017, Madrid (Spain)
+
+
+
