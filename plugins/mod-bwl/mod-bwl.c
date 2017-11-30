@@ -733,6 +733,8 @@ END_C_DECLS
  * - \ref valvulad_mod_bwl_how_to_block_sasl_user
  * - \ref valvulad_mod_bwl_how_rules
  * - \ref valvulad_mod_bwl_deny_unknown_local_mail_from
+ * - \ref valvulad_mod_bwl_limit_rules_to_sasl_users
+ * - \ref valvulad_mod_bwl_sasl_users_to_skip
  *
  * \section valvulad_mod_bwl_intro mod-bwl Introduction
  *
@@ -899,7 +901,29 @@ END_C_DECLS
  * <b>mod-bwl</b> rules, or <b>mod-slm</b> to track and control send
  * operations.
  * 
+ *
+ * \section valvulad_mod_bwl_limit_rules_to_sasl_users mod-bwl Support to create bwl global rules limited to certain sasl users.
+ *
+ * In the case you want to create mod-bwl global rules that only apply
+ * to a certain list of users, use
+ * <strong>limit_rule_to_sasl_users</strong> mysql field inside
+ * <strong>bwl_global</strong> table to setup a list of comma separated users that will apply.
+ *
+ * Having a rule with this field defined makes that rule to be only
+ * applied to this set of users.
+ *
+ * If the request in question has no sasl user or a sasl user that is
+ * not defined in such list, then the rule will not be applied.
  * 
+ * \section valvulad_mod_bwl_sasl_users_to_skip mod-bwl Support to create bwl global rules what are ignored for certain users.
+ *
+ * In the case you want to create bwl global rules that apply to all
+ * users but not for a list of users, use
+ * <strong>sasl_users_to_skip</strong> field to define a comma
+ * separated list of users to ignore/skip.
+ *
+ * For this option to work <strong>limit_rule_to_sasl_users</strong>
+ * must be empty. Not defined.
  *
  * 
  */
