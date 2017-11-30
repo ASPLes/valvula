@@ -84,6 +84,10 @@ static int  bwl_init (ValvuladCtx * _ctx)
 				  "stamp", "int",
 				  /* who: who added this rule (not used by valvula but useful for management) */
 				  "who", "varchar(1024)",
+				  /* sasl_users_to_skip : list of sasl_users that this rule will not be applied to. Leave this empty to make this rule apply to all users, authenticated or not.*/
+				  "sasl_users_to_skip", "text",
+				  /* limit_rule_to_sasl_users : list of sasl_users that will apply this rule and only this rule. Leave this empty to make this rule apply all users, authenticated or not*/
+				  "limit_rule_to_sasl_users", "text",
 				  NULL);
 
 	/* create databases to be used by the module */
@@ -181,6 +185,87 @@ typedef enum {
 	VALVULA_MOD_BWL_ACCOUNT = 3,
 } ValvulaModBwlLevel;
 
+axl_bool bwl_list_has_users (const char * limit_rule_to_sasl_users) {
+
+	char ** items;
+	int     iterator;
+	int     count;
+
+
+	/* avoid checking if parameter is not defined or has no
+	   content */
+	if (! limit_rule_to_sasl_users)
+		return axl_false;
+	if (strlen (limit_rule_to_sasl_users) <= 0)
+		return axl_false;
+
+	/* split items from list */
+	items = axl_split (limit_rule_to_sasl_users, 5, ",", " ", ";", "\\n", "\\t");
+	if (items == NULL)
+		return axl_false;
+
+	/* iterate over all items from string */
+	iterator = 0;
+	count    = 0;
+	while (items[iterator] != 0) {
+		
+		if (items[iterator] && strlen (items[iterator]) > 0) {
+			axl_stream_trim (items[iterator]);
+			if (strlen (items[iterator]) > 0) {
+				count++;
+			} /* end if */
+		} /* end if */
+		iterator++;
+	}
+	axl_freev (items);
+	
+	/* return if we have found elements in the list */
+	return count > 0;
+}
+
+axl_bool bwl_sasl_user_request_in_list (const char * sasl_user, const char * sasl_user_list) {
+	char       ** items;
+	int           iterator;
+	axl_bool      found;
+	
+	if (! sasl_user) {
+		/* found that this request has no sasl user, so we
+		   directly return axl_false because it cannot not be
+		   in the list */
+		return axl_false;
+	} /* end if */
+
+	if (! sasl_user_list)
+		return axl_false;
+	if (strlen (sasl_user_list) <= 0)
+		return axl_false;
+
+	items = axl_split (sasl_user_list, 5, ",", " ", ";", "\\n", "\\t");
+	if (items == NULL)
+		return axl_false;
+	
+	iterator = 0;
+	found    = axl_false;
+	while (items[iterator] != 0) {
+		/* check if position has content */
+		if (items[iterator] && strlen (items[iterator]) > 0) {
+			/* cleanup string */
+			axl_stream_trim (items[iterator]);
+			/* check position with sasl user */
+			if (axl_casecmp (items[iterator], sasl_user)) {
+				found = axl_true;
+				break;
+			} /* end if */
+		} /* end if */
+
+		/* next iterator position */
+		iterator++;
+	}
+	axl_freev (items);
+	
+	return found;
+}
+
 ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				     ValvulaRequest      * request,
 				     ValvulaModBwlLevel    level,
@@ -194,6 +279,11 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 	const char    * status;
 	const char    * source;
 	const char    * destination;
+	const char    * sasl_users_to_skip = NULL;
+	const char    * limit_rule_to_sasl_users = NULL;
+
+	/* get sasl user from request received */
+	const char    * sasl_user = valvula_get_sasl_user (request);
 
 	/* reset cursor */
 	valvulad_db_first_row (ctx, result);
@@ -206,6 +296,20 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 		status      = GET_CELL (row, 0);
 		source      = GET_CELL (row, 1);
 		destination = GET_CELL (row, 2);
+
+		/* sasl users application or limitation */
+		sasl_users_to_skip = GET_CELL (row, 3);
+		if (sasl_users_to_skip && bwl_sasl_user_request_in_list (sasl_user, sasl_users_to_skip)) {
+			/* found user to skip */
+			row = GET_ROW (result);
+			continue;
+		} /* end if */
+		limit_rule_to_sasl_users = GET_CELL (row, 4);
+		if (limit_rule_to_sasl_users && bwl_list_has_users (limit_rule_to_sasl_users) && ! bwl_sasl_user_request_in_list (sasl_user, limit_rule_to_sasl_users)) {
+			/* found rule defined for a list of users, but user does not match */
+			row = GET_ROW (result);
+			continue;
+		}
 
 		/* skip general rules first, look for specific rules where all attributes are defined */
 		if (first_specific && (!source || strlen (source) == 0 || !destination || strlen (destination) == 0)) {
@@ -491,7 +595,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 
 	/* get current status at server level */
 	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", message,
-				   "SELECT status, source, destination FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR source = '%s@' OR source = '%s' OR destination = '%s' OR destination = '%s' OR destination = '%s@' OR destination = '%s')",
+				   "SELECT status, source, destination, sasl_users_to_skip, sasl_users_to_skip FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR source = '%s@' OR source = '%s' OR destination = '%s' OR destination = '%s' OR destination = '%s@' OR destination = '%s')",
 				   sender_domain, sender, sender_local_part, valvula_get_tld_extension (sender_domain),
 				   recipient_domain, recipient, recipient_local_part, valvula_get_tld_extension (recipient_domain));
 	
@@ -521,7 +625,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
 		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_DOMAIN, "domain lists", message,
-					   "SELECT status, source, '%s' as destination FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
+					   "SELECT status, source, '%s' as destination, NULL as sasl_users_to_skip, NULL as sasl_users_to_skip FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
 					   recipient, recipient_domain, sender, sender_domain, valvula_get_tld_extension (sender_domain));
 		/* check valvula state reported */
 		if (state != VALVULA_STATE_DUNNO) 
@@ -530,7 +634,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
 		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_ACCOUNT, "account lists", message,
-					   "SELECT status, source, '%s' as destination FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
+					   "SELECT status, source, '%s' as destination, NULL as sasl_users_to_skip, NULL as sasl_users_to_skip FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
 					   recipient, recipient, sender, sender_domain, valvula_get_tld_extension (sender_domain));
 		/* check valvula state reported */
 		if (state != VALVULA_STATE_DUNNO) 
