@@ -45,5 +45,5 @@ INCLUDES = -I$(top_srcdir)/lib -I$(top_srcdir)/server -I$(top_srcdir)/plugins/mo
 LIBS            = $(AXL_LIBS) $(PTHREAD_LIBS) $(ADDITIONAL_LIBS) $(NOPOLL_LIBS) $(SQLITE3_LIBS)
 
 test_01_SOURCES = test_01.c
-test_01_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) $(top_srcdir)/server/libvalvulad.la $(top_srcdir)/lib/libvalvula.la $(top_srcdir)/plugins/mod-mquota/mod-mquota.la
+test_01_LDADD = $(AXL_LIBS) $(VALVULA_LIBS) $(top_srcdir)/server/libvalvulad.la $(top_srcdir)/lib/libvalvula.la $(top_srcdir)/plugins/mod-mquota/mod-mquota.la $(top_srcdir)/plugins/mod-bwl/mod-bwl.la
 

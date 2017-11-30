@@ -1975,14 +1975,86 @@ axl_bool test_05_resolver (ValvuladCtx * ctx, const char * item_name, ValvuladOb
 	return axl_false;
 }
 
+axl_bool bwl_sasl_user_request_in_list (const char * sasl_user, const char * sasl_user_list);
+axl_bool bwl_list_has_users (const char * limit_rule_to_sasl_users);
+
 /* test mod bwl */
 axl_bool test_05 (void) {
 
 	ValvuladCtx   * ctx;
 	const char    * path;
 	ValvulaState    state;
-	
 
+	/* check common functions first */
+	printf ("Test 05: checking basic functions (bwl_list_has_users)..\n");
+	if (bwl_list_has_users (NULL)) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (bwl_list_has_users ("")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (bwl_list_has_users (", , ")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (! bwl_list_has_users ("francis@aspl.es")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (! bwl_list_has_users ("francis@aspl.es monica@aspl.es")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (! bwl_list_has_users ("francis@aspl.es, monica@aspl.es")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (! bwl_list_has_users ("\tfrancis@aspl.es monica@aspl.es")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (! bwl_list_has_users (", francis@aspl.es monica@aspl.es")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	if (! bwl_list_has_users ("\n francis@aspl.es monica@aspl.es")) {
+		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
+		return axl_false;
+	}
+	printf ("Test 05: checking basic functions (bwl_sasl_user_request_in_list)..\n");
+	if (! bwl_sasl_user_request_in_list ("francis@aspl.es", "francis@aspl.es")) {
+		printf ("ERROR: expected to find user in list..\n");
+		return axl_false;
+	}
+	if (bwl_sasl_user_request_in_list ("francis@aspl.es", "monica@aspl.es")) {
+		printf ("ERROR: expected NOT to find user in list..\n");
+		return axl_false;
+	}
+	if (! bwl_sasl_user_request_in_list ("francis@aspl.es", "monica@aspl.es, francis@aspl.es")) {
+		printf ("ERROR: expected to find user in list..\n");
+		return axl_false;
+	}
+	if (bwl_sasl_user_request_in_list ("", "monica@aspl.es, francis@aspl.es")) {
+		printf ("ERROR: expected to find user in list..\n");
+		return axl_false;
+	}
+	if (bwl_sasl_user_request_in_list (NULL, "monica@aspl.es, francis@aspl.es")) {
+		printf ("ERROR: expected to find user in list..\n");
+		return axl_false;
+	}
+	if (bwl_sasl_user_request_in_list ("francis@aspl.es", "")) {
+		printf ("ERROR: expected to find user in list..\n");
+		return axl_false;
+	}
+	if (bwl_sasl_user_request_in_list ("francis@aspl.es", NULL)) {
+		printf ("ERROR: expected to find user in list..\n");
+		return axl_false;
+	}
+
+	printf ("Test 05: starting test...\n");
+	
 	/* load basic configuration */
 	path = "test_05.conf";
 	ctx  = test_valvula_load_config ("Test 05: ", path, axl_true);
