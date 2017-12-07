@@ -433,33 +433,42 @@ def _add_postfix_valvula_declaration_existing (postfix_section, host, port, orde
             result.append (line)
             continue
 
+        stripped = line
+        if stripped:
+            stripped = stripped.strip ()
+        if not stripped:
+            result.append (line)
+            continue
+        if stripped[0] == '#':
+            result.append (line)
+            continue
+
         # process lines without 
-        if line and line.strip ()[0] != '#':
-            if postfix_section in line and line[:length] == postfix_section:
+        if postfix_section in line and line[:length] == postfix_section:
 
-                if clasification == "empty_decl":
-                    line    = "%s = %s" % (postfix_section, decl)
-                    op_done = True
-                    
-                elif clasification in ["single_line_decl", "multi_line_decl_2"]:
-                    content = line.split ("=")[1].strip ()
-                    if order == "first":
-                        line    = "%s = %s, %s" % (postfix_section, decl, content)
-                    elif order == "last":
-                        line    = "%s = %s, %s" % (postfix_section, content, decl)
-                    op_done = True
-                    
-                elif clasification in ["multi_line_decl"]:
-                    if order == "last":
-                        print "ERROR: still not supported. "
-                        sys.exit (-1)
+            if clasification == "empty_decl":
+                line    = "%s = %s" % (postfix_section, decl)
+                op_done = True
 
-                    # reached this point its is first
-                    result.append (line)
-                    result.append ("  %s," % decl)
-                    op_done = True
-                    continue
-                # end if
+            elif clasification in ["single_line_decl", "multi_line_decl_2"]:
+                content = line.split ("=")[1].strip ()
+                if order == "first":
+                    line    = "%s = %s, %s" % (postfix_section, decl, content)
+                elif order == "last":
+                    line    = "%s = %s, %s" % (postfix_section, content, decl)
+                op_done = True
+
+            elif clasification in ["multi_line_decl"]:
+                if order == "last":
+                    print "ERROR: still not supported. "
+                    sys.exit (-1)
+
+                # reached this point its is first
+                line = line.replace ("=", "= %s," % decl)
+                result.append (line)
+                # result.append ("  %s," % decl)
+                op_done = True
+                continue
             # end if
         # end if
 

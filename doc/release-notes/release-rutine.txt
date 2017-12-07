@@ -28,6 +28,10 @@
 
 * publicar noticia en aspl.es.
 
+* publicar en freecode.club - http://freshcode.club/projects/valvula
+* publicar en launchpad.net - https://launchpad.net/valvula (make an
+
+
 * Generar paquetes debian
 
 * Publicar noticia en twitter ASPL_es
