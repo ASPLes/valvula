@@ -487,14 +487,25 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 {
 	ValvuladCtx  * ctx = _ctx;
 	const char   * sasl_user = valvula_get_sasl_user (request);
+	axl_bool       has_queue_id;
+	char         * transport = NULL;
 
 	/* do not report reject status because there where already reported */
 	if (VALVULA_STATE_REJECT == state)
 		return;
 
+	/* get status for queue id definition */
+	has_queue_id  = (request->queue_id && strlen (request->queue_id) > 0);
+	if (has_queue_id && state == VALVULA_STATE_FILTER) {
+		/* allows to get the define if the transport was
+		 * changed to something or it has a default transport
+		 * indication */
+		transport = axl_strdup_printf (", transport-changed-to=%s", message);
+	} /* end if */
+
 	/*          q=queue, ca=client address, ep=encryption protocol, ec=encryption cipher, ek=encryption keysize, ldi, m=message */
-	/*                                                           q|ca |ep |ec |ek  |ldi|m */
-	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d, queue-id %s%s%s%s%s%s%s%s%s%s%s%s",
+	/*                                                           q|ca |ep |ec |ek  |ldi|transport|m */
+	msg ("%s: %s -> %s%s%s%s%s, port %d, rcpt count=%d,%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 	     valvula_support_state_str (state),
 	     request->sender, request->recipient, 
 	     /* drop SASL information */
@@ -506,7 +517,8 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	     request->listener_port, 
 	     request->recipient_count,
 	     /* queue report */
-	     request->queue_id ? request->queue_id : "<undef>" ,
+	     has_queue_id ? " queue-id " : " still-msg-not-queued " ,
+	     has_queue_id ? request->queue_id : "",
 	     /* client address */
 	     request->client_address ? ", from " : "",
 	     request->client_address ? request->client_address : "",
@@ -523,9 +535,16 @@ void valvulad_report_final_state (ValvulaCtx        * lib_ctx,
 	     /* ldi : local delivery indication */
 	     valvulad_run_is_local_delivery (ctx, request) ? ", local-delivery" : ", no-local-delivery",
 
+	     /* transport : indication */
+	     has_queue_id ? (transport != NULL ? transport : ", transport=default") : "",
+
 	     /* message */
 	     message ? ": " : "",
 	     message ? message : "");
+
+	/* release transport string */
+	if (transport)
+		axl_free (transport);
 
 	return;
 }
