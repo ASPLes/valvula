@@ -354,7 +354,7 @@ axl_bool __valvulad_sqlite_run_query_is_ddl (const char * complete_query)
 
 	/* copy for comparison and lower them to catch all cases */
 	memset (buffer, 0, 10);
-	memcpy (buffer, complete_query, 10);
+	memcpy (buffer, complete_query, 9);
 	axl_stream_to_lower (buffer);
 	
 	/* basic case :: SELECT :: not ddl :: data definition language or update language */
