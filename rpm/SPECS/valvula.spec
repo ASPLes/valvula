@@ -241,6 +241,20 @@ Valvulad plugin to limit mail from use/forge from unauthorized sources
    /usr/lib/valvulad/modules/mod-lmm.so.0.0.0
    /etc/valvula/mods-available/mod-lmm.xml
 
+# valvulad-mod-transport package
+%package -n valvulad-mod-transport
+Summary: mod-transport support for valvulad-server
+Group: System Environment/Libraries
+Requires: valvulad-server
+%description  -n valvulad-mod-transport
+Valvulad plugin to limit mail from use/forge from unauthorized sources
+%files -n valvulad-mod-transport
+   /usr/lib/valvulad/modules/mod-transport.a
+   /usr/lib/valvulad/modules/mod-transport.so
+   /usr/lib/valvulad/modules/mod-transport.so.0
+   /usr/lib/valvulad/modules/mod-transport.so.0.0.0
+   /etc/valvula/mods-available/mod-transport.xml
+
 
 %changelog
 %include rpm/SPECS/changelog.inc
