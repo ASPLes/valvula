@@ -747,6 +747,7 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
  * rule=test2@test.com  address=test@test.com   NOT MATCH
  * rule=test@           address=test@test.com   MATCH       -- match by local-part
  * rule=com             address=test@test.com   MATCH       -- match TLD .com with @test.com
+ * rule=*.rsgsv.net     address=sender17@mail6.suw13.rsgsv.net   MATCH       -- match TLD .com with @*.rsgsv.net
  * \endcode
  *    
  * @return The function returns axl_true in the case everything
@@ -755,8 +756,11 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
  */
 axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, const char * address)
 {
-	char * local_part;
-	char * local_part_aux2;
+	char   * local_part;
+	char   * local_part_aux2;
+	int      iterator;
+	int      iterator2;
+	axl_bool all_matched;
 
 	/* check rule and address */
 	if (ctx == NULL || address == NULL)
@@ -766,17 +770,47 @@ axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, co
 	if (axl_casecmp (rule, address))
 		return axl_true;
 
-	if (!strstr (rule, "@") && !strstr(rule, ".")) {
+	if (strstr (rule, "*.") && strstr (rule, "@") && address) {
+		/* found wild card rule expression for account */
+
+	} else if (strstr (rule, "*.") && address) {
+
+		/* found wild card rule expression for domain */
+		if (! strstr (rule, "*.")) {
+			/* do not accept a match all, it will cause problems */
+			return axl_false;
+		} /* end if */
+		
+		iterator    = strlen (rule) - 1; 
+		iterator2   = strlen (address) - 1;
+		all_matched = axl_true;
+		while (iterator >= 1 && iterator2 >= 1) {
+			if (rule[iterator] == address[iterator2]) {
+				iterator--;
+				iterator2--;
+				continue;
+			}
+			all_matched = axl_false;
+			break;
+		}
+
+		/* report final status */
+		return (all_matched && iterator == 0);
+
+	} else if (!strstr (rule, "@") && !strstr(rule, ".")) {
+
 		/* rule not has @ and . in it, so we have a TLD case */
 		/* check if domain matches: that is rule=aspl.es == get_domain(test@aspl.es) */
 		if (axl_casecmp (rule, valvula_get_tld_extension (address)))
 			return axl_true;
-	} else if (!strstr (rule, "@")) {
+	} else if (! strstr (rule, "@")) {
+
 		/* rule not has @ in it */
 		/* check if domain matches: that is rule=aspl.es == get_domain(test@aspl.es) */
 		if (axl_casecmp (rule, valvula_get_domain (address)))
 			return axl_true;
 	} else {
+
 		/* rule has @ in it, try to check for for rule=web@ == get_local_part (web@aspl.es) */
 		if (valvula_get_domain (rule) == NULL || strlen (valvula_get_domain (rule)) == 0) {
 			local_part      = valvula_get_local_part (rule);
