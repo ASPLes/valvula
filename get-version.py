@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from core_admin_common import command
+from core_admin_common import command, support
 import sys
 
 (status, info) = command.run ("LANG=C svn update . | grep 'At revision'")
@@ -9,11 +9,11 @@ if status:
     sys.exit (-1)
 
 # get versision
-revision = info.split (" ")[2].replace (".", "").strip ()
+revision = support.get_int (info.split (" ")[2].replace (".", "").strip ())
 print "INFO: Revision found: %s" % revision
 
 version = open ("VERSION").read ().split (".b")[0].strip ()
-version = "%s.b%s" % (version, revision)
+version = "%s.b%s" % (version, (revision + 1))
 print "INFO: Updated vesion to: %s" % version
 
 open ("VERSION", "w").write ("%s\n" % version)
