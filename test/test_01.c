@@ -323,6 +323,42 @@ axl_bool  test_00 (void) {
 		return axl_false;
 	} /* end if */
 
+	printf ("Test 00: checking to match *.rsgsv.net..\n");
+	if (! valvula_address_rule_match (ctx, "*.rsgsv.net", "mail164.atl221.rsgsv.net")) {
+		printf ("ERROR 0.15: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 00: checking to match *.rsgsv.net.. (2)\n");
+	if (! valvula_address_rule_match (ctx, "*.rsgsv.net", "sender@mail164.atl221.rsgsv.net")) {
+		printf ("ERROR 0.16: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 00: checking to match *.rsgsv.net.. (3)\n");
+	if (! valvula_address_rule_match (ctx, "*.rsgsv.net", "mail6.suw13.rsgsv.net")) {
+		printf ("ERROR 0.17: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 00: checking to match *.rsgsv.net.. (4)\n");
+	if (! valvula_address_rule_match (ctx, "*.rsgsv.net", "sender17@mail6.suw13.rsgsv.net")) {
+		printf ("ERROR 0.18: expected positive..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 00: checking to match *.rsgsv.net.. (5)\n");
+	if (valvula_address_rule_match (ctx, "*.rsgsv.net", NULL)) {
+		printf ("ERROR 0.19: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
+	printf ("Test 00: checking to match *.rsgsv.net.. (6)\n");
+	if (valvula_address_rule_match (ctx, "*.", "aspl.es")) {
+		printf ("ERROR 0.20: expected negative..\n");
+		return axl_false;
+	} /* end if */
+
 	valvula_ctx_unref (&ctx);
 
 	return axl_true;
