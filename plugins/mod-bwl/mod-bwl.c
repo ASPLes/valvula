@@ -563,6 +563,87 @@ ValvulaState bwl_process_check_for_deny_unknown_local_mail_from (ValvulaCtx     
 	return VALVULA_STATE_REJECT;
 }
 
+char ** bwl_get_expand_with (char ** wildcards, const char * map_string)
+{
+	int    iterator = 0;
+	char * old_ptr;
+	
+	/* do not process if empty or null value received */
+	if (wildcards == NULL)
+		return NULL;
+
+	while (wildcards[iterator] != 0) {
+		/* get old ptr */
+		old_ptr = wildcards[iterator];
+
+		/* create new value */
+		wildcards[iterator] = axl_strdup_printf (map_string, old_ptr);
+
+		/* release old ptr */
+		axl_free (old_ptr);
+
+		/* next posibiont */
+		iterator++;
+	}
+
+	/* return wildcards */
+	return wildcards;
+}
+
+
+char ** bwl_get_wildcards (const char * domain)
+{
+	char ** items;
+	int     iterator = 0;
+	char  * old_ptr;
+
+	/* do not process if empty or null value received */
+	if (domain == NULL || strlen (domain) == 0)
+		return NULL;
+
+	/* get items */
+	items = axl_stream_split (domain, 1, ".");
+	if (items == NULL)
+		return NULL;
+
+	/* expand */
+	while (items[iterator] != NULL) {
+		/* get old reference */
+		old_ptr = items[iterator];
+
+		/* get printf */
+		items[iterator] = axl_stream_join (items + iterator, ".");
+
+		/* release old ptr */
+		axl_free (old_ptr);
+
+		/* next position */
+		iterator ++;
+		
+	}
+
+	return items;
+}
+
+/* get wildcard source */
+char * bwl_get_wildcard_source (const char * domain)
+{
+	char ** wildcards;
+	char  * result = NULL;
+	
+	/* get domain wild card items */
+	wildcards = bwl_get_wildcards (domain);
+	wildcards = bwl_get_expand_with (wildcards, "source = '*.%s'");
+
+	if (wildcards) {
+		/* join parts */
+		result = axl_stream_join (wildcards, " OR ");
+		/* release items */
+		axl_freev (wildcards);
+	} /* end if */
+	
+	return result;
+}
 
 /** 
  * @brief Process request for the module.
@@ -581,6 +662,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 {
 	ValvulaState    state;
 	axl_bool        is_local;
+	char          * wild_card_source;
 
 	/* check if sasl user is blocked */
 	if (valvula_is_authenticated (request) && bwl_is_sasl_user_blocked (ctx, request))
@@ -593,11 +675,23 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		msg ("bwl (1): working with recipient=%s", recipient);
 	} /* end if */
 
+	/* get wildcard source */
+	wild_card_source = bwl_get_wildcard_source (sender_domain);
+
 	/* get current status at server level */
 	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", message,
-				   "SELECT status, source, destination, sasl_users_to_skip, sasl_users_to_skip FROM bwl_global WHERE is_active = '1' AND (source = '%s' OR source = '%s' OR source = '%s@' OR source = '%s' OR destination = '%s' OR destination = '%s' OR destination = '%s@' OR destination = '%s')",
+				   "SELECT status, source, destination, sasl_users_to_skip, sasl_users_to_skip FROM bwl_global WHERE is_active = '1' AND (%s %s source = '%s' OR source = '%s' OR source = '%s@' OR source = '%s' OR destination = '%s' OR destination = '%s' OR destination = '%s@' OR destination = '%s')",
+				   /* support for *.domain.com expansion:
+				    * mail.domain.com is expanded to:
+				    * source = '*.mail.domain.com' OR source = '*.domain.com' OR source = '*.com'
+				    */
+				   wild_card_source ? wild_card_source : "",
+				   wild_card_source ? " OR " : "",
+				   /* rest of parameters */
 				   sender_domain, sender, sender_local_part, valvula_get_tld_extension (sender_domain),
 				   recipient_domain, recipient, recipient_local_part, valvula_get_tld_extension (recipient_domain));
+	if (wild_card_source)
+		axl_free (wild_card_source);
 	
 	/* check valvula state reported */
 	if (state != VALVULA_STATE_DUNNO) {

@@ -2011,8 +2011,29 @@ axl_bool test_05_resolver (ValvuladCtx * ctx, const char * item_name, ValvuladOb
 	return axl_false;
 }
 
-axl_bool bwl_sasl_user_request_in_list (const char * sasl_user, const char * sasl_user_list);
-axl_bool bwl_list_has_users (const char * limit_rule_to_sasl_users);
+axl_bool    bwl_sasl_user_request_in_list (const char * sasl_user, const char * sasl_user_list);
+axl_bool    bwl_list_has_users            (const char * limit_rule_to_sasl_users);
+char      * bwl_get_wildcard_source       (const char * domain);
+
+void check_source_wild_card (const char * source_domain, const char * expected_expansion)
+{
+	char * value;
+
+	/* call to get source expansion */
+	value = bwl_get_wildcard_source (source_domain);
+	if (value && ! axl_cmp (value, expected_expansion)) {
+		printf ("Expected to find [%s] but found [%s]\n", expected_expansion, value);
+		axl_free (value);
+		exit (-1);
+	} else if (value == expected_expansion) 
+		return;
+
+	printf ("INFO: expanded %s to %s\n", source_domain, expected_expansion);
+	axl_free (value);
+
+	/* finish */
+	return;
+}
 
 /* test mod bwl */
 axl_bool test_05 (void) {
@@ -2059,6 +2080,13 @@ axl_bool test_05 (void) {
 		printf ("ERROR: test_05 expected axl_false or NULL list..\n");
 		return axl_false;
 	}
+
+	printf ("Test 05: checking expansion with bwl_get_wildcard_source ..\n");
+	check_source_wild_card ("aspl.es", "source = '*.aspl.es' OR source = '*.es'");
+	check_source_wild_card ("mail.aspl.es", "source = '*.mail.aspl.es' OR source = '*.aspl.es' OR source = '*.es'");
+	check_source_wild_card ("", NULL);
+	check_source_wild_card (NULL, NULL);
+	
 	printf ("Test 05: checking basic functions (bwl_sasl_user_request_in_list)..\n");
 	if (! bwl_sasl_user_request_in_list ("francis@aspl.es", "francis@aspl.es")) {
 		printf ("ERROR: expected to find user in list..\n");
@@ -2565,6 +2593,63 @@ axl_bool test_05 (void) {
 		printf ("ERROR (4.13) expected discard indication but found: %d\n", state);
 		return axl_false;
 	} /* end if */
+
+	/*****************
+	 ** New test 
+	 *****************/
+	printf ("Test --: checking (TLD) *.rsgsv.net -> @aspl.es (reject) (account level)\n");
+
+	/** delete current rules **/
+	if (! valvulad_db_run_non_query (ctx, "DELETE FROM bwl_global")) {
+		printf ("ERROR: unable to remove all global rules..\n");
+		return axl_false;
+	} /* end if */
+	
+	/* insert content */
+	if (! valvulad_db_run_non_query (ctx, "INSERT INTO bwl_global (is_active, source, destination, status) VALUES ('1', '*.rsgsv.net', 'francis@aspl.es', 'ok')")) {
+		printf ("ERROR: expected to insert value with valvulad_db_run_non_query but found a failure..\n");
+		return axl_false;
+	} /* end if */
+	
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	printf ("Test --: checking bounce-mc.us13_57217317.522293-isabXXXXxx=elXxxxxxxxxur.com@mail117.suw13.rsgsv.net -> francis@aspl.es (should be ACCEPTED)..\n");
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"bounce-mc.us13_57217317.522293-xxxx=essssxxxxxasur.com@mail117.suw13.rsgsv.net", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_OK) {
+		printf ("ERROR (4.9): expected valvula state (OK) %d but found %d\n", VALVULA_STATE_OK, state);
+		return axl_false;
+	} /* end if */
+
+	/* SHOULD NOT WORK: now try to run some requests. The
+	 * following should work by allowing unlimited users to pass
+	 * through the module */
+	state = test_valvula_request (/* policy server location */
+		"127.0.0.1", "3579", 
+		/* state */
+		"smtpd_access_policy", "RCPT", "SMTP",
+		/* sender, recipient, recipient count */
+		"bounce-mc.us13_57217317.522293-xxxx=essssxxxxxasur.com@mail117.suw13.rsgsv.com", "francis@aspl.es", "1",
+		/* queue-id, size */
+		"935jfe534", "235",
+		/* sasl method, sasl username, sasl sender */
+		NULL, NULL, NULL);
+
+	if (state != VALVULA_STATE_DUNNO) {
+		printf ("ERROR (4.10): expected valvula state %d but found %d\n", VALVULA_STATE_DUNNO, state);
+		return axl_false;
+	} /* end if */
+	
 
 	/* finish test */
 	common_finish (ctx);
