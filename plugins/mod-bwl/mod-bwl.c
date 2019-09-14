@@ -276,6 +276,7 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 {
 
 	ValvuladRow     row;
+	const char    * rule_id;
 	const char    * status;
 	const char    * source;
 	const char    * destination;
@@ -293,18 +294,19 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 	while (row) {
 
 		/* get status */
-		status      = GET_CELL (row, 0);
-		source      = GET_CELL (row, 1);
-		destination = GET_CELL (row, 2);
+		rule_id     = GET_CELL (row, 0);
+		status      = GET_CELL (row, 1);
+		source      = GET_CELL (row, 2);
+		destination = GET_CELL (row, 3);
 
 		/* sasl users application or limitation */
-		sasl_users_to_skip = GET_CELL (row, 3);
+		sasl_users_to_skip = GET_CELL (row, 4);
 		if (sasl_users_to_skip && bwl_sasl_user_request_in_list (sasl_user, sasl_users_to_skip)) {
 			/* found user to skip */
 			row = GET_ROW (result);
 			continue;
 		} /* end if */
-		limit_rule_to_sasl_users = GET_CELL (row, 4);
+		limit_rule_to_sasl_users = GET_CELL (row, 5);
 		if (limit_rule_to_sasl_users && bwl_list_has_users (limit_rule_to_sasl_users) && ! bwl_sasl_user_request_in_list (sasl_user, limit_rule_to_sasl_users)) {
 			/* found rule defined for a list of users, but user does not match */
 			row = GET_ROW (result);
@@ -390,12 +392,12 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 		}
 		
 		if (axl_stream_casecmp (status, "reject", 6)) {
-			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting due to blacklist (%s)", level_label);
+			valvulad_reject (ctx, VALVULA_STATE_REJECT, request, "Rejecting due to blacklist (%s, rule-id=%s)", level_label, rule_id);
 			return VALVULA_STATE_REJECT;
 			
 		} /* end if */
 		if (axl_stream_casecmp (status, "discard", 7)) {
-			valvulad_reject (ctx, VALVULA_STATE_DISCARD, request, "Discard due to blacklist (%s)", level_label); 
+			valvulad_reject (ctx, VALVULA_STATE_DISCARD, request, "Discard due to blacklist (%s, rule-id=%s)", level_label, rule_id); 
 			return VALVULA_STATE_DISCARD;
 			
 		} /* end if */
@@ -403,7 +405,7 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 		if (axl_stream_casecmp (status, "filter-discard", 14)) {
 			/* do a discard but instaed or returning DISCARD, use a filter to the transport discard: */
 			(*message) = axl_strdup ("discard:");
-			valvulad_reject (ctx, VALVULA_STATE_FILTER, request, "Discard (using filter-discard) due to blacklist (%s)", level_label); 
+			valvulad_reject (ctx, VALVULA_STATE_FILTER, request, "Discard (using filter-discard) due to blacklist (%s, rule-id=%s)", level_label, rule_id); 
 			return VALVULA_STATE_FILTER;
 			
 		} /* end if */
@@ -680,7 +682,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 
 	/* get current status at server level */
 	state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_SERVER, "global server lists", message,
-				   "SELECT status, source, destination, sasl_users_to_skip, sasl_users_to_skip FROM bwl_global WHERE is_active = '1' AND (%s %s source = '%s' OR source = '%s' OR source = '%s@' OR source = '%s' OR destination = '%s' OR destination = '%s' OR destination = '%s@' OR destination = '%s')",
+				   "SELECT id, status, source, destination, sasl_users_to_skip, sasl_users_to_skip FROM bwl_global WHERE is_active = '1' AND (%s %s source = '%s' OR source = '%s' OR source = '%s@' OR source = '%s' OR destination = '%s' OR destination = '%s' OR destination = '%s@' OR destination = '%s')",
 				   /* support for *.domain.com expansion:
 				    * mail.domain.com is expanded to:
 				    * source = '*.mail.domain.com' OR source = '*.domain.com' OR source = '*.com'
@@ -719,7 +721,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
 		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_DOMAIN, "domain lists", message,
-					   "SELECT status, source, '%s' as destination, NULL as sasl_users_to_skip, NULL as sasl_users_to_skip FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
+					   "SELECT id, status, source, '%s' as destination, NULL as sasl_users_to_skip, NULL as sasl_users_to_skip FROM bwl_domain WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
 					   recipient, recipient_domain, sender, sender_domain, valvula_get_tld_extension (sender_domain));
 		/* check valvula state reported */
 		if (state != VALVULA_STATE_DUNNO) 
@@ -728,7 +730,7 @@ ValvulaState bwl_process_request_aux (ValvulaCtx        * _ctx,
 		/* get current status at domain level: rules that applies to recipient 
 		   domain and has to do with source account or source domain */
 		state  = bwl_check_status (_ctx, request, VALVULA_MOD_BWL_ACCOUNT, "account lists", message,
-					   "SELECT status, source, '%s' as destination, NULL as sasl_users_to_skip, NULL as sasl_users_to_skip FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
+					   "SELECT id, status, source, '%s' as destination, NULL as sasl_users_to_skip, NULL as sasl_users_to_skip FROM bwl_account WHERE is_active = '1' AND rules_for = '%s' AND (source = '%s' OR source = '%s' OR source = '%s')",
 					   recipient, recipient, sender, sender_domain, valvula_get_tld_extension (sender_domain));
 		/* check valvula state reported */
 		if (state != VALVULA_STATE_DUNNO) 
