@@ -377,6 +377,10 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				   directed to local delivery:
 				   otherwise, open-relay will be
 				   allowed */
+				msg ("OK by rule-id=%s (%s), rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s]",
+				     rule_id, level_label,
+				     status, source, destination,
+				     request->sender, request->recipient); 
 				return VALVULA_STATE_OK;
 			} else {
 				/* if (__mod_bwl_enable_debug) { */
