@@ -368,7 +368,7 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 		if (axl_stream_casecmp (status, "ok", 2)) {
 			/* accept it if the sender or reception domain
 			 * is local or operation is authenticated */
-			if (valvulad_run_is_local_delivery (ctx, request) || valvula_get_sasl_user (request)) {
+			if (valvulad_run_is_local_delivery (ctx, request) || valvula_is_authenticated (request)) {
 				/* so, reached this point we have that
 				 * the rule (whitelist) was added and
 				 * it matches with a local delivery */
@@ -377,10 +377,15 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				   directed to local delivery:
 				   otherwise, open-relay will be
 				   allowed */
-				msg ("OK by rule-id=%s (%s), rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s]",
+				msg ("OK by rule-id=%s (%s), rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s, is_local_delivery=%d, is_authenticated=%s, sasl_user=%s]",
 				     rule_id, level_label,
 				     status, source, destination,
-				     request->sender, request->recipient); 
+				     request->sender, request->recipient,
+				     valvulad_run_is_local_delivery (ctx, request),
+				     /* is_authenticated */
+				     valvula_is_authenticated (request),
+				     /* sasl_user */
+				     valvula_get_sasl_user (request) ? valvula_get_sasl_user (request) : "");
 				return VALVULA_STATE_OK;
 			} else {
 				/* if (__mod_bwl_enable_debug) { */
