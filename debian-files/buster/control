@@ -1,0 +1,98 @@
+Source: valvula
+Priority: extra
+Maintainer: Francis Brosnan <francis@aspl.es>
+Build-Depends: debhelper (>= 5), autotools-dev, pkg-config, 
+  libaxl-dev (>= 0.6.4)
+Standards-Version: 3.7.2
+Section: libs
+
+Package: libvalvula
+Section: libs
+Architecture: any
+Depends: libc6, libaxl1 (>= 0.5.6)
+Description: Base Valvula library (process support)
+  libvalvula is the core library used by the project. It provides
+  basic functions to parse incoming requests, thread handling and
+  other support functions.
+
+Package: libvalvula-dev
+Section: libs
+Architecture: any
+Depends: libc6, libaxl-dev (>= 0.5.6), libvalvula
+Description: Base Valvula library (development headers)
+  libvalvula core library developement headers
+
+Package: libvalvula-server
+Section: libs
+Architecture: any
+Depends: libc6, libvalvula (>= ${source:Version})
+Description: Base library used by the server valvulad
+  libvalvula-server is the base library providing all features that
+  are needed by valvulad-server and using support from libvalvula.
+
+Package: libvalvula-server-dev
+Section: libs
+Architecture: any
+Depends: libc6, libaxl-dev (>= 0.5.6), libvalvula-server (>= ${source:Version})
+Description: Base library used by the server valvulad (dev headers)
+  libvalvula-server development headers
+
+Package: valvulad-server
+Section: libs
+Architecture: any
+Depends: libvalvula-server (>= ${source:Version}), python-axl
+Description: high performance policy server (for postfix)
+  valvulad-server is a high performance, thread based policy server
+  with support for postfix.
+
+Package: valvulad-mod-ticket
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${source:Version})
+Description: mod-ticket support for valvulad-server
+  mod-ticket is a module use to control mail sendings using
+  preconfigured plans, limitting sendings by day, month, total amount
+  or period.
+
+Package: valvulad-mod-slm
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${source:Version})
+Description: mod-slm support for valvulad-server
+  mod-slm is a module that implements flexible sender login mismatch
+  detection and blocking. It implements several automatic policies and 
+  provides support for exceptions.
+
+Package: valvulad-mod-bwl
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${source:Version})
+Description: mod-bwl support for valvulad-server
+  mod-bwl is a module that provides extended blacklist and whilte lists
+  support to valvula, help the server to define different level of rules
+  that applies globally, at domain level and at account level.
+
+Package: valvulad-mod-mquota
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${source:Version})
+Description: mod-mquota support for valvulad-server
+  mod-mquota is a module that provides sending quotas to valvula. It allows 
+  to control sending rate by minute, hour, and globally within administrator 
+  defined periods.
+
+Package: valvulad-mod-object-resolver
+Section: libs
+Architecture: any
+Depends: valvulad-server (>= ${source:Version}), libsqlite3-0
+Description: mod-object-resolver support to load external databases
+  mod-object-resolver tries to aid valvulad engine to detect local domain
+  and sasl user accounts that are not available using normal configurations
+  with MySQL.
+
+Package: valvula-doc
+Section: libs
+Architecture: any
+Description: valvula documentation
+  This package includes all valvula project documentation
+
