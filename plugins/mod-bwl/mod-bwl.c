@@ -377,7 +377,7 @@ ValvulaState bwl_check_status_rules (ValvulaCtx          * _ctx,
 				   directed to local delivery:
 				   otherwise, open-relay will be
 				   allowed */
-				msg ("OK by rule-id=%s (%s), rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s, is_local_delivery=%d, is_authenticated=%s, sasl_user=%s]",
+				msg ("OK by rule-id=%s (%s), rule: [status=%s, source=%s, destination=%s], request: [source=%s, destination=%s, is_local_delivery=%d, is_authenticated=%d, sasl_user=%s]",
 				     rule_id, level_label,
 				     status, source, destination,
 				     request->sender, request->recipient,
