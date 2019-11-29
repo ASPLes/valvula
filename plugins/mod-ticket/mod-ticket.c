@@ -252,6 +252,37 @@ axlPointer __ticket_get_row_or_fail (ValvuladCtx * ctx, axlPointer result) {
 	return row;
 }
 
+/** 
+ * The following function allows to check if the user configured one
+ * SASL user or a list of SASL users:
+ *
+ * mailing-aspl-01, mailing-aspl-02, mailing-aspl-03
+ *
+ * In case only one user is configured: mailing-aspl-01, the function
+ * will also detect them. 
+ *
+ * The idea is that the function split the whole content from database
+ * to do check item by item to ensure the list contains what we are
+ * looking for:
+ *
+ *  "mailing-aspl-01, mailing-aspl-02, mailing-aspl-03" ->
+ *
+ *     "mailing-aspl-01", "mailing-aspl-02", "mailing-aspl-03"  ->
+ *
+ *        check: "mailing-aspl-01" == "mailing-aspl-03" -> false
+ *        check: "mailing-aspl-02" == "mailing-aspl-03" -> false
+ *        check: "mailing-aspl-03" == "mailing-aspl-03" -> true 
+ *
+ *            then there is a ticket that covers this user directly
+ *            or because it is described in a list.q
+ *
+ * IMPORTANT CONSIDERATION: if the user saves the list of sasl_users that applies
+ * to this ticket with whitespaces, it will not work. It must be separted by ",".
+ * See line:310: items = axl_split (str_value, 1, ",");
+ *
+ * @return This internal function returns axl_true in case the list
+ * inside (ValvuladRes Query result) contains (user_or_domain).
+ */
 axl_bool mod_ticket_ensure_alternative_user (ValvuladCtx * ctx, ValvuladRes result, const char * user_or_domain)
 {
 	/* get result and row */
