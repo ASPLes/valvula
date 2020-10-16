@@ -385,11 +385,15 @@ void _valvula_log2 (ValvulaCtx        * ctx,
 		    ...);
 
 
+const char * valvula_get_sender (ValvulaRequest * request);
+
 const char * valvula_get_sender_domain (ValvulaRequest * request);
 
-const char * valvula_get_recipient_domain (ValvulaRequest * request);
-
 char       * valvula_get_sender_local_part (ValvulaRequest * request);
+
+const char * valvula_get_recipient (ValvulaRequest * request);
+
+const char * valvula_get_recipient_domain (ValvulaRequest * request);
 
 char       * valvula_get_recipient_local_part (ValvulaRequest * request);
 

@@ -693,6 +693,23 @@ const char * valvula_get_sender_domain (ValvulaRequest * request)
 }
 
 /** 
+ * @brief Support function that allows getting sender, implementing
+ * NULL checks.
+ *
+ * @param request The request that is being queried for its sender.
+ *
+ * @return A reference to the sender or NULL if it fails or it
+ * is not defined.
+ */
+const char * valvula_get_sender (ValvulaRequest * request)
+{
+	if (request == NULL || request->sender == NULL)
+		return NULL;
+
+	return request->sender;
+}
+
+/** 
  * @brief Allows to check if the provided request is authenticated
  * (SASL user enabled).
  *
@@ -921,6 +938,23 @@ char * valvula_get_local_part (const char * address)
 	/* return NULL */
 	return NULL;
 }
+
+/** 
+ * @brief Allows to get recipient defined at the valvula request.
+ *
+ * @param request The request operation that is being checked to
+ * report recipient
+ *
+ * @return Recipient or NULL if it fails.
+ */
+const char * valvula_get_recipient (ValvulaRequest * request)
+{
+	if (request == NULL || request->recipient == NULL)
+		return NULL;
+
+	return request->recipient;
+}
+
 
 /** 
  * @brief Allows to get recipient domain defined at the valvula
