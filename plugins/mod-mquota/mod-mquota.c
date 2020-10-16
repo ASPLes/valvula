@@ -67,6 +67,8 @@ axlHash * __mod_mquota_hour_hash;
 axlHash * __mod_mquota_domain_minute_hash;
 axlHash * __mod_mquota_domain_hour_hash;
 
+axlHash * __mod_mquota_instance_tracking;
+
 /* reference to the list of mquotas lists */
 axlList                      * __mod_mquota_limits = NULL;
 int                            __mod_mquota_hour_track = 0;
@@ -92,7 +94,7 @@ ModMquotaLimit * mod_mquota_report_limit_select (ModMquotaLimit * limit)
 {
 	/* report some debug */
 	if (limit && limit->label && __mod_mquota_enable_debug) {
-		msg ("[mSelecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label,  
+		msg ("Selecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label,  
 		     limit->global_limit, limit->hour_limit, limit->minute_limit); 
 	} /* end if */
 
@@ -250,6 +252,16 @@ axl_bool __mod_mquota_minute_handler        (ValvulaCtx  * _ctx,
 	new_reference = mod_mquota_get_current_period (current_minute, current_hour);
 	if (new_reference != __mod_mquota_current_period) {
 
+		/* with the period change, reset instance tracking */
+		hash = __mod_mquota_instance_tracking;
+		/* show some info */
+		if (__mod_mquota_enable_debug) 
+			msg ("[mod-mquota] releasing instance tracking (items stored=%d)", axl_hash_items (hash));
+		/* init again */
+		__mod_mquota_instance_tracking  = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+		/* release */
+		axl_hash_free (hash);
+
 		/* get old reference */
 		old_reference = __mod_mquota_current_period;
 		__mod_mquota_current_period = new_reference;
@@ -369,6 +381,9 @@ static int  mquota_init (ValvuladCtx * _ctx)
 	__mod_mquota_hour_hash          = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 	__mod_mquota_domain_minute_hash = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 	__mod_mquota_domain_hour_hash   = axl_hash_new (axl_hash_string, axl_hash_equal_string);
+
+	/* instance tracking */
+	__mod_mquota_instance_tracking  = axl_hash_new (axl_hash_string, axl_hash_equal_string);
 
 	/* get debug support */
 	node = axl_doc_get (_ctx->config, "/valvula/enviroment/default-sending-quota");
@@ -633,11 +648,13 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 
 	/* get count */
 	count = request->recipient_count;
+	if (count == 0)
+		count = 1;
 
 	/* reached this point, update record */
-	global_usage += 1;
-	hour_usage   += 1;
-	minute_usage += 1;
+	global_usage += count;
+	hour_usage   += count;
+	minute_usage += count;
 
 	/* get values and move then to printable values */
 	sender = valvula_get_sender (request);
@@ -648,12 +665,12 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 	  recipient = "";
 	queue_id = valvula_get_queue_id (request);
 	if (! queue_id)
-	  queue_id = "";	
+	  queue_id = "";
 
 	/* show quota consumed */
 	if (__mod_mquota_enable_debug)
-	  msg ("[mod-mquota] quota consumed rcpt count=%d sasl-username=%s (sender=%s, recipient=%s, queue-id=%s) -> global %d, hour %d, minute %d",
-	       count, sasl_user, sender, recipient, queue_id, global_usage, hour_usage, minute_usage); 
+		msg ("[mod-mquota] quota consumed rcpt count=%d, request-instance=%s sasl-username=%s (sender=%s, recipient=%s, queue-id=%s) -> global %d, hour %d, minute %d",
+		     count, valvula_get_request_instance (request), sasl_user, sender, recipient, queue_id, global_usage, hour_usage, minute_usage); 
 
 	axl_hash_insert_full (__mod_mquota_current_period->accounting, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (global_usage), NULL);
 	axl_hash_insert_full (__mod_mquota_hour_hash, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (hour_usage), NULL);
@@ -725,6 +742,8 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 {
 	const char     * sasl_user;
 	const char     * sasl_domain;
+	char           * key;
+	int              count;
 
 	/* do nothing if module is disabled */
 	if (__mquota_mode == VALVULA_MOD_MQUOTA_DISABLED)
@@ -752,6 +771,42 @@ ValvulaState mquota_process_request (ValvulaCtx        * _ctx,
 
 	/* get the limit */
 	valvula_mutex_lock (&hash_mutex);
+
+	/* get count */
+	count = request->recipient_count;
+	if (count == 0) {
+		/* not in DATA section, attempt to avoid counting twice (or more) same calls to same instance request */
+		if (valvula_get_sender (request) && valvula_get_recipient (request) && valvula_get_request_instance (request)) {
+			/* sender, recipient and instance request defined */
+			
+			/* check if we tracked this request instance */
+			key = axl_strdup_printf ("%s.%s.%s", valvula_get_sender (request), valvula_get_recipient (request), valvula_get_request_instance (request));
+			if (axl_hash_exists (__mod_mquota_instance_tracking, key)) {
+				/* also release key in hash */
+				axl_hash_remove (__mod_mquota_instance_tracking, key);		
+				/* release key */
+				axl_free (key);
+				
+				/* release mutex */
+				valvula_mutex_unlock (&hash_mutex);
+
+				/* show debug */
+				if (__mod_mquota_enable_debug)
+					msg ("[mod-mquota] already tracked, skipping quota consume, request-instance=%s sasl-username=%s (sender=%s, recipient=%s, queue-id=%s)",
+					     valvula_get_request_instance (request),
+					     valvula_get_sasl_user (request),
+					     valvula_get_sender (request),
+					     valvula_get_recipient (request),
+					     valvula_get_queue_id (request));
+				
+				return VALVULA_STATE_DUNNO; /* not rejected, not limited */
+			} /* end if */
+
+			/* save this request to avoid counting quota for this case (reuse key pointer */
+			axl_hash_insert_full (__mod_mquota_instance_tracking, (axlPointer) key, axl_free, INT_TO_PTR (axl_true), NULL);
+			
+		} /* end if */
+	} /* end if */
 
 	if (__mod_mquota_check_reject_user (sasl_user, request)) 
 		return VALVULA_STATE_REJECT;  /* lock already released by
@@ -788,6 +843,9 @@ void mquota_close (ValvuladCtx * ctx)
 	axl_hash_free (__mod_mquota_hour_hash);
 	axl_hash_free (__mod_mquota_domain_minute_hash);
 	axl_hash_free (__mod_mquota_domain_hour_hash);
+
+	/* release instance tracking */
+	axl_hash_free (__mod_mquota_instance_tracking);
 
 	/* release accounting */
 	axl_hash_free (__mod_mquota_current_period->accounting);

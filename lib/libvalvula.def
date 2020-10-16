@@ -79,6 +79,7 @@ valvula_get_queue_id
 valvula_get_recipient
 valvula_get_recipient_domain
 valvula_get_recipient_local_part
+valvula_get_request_instance
 valvula_get_sasl_user
 valvula_get_sender
 valvula_get_sender_domain

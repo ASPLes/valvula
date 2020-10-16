@@ -748,7 +748,7 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
  *
  * @param request that is being queried.
  *
- * @return A reference to the queue id or NULL if the request received is still with queue-id not defined
+ * @return A reference to the queue id or NULL if the request received is still with no queue-id defined
  */ 
 const char * valvula_get_queue_id (ValvulaRequest * request)
 {
@@ -757,6 +757,22 @@ const char * valvula_get_queue_id (ValvulaRequest * request)
 
 	/* return current queue id */
 	return request->queue_id;
+}
+
+/** 
+ * @brief Allows to get instance associated to the request (if defined)
+ *
+ * @param request that is being queried.
+ *
+ * @return A reference to the instance or NULL if the request received is still with no instance defined
+ */ 
+const char * valvula_get_request_instance (ValvulaRequest * request)
+{
+	if (request == NULL || request->instance == NULL)
+		return NULL;
+
+	/* return current instance */
+	return request->instance;
 }  
 
 

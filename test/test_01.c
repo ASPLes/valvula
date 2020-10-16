@@ -415,7 +415,7 @@ void send_content (VALVULA_SOCKET socket, const char * header, const char * cont
 	/* send content */
 	bytes_written = send (socket, payload, content_length, 0);
 	if (bytes_written != content_length) {
-		printf ("ERROR: content sent %d differs from expected %d\n", bytes_written, content_length);
+		printf ("ERROR: header=%s, content=%s, payload=%s, content sent %d differs from expected %d\n", header, content, payload, bytes_written, content_length);
 		exit (-1);
 	} /* end if */
 
