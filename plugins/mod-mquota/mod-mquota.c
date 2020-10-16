@@ -92,7 +92,7 @@ ModMquotaLimit * mod_mquota_report_limit_select (ModMquotaLimit * limit)
 {
 	/* report some debug */
 	if (limit && limit->label && __mod_mquota_enable_debug) {
-		msg ("Selecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label,  
+		msg ("[mSelecting sending mquota period with label [%s] limits g: %d, h: %d, m: %d", limit->label,  
 		     limit->global_limit, limit->hour_limit, limit->minute_limit); 
 	} /* end if */
 
@@ -632,7 +632,9 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 	hour_usage   += 1;
 	minute_usage += 1;
 
-	/* msg ("Saving limits %s -> global %d, hour %d, minute %d", sasl_user, global_usage, hour_usage, minute_usage); */
+	/* show quota consumed */
+	if (__mod_mquota_enable_debug)
+	  msg ("[mod-mquota] quota consumed sasl-username=%s -> global %d, hour %d, minute %d", sasl_user, global_usage, hour_usage, minute_usage); 
 
 	axl_hash_insert_full (__mod_mquota_current_period->accounting, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (global_usage), NULL);
 	axl_hash_insert_full (__mod_mquota_hour_hash, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (hour_usage), NULL);
