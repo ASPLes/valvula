@@ -744,6 +744,23 @@ const char * valvula_get_sasl_user (ValvulaRequest * request)
 }
 
 /** 
+ * @brief Allows to get queue-id associated to the request (if defined)
+ *
+ * @param request that is being queried.
+ *
+ * @return A reference to the queue id or NULL if the request received is still with queue-id not defined
+ */ 
+const char * valvula_get_queue_id (ValvulaRequest * request)
+{
+	if (request == NULL || request->queue_id == NULL)
+		return NULL;
+
+	/* return current queue id */
+	return request->queue_id;
+}  
+
+
+/** 
  * @brief Allows to check if the provided address matches the provided
  * rule.
  *

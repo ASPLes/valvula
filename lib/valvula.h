@@ -401,6 +401,8 @@ axl_bool     valvula_is_authenticated (ValvulaRequest * request);
 
 const char * valvula_get_sasl_user (ValvulaRequest * request);
 
+const char * valvula_get_queue_id (ValvulaRequest * request);
+
 axl_bool     valvula_address_rule_match (ValvulaCtx * ctx, const char * rule, const char * address);
 
 const char * valvula_get_domain (const char * address);
