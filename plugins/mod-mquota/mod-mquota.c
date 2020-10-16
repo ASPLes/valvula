@@ -605,6 +605,7 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 	const char     * sender;
 	const char     * recipient;
 	const char     * queue_id;
+	int              count;
 
 	/* check global limit */
 	global_usage = PTR_TO_INT (axl_hash_get (__mod_mquota_current_period->accounting, (axlPointer) sasl_user));
@@ -630,6 +631,9 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 		return axl_true; /* lock released by __mod_mquota_check_reject when it
 				  * returns axl_true */
 
+	/* get count */
+	count = request->recipient_count;
+
 	/* reached this point, update record */
 	global_usage += 1;
 	hour_usage   += 1;
@@ -648,8 +652,8 @@ axl_bool __mod_mquota_check_reject_user (const char * sasl_user, ValvulaRequest 
 
 	/* show quota consumed */
 	if (__mod_mquota_enable_debug)
-	  msg ("[mod-mquota] quota consumed sasl-username=%s (sender=%s, recipient=%s, queue-id=%s) -> global %d, hour %d, minute %d",
-	       sasl_user, sender, recipient, queue_id, global_usage, hour_usage, minute_usage); 
+	  msg ("[mod-mquota] quota consumed rcpt count=%d sasl-username=%s (sender=%s, recipient=%s, queue-id=%s) -> global %d, hour %d, minute %d",
+	       count, sasl_user, sender, recipient, queue_id, global_usage, hour_usage, minute_usage); 
 
 	axl_hash_insert_full (__mod_mquota_current_period->accounting, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (global_usage), NULL);
 	axl_hash_insert_full (__mod_mquota_hour_hash, (axlPointer) axl_strdup (sasl_user), axl_free, INT_TO_PTR (hour_usage), NULL);
