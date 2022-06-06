@@ -57,15 +57,21 @@ axl_bool object_resolver_plesk_accounts (ValvuladCtx * ctx, const char * item_na
 	/* run query */
 	switch (request_type) {
 	case VALVULAD_OBJECT_ACCOUNT:
-		/* get account */
+		/* Get account (status: 0 indicates enabled, status: indicates disabled.
+		 *
+		 * See: https://support.plesk.com/hc/en-us/articles/213948465-How-to-activate-deactivate-the-mail-service-for-a-domain-subscription-server-wide
+		 *
+		 * Running the following disables domain and configures status to 1:
+		 * >> plesk bin subscription -u example.com -mail_service false
+		 */
 		res = valvulad_db_sqlite_run_query (ctx, __object_resolver_plesk_accounts_file,
-						    "SELECT users.name || '@' || domains.name AS account FROM domains, users WHERE domains.id = users.dom_id AND domains.name = '%s' and users.name = '%s'",
+						    "SELECT users.name || '@' || domains.name AS account FROM domains, users WHERE domains.id = users.dom_id AND domains.name = '%s' and users.name = '%s' AND domains.status = 0",
 						    domain, local_part);
 		break;
 	case VALVULAD_OBJECT_DOMAIN:
-		/* get account */
+		/* get account (status: 0 indicates enabled, status: 1, indicates disabled)  */
 		res = valvulad_db_sqlite_run_query (ctx, __object_resolver_plesk_accounts_file,
-						    "SELECT domains.name FROM domains WHERE domains.name = '%s'",
+						    "SELECT domains.name FROM domains WHERE domains.name = '%s' AND domains.status = 0",
 						    domain);
 		break;
 	case VALVULAD_OBJECT_ALIAS:
