@@ -512,6 +512,10 @@ ValvuladRes     valvulad_db_sqlite_run_query (ValvuladCtx * ctx,
 	/* close std args */
 	va_end (args);
 
+	/* report debug queries */
+	if (ctx->debug_queries)
+	        msg ("%s: running query: %s (at: %s)", __AXL_PRETTY_FUNCTION__, complete_query, sqlite_path);
+
 	if (__valvulad_sqlite_run_query_is_ddl (complete_query))
 		rc = sqlite3_exec (res->db, complete_query, 0, 0, &error_msg);
 	else
@@ -643,6 +647,10 @@ const char  *   valvulad_db_sqlite_get_cell  (ValvuladCtx * ctx, ValvuladRow row
 	/* check input parameters */
 	if (res == NULL)
 		return NULL;
+
+	/* report debug queries */
+	if (ctx->debug_queries)
+	        msg ("%s: reporting cell content (%s) at position=%d", __AXL_PRETTY_FUNCTION__, (const char *) sqlite3_column_text (res->res, position), position);
 	
 	return (const char *) sqlite3_column_text (res->res, position);
 #else
