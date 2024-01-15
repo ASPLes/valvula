@@ -1,0 +1,1319 @@
+2023-12-14  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding files for Ubuntu Focal 22.04 support
+
+2022-06-06  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated release version
+
+	* [fix] Adding debug information to sqlite queries
+
+	* [fix] Updated version and release with plesk account/domain detection   for status=0 flag (disabled=1, enabled=0).
+
+	* [fix] Fixed valvula plesk checking to also check status=0 flag
+
+2022-01-12  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated compilation files
+
+2021-12-30  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding files to support debian bullseye
+
+2020-12-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding initial files to support ubuntu focal
+
+	* [fix] Copyright updates
+
+2020-10-16  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated version files
+
+	* [fix] Applied several updates to detect mod-mquote is used out of data   section and, in that case, implement a request instance tracking to avoid   double/triple counting quotas. Added code to show quota tracking counters   so administrator can account and know how the softare is counting
+
+	* [fix] Added count indication to mod-mquota debug
+
+	* [fix] Updated valvula API to include function to return queue_id associated   to request: valvula_get_queue_id
+	* [fix] Added more code to mod-mquota to better track sender, recipient and queue_id
+	  associated to request consuming quota when debug is enabled.
+
+	* [fix] Updated code to include valvula_get_recipient and valvula_get_sender   functions to better check for these values
+
+	* [fix] Updated mod-mquota.c to reflect quota consumption when debug is   enabled.
+
+2019-11-29  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added additional documentation to explain how alternative   sasl_users are detected by mod-ticket
+
+2019-10-10  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-bwl.c to make is_authenticated printf to be formated with %d
+
+2019-10-01  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More updates for debian buster
+
+	* [fix] Adding files to support debian buster
+
+2019-09-27  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated get-version.py and added LATEST-VERSION.
+
+	* [fix] More updates to better protect ok rules only when authenticated or   local delivery detected.
+
+	* [fix] Updated mod-bwl to record when something is accepted by a rule (reporting   level label and rule-id).
+
+2019-09-14  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated query code from mod-bwl to get id from database so that rule id   can be reported to the log when a discard, reject or filter is triggered.
+
+2019-07-12  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More fixings to bionic packaging
+
+	* [fix] Adding files for bionic packaging
+
+2018-12-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding web references..
+
+2018-11-21  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated #Valvula footer
+
+	* [fix] Adding references to MyQttHub.com
+
+2018-08-21  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding package support for debian/stretch/amd64
+
+2018-05-21  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated release version..
+
+	* [fix] Added code to detect and expand rules with *.domain.com so they are   properly expanded into the SQL so they can match rules with this content   by mod-bwl. Updated regression test 005 to check new feature (memory check,   and rest of features keep working).
+
+2018-05-04  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated get-version.py to align versions generated with github   versioning. Updated VERSION.
+
+	* [fix] Added mod-transport compilation support for Centos to ensure   we have packages.
+
+	* [fix] Fixed __valvulad_sqlite_run_query_is_ddl (valgrind reported).
+
+	* [fix] Updated valvula_address_rule_match to allow matching expressions   with domain wild cards.
+
+	* [fix] Updated #Valvula regression test to check new domain   expression matching.
+
+2018-03-07  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated version file
+
+	* [fix] Updated valvula to report queue id or "still-not-queued" to better report operator   what is happening. Also, updated code to report selected transport and which so the operator   can also know what transport applies and if applies.
+
+2017-12-07  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated reference files for valvulad-mgr.py -c modifications.
+
+	* [fix] fixed valvulad-mgr.py to  support connecting valvula with valvulad-mgr.py -c   for multi_tab declarations missing with one line declarations for "first" configurations.
+
+2017-11-30  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updating version..
+
+	* [fix] Updated version file..
+
+	* [fix] Updated regression test (test_01 -- test_05) to check new support to skip mod bwl   global rules applied to certain users.
+
+	* [fix] Updated mod-bwl to explain new fields used for global rules to limit rules   to a set of users and to create rules that apply to all transactions except a list of   sasl users.
+
+	* [fix] Updated mod-bwl to allow creating global bwl rules that only applies to a certain list of   sasl_users, but also rules that are not applied to a certain list of users.
+
+2017-11-28  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Closing release 1.0.8
+
+	* [fix] Copyright updates..
+
+	* [fix] Making mod-object-resolver to also reconfigure /var/spool/postfix/plesk/   directory to ensure (chmod o-rwx && chmod o+x) so applications can read virtual.db   and other root 644 files.
+
+2017-11-27  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated regression test (test_05) to check new API added:
+	   - valvulad_run_remove_object_resolver
+
+	  ..and to test new function introduced into mod-bwl to reject unknown
+	  accounts targetting known local accounts (deny_unknown_local_mail_from).
+
+2017-11-27  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvula to include a new type of protection to reject unknown   accounts targetting to known local accounts :: deny_unknown_local_mail_from
+
+	* [fix] Updated default example file..
+
+	* [fix] Reorganized valvulad_run_add_object_resolver function to use code provided   by new function (to remove handler) and make it cleaner. API added:
+	  - valvulad_run_remove_object_resolver
+
+	* [fix] Updated code to preread and check uid and gid to be used so modules can use   this information to prepare itself...then, once everything is loaded, valvula changes   running uid and gid.
+
+	* [fix] Fixed mod-object-resolver to avoid changing permissions when running uid   and gid is 0
+
+	* [fix] Minor changes to mod-object-resolver.c..
+
+	valvulad: * [fix] Code to update running_uid and running_gid
+
+	* [fix] Updated valvula engine to keep track about running uid and gid. * [fix] Updated log reporting to state if a delivery is local or non-local.
+
+	* [fix] Updated mod-object-resolver to configure permissions on startup   to ensure passwd.db from plesk is correctly accessed by valvula.
+
+	valvulad: * [fix] Fixed gid reporting..
+
+	* [fix] Updated valvulad_db_sqlite run query to report uid=, euid= and errno in   case of sqlite error
+
+	* [fix] More updates to fix sqlite3_errstr detection
+
+	* [fix] Indented code inside __valvulad_sqlite3_get_error_code and added   ENABLE_SQLITE_SUPPORT macro to avoid including this code.
+	* [fix] Updated configure process to detect if sqlite_errstr is available.
+
+	* [fix] Added initial code to substitute sqlite3_errstr with    __valvulad_sqlite3_get_error_code because the former is not always   available (ubuntu precise, squeeze and lenny has no support for such   function).
+
+	valvulad: * [fix] Improved error message when valvulad is not able to open sqlite3 database..
+
+	* [fix] Updated valvula.spec to include reference to sqlite package for centos.
+
+	* [fix] More updates to control files (debian/ubuntu).
+
+	* [fix] Updated server/Makefile.am to include references to sqlite3_libs for libvalvulad   (seems to be causing problems in ubuntu precise).
+
+	* [fix] Updated valvulad to support building mod-object-resolver for   Centos
+
+	* [fix] Adding install file for valvulad-mod-object-resolver (debian/ubuntu).
+
+	* [fix] Adding initial support for valvulad-mod-object-resolver.
+
+	valvulad: * [fix] added initial documentation explaining how to use valvulad's   mod-object-resolver.
+
+	* [fix] Added additional documentation to explain module activation with and without   port association.
+
+	* [fix] Updated valvulad-mgr.py to support two new functions to enable   and disable modules without port association.
+
+2017-11-26  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	valvulad: * [fix] Linking configure/compilation for mod-object-resolver.
+
+	* [fix] Updated top makefile.am..
+
+	* [fix] Added initial complete implementation for mod-object-resolver   (a module that uses new API to add object resolutions that enables valvulad   to be able to detect domains and accounts that do not use mysql interface).
+
+	* [fix] Added new regression test (test_02h) to check external object   resolvers (functions that allows providing resolution support to valvulad   engine about accounts and domains that are local).
+
+	* [fix] Added new functions to support registering an external handler that   works as an object resolver (account or domain that are detected as local).   API added:
+	  - ValvuladObjectResolver (handler)
+	  - valvulad_run_add_object_resolver
+	  - ValvuladObjectRequest (enum)
+	    |    VALVULAD_OBJECT_ACCOUNT
+	    |    VALVULAD_OBJECT_DOMAIN
+	    |    VALVULAD_OBJECT_ALIAS
+
+	* [fix] Added initial working initialization code to have support   for object resolvers at valvulad (external handlers that tells   if an object is a local domain or a local account).
+
+2017-11-25  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added complete regression test (test_02g) to check new   Sqlite API added..
+
+	* [fix] Exported hidden function for valvulad main server..
+
+	* [fix] Updated valvulad server to also load modules when requested to   check for local domain or local account (-l option).
+
+	* [fix] added initial working support for valvula SQLite library API.   Added functions:
+	   - valvulad_db_sqlite_run_query
+	   - valvulad_db_sqlite_run_sql
+	   - valvulad_db_sqlite_get_row
+	   - valvulad_db_sqlite_get_cell
+	   - valvulad_db_sqlite_release_result
+
+	* [fix] Added support to detect and compile valvula with SQLIte support.
+
+2017-11-10  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated regression test_01.c (test_07a) to include new file   reported but no error was found..
+
+	* [fix] adding test_07a3.conf configuration example to improve   regression test (test_07a) but no failure found.
+
+2017-11-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Upgraded version to compilation..
+
+	* [fix] Adding some more additional debug to mod-mquota to better report   what is doing when no match was found..
+
+	* [fix] Added more regression tests to test_07 to check mod-mquota..
+
+	* [fix] Added new regression test to check bug reported. Everything ok so far..
+
+	* [fix] Added some debug to mod-mquota module to better report what's doing.
+
+2017-08-29  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvulad mysql configuration detection to better report it is not   able to find right indication (instead of failing with a split error).
+
+2017-07-06  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvula regression test to add more checks to check   valvula address matching for tld domains
+
+	* [fix] Fixed valvula_get_tld_extension to support domains with   more dots than one ... making implementation more robust
+
+	* [fix] Adding additional debug to mod-bwl to trace when rules does   not match and what parameters were passed..
+
+2017-07-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated VERSION file..
+
+	* [fix] Updated mod-bwl (varchar(1024) -> "who")
+
+	* [fix] Updated regression test (test_00) to check new api to get   top level extensions. Updated test_05 to check new support included   in mod-bwl to allow rejecting/accepting top level domains..
+
+	* [fix] Making valvula mod-bwl to allow creating rules for top level domains   (.com, .org, .us, .top ... for example). This allow rejecting or accepting   globally, domain level or account level complete domain zones...
+
+	* [fix] Updated .def..
+
+	* [fix] Updated libValvula to include new function to get domain extension   (to level extension). API added:
+	  - valvula_get_tld_extension
+
+2017-06-13  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More regression test updates..
+
+2017-06-12  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Corrected postfix configuration variables handling. Updated regression test files   to ensure it is working right.
+
+	* [fix] Updated version file..
+
+	* [fix] More updates to regression tests..
+
+	* [fix] Fixed memory leaks at postfix configuration parse to support/resist   those configurations with repeated declarations..
+
+	* [fix] Added additional code to support old mysql postfix interface   based on select_field/where_field/table/additional. Updated test_02b   to include a regression test to check this.
+
+	* [fix] Updated version file..
+
+	* [fix] Added new files used by regression tests..
+
+	* [fix] Updated teset_01.c module to fix some tests and to increase   log reporting..
+
+	* [fix] Updated valvula support to read postfix variables (to load mysql indications). * [fix] Updated __valvulad_run_request_common_object to check unallowed characters..
+
+	* [fix] Updated valvulad-db module to include new functions to detect   unallowed characters:
+	  - valvulad_db_check_unallowed_chars
+
+2017-06-11  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed VERSION and get-version.py (to be sure published valvula is the latest).
+
+	* [fix] Fixed (--version) trying to run valvula as usual..
+
+2017-03-31  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvula.example.conf to include a good example about how   to enable mod-bwl debug..
+
+	* [fix] More fixings applied to mod-bwl..
+
+	* [fix] Making mod-bwl to only skip rules that are not local delivery they   they have "OK" as status to also check if the request we are matching to   is not authenticated.
+
+	* [fix] Added additional debug information to mod-bwl to explain what does   mod-bwl with generic and specific rules..
+
+2017-03-25  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-slm/mod-slm.c to avoid applying its rules when it is found   request is a local delivery
+
+2017-02-17  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvula plugins/Makefile.am to avoid building mod-transport   for now..
+
+2017-02-16  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding more documentation to about whey OK rules are skipped by   mod-bwl when it is not targeted to a local delivery..
+
+	* [fix] Updated mod-bwl to report skip rule when non local delivery was detected..
+
+2017-01-16  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated web files..
+
+2016-11-16  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-bwl to avoid logging some messages if debug is not enabled..
+
+2016-11-08  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed valvula cron to include all needed PATH elements to make   it find "sed" command (failure found at jessie platform).
+
+2016-10-20  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-transport.c (few lines)..
+
+2016-10-19  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added initial code to implement mod-transport: a flexible Postfix   map module that helps to create rules that, if matches, a particular postfix   transport will be applied.
+
+2016-09-30  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Several updates to valvula core to improve sql injection protection
+
+2016-09-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Closing release 1.0.7
+
+	* [fix] Minor indications at configure.ac to guide user when mariadb/mysql   headers are not found.
+
+	* [fix] Some cleanups more..
+
+	* [fix] Adding additional mysql indications to test_01 in the case it fails..
+
+	* [fix] Updated regression tests (test 03 and test 07) to improve error   reporting.
+
+2016-09-07  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Changing version for new release..
+
+	* [fix] Updated test-02b regression test to check different combinations for   postfix declatations where mysql indication can be found.
+
+	* [fix] Updated valvulad_run module to make local domain detection code more   cleaner. Updated error notification to log to better report when domain and   account detection does not work.
+
+	* [fix] Fixed password hiding (was not working)
+
+	* [fix] Several updates to make mod-bwl to drop more log information   when an account is considering local or not when debug module is enabled.
+
+	* [fix] Updated code for postfix mysql declarations to avoid posting   password found to the log...
+
+	* [fix] More updates to valvula.example.conf
+
+	* [fix] Updated server code to allow enabling debug queries from   configuration file (not only with command line option). Updated   example configuration file to include a default indication to enable   debugging queries..
+
+	* [fix] Added some additional debugging code to mod-bwl to help   system administrator know that's being executed..
+
+	* [fix] Updated valvulad-mgr.py to allow setting no sasl account for   --test-server option. Updated option to provide some examples so   the user can better use the tool.
+
+2016-08-19  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated rpm files to have valvula compiled and packaged for Centos7
+
+	* [fix] Updated mod-lmm.c code to flag it as still not finished..
+
+	* [fix] Added missing changelog.inc to allow building for centos..
+
+	* [fix] Commented out some variables at mod-lmm to avoid compilation   failures in Centos7
+
+	* [fix] Updated buildrpm.sh and configure.ac to include additional   changes to improve Centos7 support.
+
+2016-05-10  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding support for jessie..
+
+2016-05-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More copyright (2014 -> 2016) updates
+
+	* [fix] Updated web files (copyright)..
+
+	* [fix] closing release 1.0.6
+
+	* [fix] Updated version file..
+
+	* [fix] Updated mod-ticket to allow disabling any of the limits by configuring   -1 so anual, month or day limits can be disabled.
+
+2016-05-06  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding support to Ubuntu 16.04 xenial xerus
+
+2016-03-11  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More code to implement mod-lmm
+
+2016-03-10  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding initial files to implement mod-lmm (mod limit mail from)
+
+	core-admin: * [fix] Updated copyright ..
+
+2016-02-11  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated configure.ac to detect vasprintf support when run   under raspbian-wheezy
+
+2015-12-22  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated check-valvulad.py to support checking those OS that   do not have "service" command
+
+2015-12-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed check-valvulad and check-valvulad.py (included usr/sbin into   path and syslog reporting)
+
+2015-12-01  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixec check-valvulad cron (it was a wrong char in front of   the command preventing its execution).
+
+2015-11-19  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Making sender-login-mismatch have by default same-domain configured
+
+2015-09-29  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-mquota source code to add some comments to lock/unlock release
+
+	* [fix] More fixings to package exarg.c
+
+	* [fix] Updated Makefile.am to fix references..
+
+	* [fix] Updated packaging to include support for pkg-config files..
+
+	* [fix] Fixing missing reference to exarg.h in libvalvula-server-dev   package (reported by Wouter Paesen)
+
+2015-09-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-bwl to allow implement filter discard..
+
+	* [fix] Making debug level 2 to be also reported through ValvulaLogHandler   (so valvulad can also report them through syslog).
+
+	* [fix] Updated valvula engine to allow external applications to register   a handler that is called every time a log message is produced. Updated valvulad   server to register a handler so error and critical messages get reported by   valvulad configuration.
+
+	* [fix] Updated valvulad_reject API to allow providing the state that is reported   so discard messages can also unified format as REJECT. Updated rest of the modules   to conform with the change.
+
+	* [fix] Minor updates to better show logs for protocol lines received from postfix..
+	* [fix] Updated valvula.example.conf to use a new line limit (40->80).
+
+2015-09-08  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Several updates to make mod-bwl to allow blocking or whitelisting   using local-part@ rules. Updated mod-bwl documentation to explain how to   to use this.
+	* [fix] Updated valvula_address_rule_match to also support matching rules
+	  addressing only local part. Updated regression test_00 to check this new
+	  function introduced.
+
+	* [new] Added support to get local part from request for sender and recipient
+	  values. API added:
+
+	  - valvula_get_local_part
+	  - valvula_get_sender_local_part
+	  - valvula_get_recipient_local_part
+
+2015-09-05  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More doc updates..
+
+	* [fix] Fixed error at mod-slm's doc
+
+2015-08-31  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Closing release 1.0.5
+
+	* [fix] Updated version file..
+
+	* [fix] Fixed support to handle values provided by the protocol that includes = in the   middle of the content. Added regression test (test_02e) to reproduce bug and check   fix introduced.
+
+2015-08-11  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated check-valvulad.py to ensure it recovers   valvula without considering if the pid file is present or not..
+
+	* [fix] More updates on MySQL error reporting.
+
+2015-07-15  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Removing openhub widget from webpage..
+
+2015-05-07  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated buildrpm to create mods-enabled directory   when valvulad-server is installed.
+
+	* [fix] More updates on valvulad-mgr.py to check if /etc/valvula/mod-enabled/ exists..
+
+2015-04-26  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] adding additional documentation to <request-line> configuration inside   valvula.example.conf.
+
+2015-04-13  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More improvements on centos packaging..
+
+2015-04-10  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More updates to include svn revision into version. More   improvements on Centos packages...
+
+2015-04-08  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed init.d for rpm..
+
+	* [fix] Added support to Centos packages to enable valvula as a service   after installing it.
+
+2015-04-07  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added support to create centos packages..
+
+2015-03-05  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed compilation error due to unused return value while   writing pid file on valvula server start.
+
+2015-03-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More updates on valvulad logging about tls operations..
+
+	core-admin: * [fix] More updates to report more information about TLS used   during session..
+
+	* [fix] More updates on log reporting when tls is used..
+
+	* [fix] Added more information to indicate encryption protocol..
+
+	* [fix] Improved documentation to better explain you need python-axl installed   to have valvulad-mgr.py working..
+
+	* [fix] Added and fixed some references to make dist .targz to work   (error reported by Martin Thomas Schrott).
+
+2015-03-02  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Making valvula_reader_process_request to acquire a reference   to the connection being handled to avoid losing a reference during   the operation..
+
+2015-02-23  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding more references to mod-ticket documentation..
+
+	* [fix] Updated server documentation to make a reference to python-axl   to have valvula-mgr.py working.
+
+	* [fix] added more documentation to install and use mod-ticket module.
+	* [fix] Updated debian building process to require python-axl for valvulad-server
+	  so vavulad-mgr.py works out of the box.
+
+2015-01-20  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Removing debugging code from mod-ticket.c..
+
+	* [fix] Restoring backup last : suffix when indicating transports   with filter command.
+
+	* [fix] Removed ":" after transport filter value reported.
+
+	* [fix] More fixings applied to mod-ticket.c to properly configured the   transport to use in the case it is configured.
+
+	* [fix] Updated regression test (test_03a) to honour is_active flag   for outgoing_ip table.
+
+	* [fix] Updated mod-ticket to report DUNNO when transport is defined but   disabled.
+
+	* [fix] Several updates applied to mod-ticket module to allow reporting   filter value for a particular ticket so this allows to implement different   policies to different tickets like using different ips or configurations.   Added regression test test_03a to check all this support.
+
+2015-01-02  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] changing release revision..
+
+	* [fix] Making valvula server code to avoid callign MySQL API when dbconn   reported is NULL (in cases where mysql host is gone).
+
+2014-08-24  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding references to openhub.net stats to web page..
+
+2014-08-12  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding references..
+
+	* [fix] Updated valvula references..
+
+2014-08-08  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated release runtine
+
+2014-07-28  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updating release runtine
+
+	* [fix] Closing release 1.0.4
+
+2014-07-14  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Several modifications to prepare new mod-mw.c module (a module to implement custom   mysql sentences as requests are received).
+
+	* [fix] Updated default server configuration to include default values to mail quota.
+
+2014-07-11  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated check-valvulad.py to avoid using commands.getstatusoutput ...   ...what a poor command shell implementation. Replaced by os.system.
+
+	* [fix] updated valvula client ping code to detect timeouts in different steps.
+
+	* [fix] Updated building process to make valvula restart to not send a fail   signal to post inst inside debian install..
+
+2014-07-11  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated server API to include a new db function to run a query when it   is fully formated a already prepared. API added:
+	   - valvulad_db_run_query_s
+
+	* [fix] Updated mod-bwl to use previous API to avoid allocation problems.
+
+2014-07-11  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	valvulad: * [fix] Updated valvula building process to include new check scripts..
+
+	* [fix] More updates on cron file..
+
+	* [fix] Adding missing script.
+
+	* [fix] Moving valvula to the next version..
+
+	* [fix] Updated building process to include references to install new valvula   check script and automated cron.
+
+	* [fix] Added valvulad check script that uses valvulad -p option to check   valvula service and recover it in case of failure.
+
+	* [fix] Fixed configuration load error handling at valvulad (ping request).
+
+2014-07-10  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed mod-mquota rotation problem. Updated test_07 to check period selection.
+	* [fix] Updated valvulad command line to allow calling to test local server to ensure
+	  it is working. This is going to be used as a base result to implement local valvula
+	  checking..
+
+2014-07-08  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More debug to handle exec() call errors..
+
+	* [fix] Updated valvula server code to avoid changing pid file ownership..
+
+	* [fix] Updated source code to skip pid checking when restarting due to reexec..
+
+	* [fix] Updated pid removal on signal handling to report any error found..
+
+	* [fix] Changing permissions to pid file..
+
+	* [fix] Adding more debug info..
+
+	* [fix] Separated debug variables from mod-bwl and mod-mquota..
+
+	* [fix] Several updates to make valvula server to be able to fully restart   on wrong signal received. During the process, now the server will report what   were the requests that were handled at the moment the signal was received.
+
+	* [fix] Updated valvula reader to restore previous implementation that handle one request for each connection received.
+
+2014-07-04  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated server code to have support to restart the server when a critical signal is received.
+
+	* [fix] Added initial code to record what requests are in place and   what handlers are being checked.
+	* [fix] Removed connection rest handling code. It seems is causing more problems
+	  than solving them.
+
+2014-07-02  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More debug info to mod-bwl..
+
+	* [fix] Adding additional debug support to mod-bwl and mod-mquota.
+
+2014-06-30  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated reg test (test_02) to remove table_02_test before starting.
+
+	* [fix] Making mod-ticket to use recipient count declaration so it can be used   at smtpd_sender_restrictions and smtpd_data_restrictions.
+
+2014-06-29  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed formating problem on reject messages.
+
+	* [fix] making valvula to report rcpt count on DUNNO line.
+
+2014-06-20  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Making valvula to record quota usage, at mod-ticket, to refer to   the previous month and previous day.
+
+2014-06-13  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-slm to allow by default not blocking mai from: <> requests   when they are generated by sasl users. Updated regression test to check   this new code and to also check that they are rejected when configured that way.
+
+2014-06-10  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Making mod-slm to also support whitelisting a sasl user account without   requiring a mail from.
+
+2014-06-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-mquota to remove some debug info..
+
+	* [fix] Updated mod-mquota to fix internal problem causing account flushing   handler not being called.
+
+	* [fix] Fixed error reporting at mod-mquota..
+
+	* [fix] Fixed error reporting at mod-mquota.
+
+	* [fix] Updated valvula to make mod-ticket to change day before continue   to avoid middle changes during the test..
+
+	* [fix] Updated mod-mquota to better report when a sending mquota is reached   why it was reched.
+
+2014-06-06  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixing web reference problems..
+
+	* [fix] Updated regression test to report more information around 4.11
+
+	* [fix] Removed log file from mailserver02.aspl.es..
+
+	* [fix] More updates to debug mod-ticket..
+
+	* [fix] More debug..
+
+	* [fix] Updated mod-ticket.
+
+	* [fix] Adding depuration info to track done errors...
+
+2014-06-05  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Making valvula user execution change to be the last part of the   run time configuration after startup. This solves issues where users try   to read postfix configuration while running valvula with a user with   lower permissions.
+
+	* [fix] Closing 1.0.3 release (Radioactive).
+
+	* [fix] Adding more documentation..
+
+2014-06-04  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding more documentation.
+
+	* [fix] Adding more documentation..
+
+	4 de junio 2014
+
+2014-06-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding more documentation.
+
+2014-06-02  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More documentation..
+
+	* [fix] Several updates to include lots of documentation.
+
+2014-05-25  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added more documentation..
+
+2014-05-23  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvula to report final state for all transactions   handled in the case there weren't rejected. This will help improving   what's accepted by valvula.
+
+2014-05-20  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding some changes..
+
+2014-05-18  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Changing version number..
+
+	* [fix] Adding initial references to the valvula server documentation..
+
+	* [fix] Finished initial version for the webpage..
+
+2014-05-17  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More changes to the project's webpage..
+
+	* [fix] Adding initial web files..
+
+2014-05-14  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Making reject messages to also report client address.
+
+	* [fix] Making valvula server to report which port was involved in the request   and what queue id.
+
+	* [fix] Removing debug logs from mod-mquota..
+
+	* [fix] Fixed alias account detection at postfix databases.   Updated test_02d to check fix introduced.
+
+	* [fix] Removed out additional comments from mod-bwl.c
+
+	* [fix] More updates to allow local checks on local addresses.
+
+	* [fix] Fixed local address detection when local_recipient_address is used (in postfix   main.cf configuration file).
+
+	* [fix] Updated valvula to track and report how many requests have been   handled.
+	* [fix] Added some mutexes to ensure stats tracking aren't broken.
+
+	* [fix] Fixed valvula_is_authenticated. It wasn't working for empty   strings.
+
+	* [fix] Mod-slm to support case insenstivie comparisons for   accounts and sasl user accounts where @ is used. Updated reg test 06.
+
+2014-05-13  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed registry selected when various modules are working   on the same port.
+
+	* [fix] Added more debug code to better report what's reported by valvula.
+
+	valvulad: * [fix] Fixed module pointer for mod-bwl...
+
+	* [fix] Fixing valvulad server to not start when another instance   is running out there.
+
+	* [fix] Making valvula server to not start if pid file is found..
+
+	* [fix] Added support to valvula server to record when it was started so   the server can report how many seconds it is been running.
+
+2014-05-12  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [new] Several modifications to allow valvula to gather several stats   so the can be viewed by a system administration to track performance   for each module.
+
+2014-05-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding missing files ..
+
+	* [fix] Added support to squeeze to create packages for bwl, mquota and   slm modules..
+
+	* [fix] Added support to create lenny packages for bwl, slm and mquota..
+
+	* [fix] Adding precise support to build mod-mquota, bwl and slm.
+
+	* [fix] Adding wheezy support to produce bwl, slm and mquota modules..
+
+2014-05-08  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-slm to clearly support "disabled" mode.
+
+2014-05-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding id autoincrement to better handle rules at mod-slm.
+
+	* [fix] Updated mod-slm to include is_active and description fields at   slm_exception table. Updated sqls to use these new values.
+	* [fix] Updated test_01 to fix test 07 (mod-mquota checkings).
+
+	* [new] Updated valvulad server to include a new option that allows checking   if a domain is considered local destination by valvulad (-l option).
+
+2014-05-01  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed reg test (test_07).
+
+	* [fix] Finished mod-mquota exceptions (support to skip applying   quota to some users).
+
+2014-04-30  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [new] Implemented several reorganizations at the mod-mquota module to make   the code more readable and maintainable. Added support to also handle   domain limits along with account limits. Updated test_07 (reg test) to check   new support introduced.
+
+2014-04-28  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Completed first fully working version that provides mod-mquota   support which allows to control sending rate for SASL users, limiting   them inside time periods and inside those periods, it provides minute,   hour and global limits (per user). Added regression test (test_07).   Still more work is required.
+
+2014-04-27  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated init.d script to make it depend on mysql so it starts after it.   (fixes valvula not staring at boot).
+
+2014-04-25  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added debugging information to test_03 to hunt an elusive bug...
+
+	* [fix] Updated regression test to better reflect error reported by test_03 (reg test).
+
+2014-04-24  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixing test_04 regression test..
+
+2014-04-20  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding missing file..
+
+	* [fix] Updated error reporting at regression tests.
+
+	* [fix] Fixed regression test failure (test_07).
+
+	* [fix] Adding mod-mquota files..
+
+	* [fix] Added more code to check new module (mod-mquota). Still more work   required. Added initial configuration files and documentation.
+
+2014-04-19  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Minor changes..
+
+	* [fix] Finished mod-bwl (sasl user restrictions). Updated reg test (test_05) to   check this new support.
+
+	* [fix] Fixed mod-bwl pointer..
+
+	* [fix] Added support to mod-slm to allow exceptions (sasl_username+mail_from)   allowed pairs.
+
+2014-04-19  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [new] Finished mod-slm (mod sender login mismatch) which provides support to   detect and restrict various mail from - sasl user mismatches, enforcing valid   mail froms are used, or even forcing users to use same SASL user as mail from.   Added regression test (test_06) to fully check this new module.
+	* [new] Updated valvula server to support detecting which accounts and aliases
+	  are considered local by postfix. With this, modules can make better decisions
+	  help users to create simplier rules. Added internal API for this:
+
+	  - valvulad_run_is_local_address
+
+	  Added regression test to check this new local accounts detection support
+	  (test_02c).
+
+2014-04-18  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-bwl to complete black listing rules providing domain   level and account level. Updated test_05 (reg test) to check support added.
+
+	* [fix] Updated mod-bwl to make whitelist rules added by this module   to only apply to domains that are considered local and when they   are the destination (this way open relay risk is eliminated). Updated   reg test (test_05) to check new functions. Added new function to allow   adding local domains:
+	  - valvulad_run_add_local_domain
+
+	* [new] Added general support to allow valvula to detect current   domains supported by postfix installation. This includes those domains declared   inside postfix' main.cf but also those domains declared through mysql connection   at virtual_domains_maps variable. Nice! Added regression test (test_02b) to check   support added. Updated server API to allow modules to use the following functions   to check if a domain is local:
+	   - valvulad_run_is_local_domain
+	   - valvulad_run_is_local_delivery
+
+2014-04-16  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed array wrong boundary check spotted by gcc (impressive!).
+
+	* [fix] Several updates to make valvula to detect local domains   reading postfix configuration. Still more work is required. Added   regression test_02-b to check this new support.
+
+	* [fix] Updated valvulad-mgr.py to allow running a test with several operations..
+
+2014-04-15  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [new] Added new api functions to get domain from string and   match an address against a rule. API added:
+	   - valvula_get_domain
+	   - valvula_address_rule_match
+	   - valvula_get_recipient_domain
+
+	  Added regression test (test_00) to check these new functions.
+
+	* [new] Added new regression test to check features added to
+	  mod-bwl. Now the module is able to apply reject, discard and ok
+	  state to requests. Nice.
+
+2014-04-15  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding more updates to mod-bwl. Still more work is required.
+
+2014-04-14  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Committing missing files..
+
+	* [fix] Adding initial files to implement mod-bwl (black and white lists).
+
+	* [fix] Updated valvulad-mgr.py to allow doing test operations against   local valvula server..
+
+2014-04-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated debian package relations at control file..
+
+	* [fix] Making server to report what sasl user is being used while reporting   reject status.
+	* [fix] Updated valvulad_reject to also configure ValvulaRequest to have that
+	  rejection message so that this is also used while reporting to postfix.
+
+	* [fix] Updated regression test to better report where it fails.
+
+	* [fix] Making valvula server to produce logs on mail.log facility.
+	* [fix] Removed debug operations..
+
+2014-04-08  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated mod-ticket to allow blocking a user that is matched   by a ticket without considering its status or validation. Updated regression   test (test_03) to check this new feature.
+
+	* [fix] Making valvula server to place the pid file before changing user.
+
+	* [fix] Making valvula server to generate a pid so init.d script works.
+
+	* [fix] Added limit to line requests that are accepted so that   if exceeded the connection is closed. Added support to valvulad   configuration file.
+	* [fix] Fixed detach support at valvula server to work properly
+	  allowing to activate the valvula engine after that.
+
+	* [fix] Reorganized signal handling to make backtrace generation to work.
+
+	* [fix] Making valvula server to hold when wrong signal is received.
+
+	* [fix] Making signal installation to be done before configuration is loaded.
+
+2014-04-06  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Making mod-ticket to honour valid until == -1 to skip expariration   periods..
+
+	* [fix] Making valvula-mgr.py to add more default sections to postfix configuration.
+
+	* [fix] Updated default valvula.example.conf to correct directory where   modules are loaded.
+
+	* [fix] Updated valvulad-mgr.py to add default declarations along with requested   declaration when requested to update smtpd_recipient_restrictions and no declaration   is found.
+
+2014-04-05  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated debian packages for lenny, squeeze and wheezy.
+
+	* [fix] Fixing wrong references to mod-available directory at debian   packages..
+
+2014-04-02  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated version.
+
+	* [fix] adding lenny support.
+
+2014-04-01  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding support for debian wheezy (debian packaging).
+
+	* [fix] More fixings into valvulad-mgr.py to pass all tests without having   all code installed on the system.
+
+	* [fix] Updated valvulad-mgr.py to allow setting user into the configuration.
+
+2014-03-26  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvulad server code to support changing running uid and   gid.
+
+	* [fix] Setting default installation security options to the /etc/valvula   folder.
+
+	* [fix] More fixings into the installation process.
+
+	* [fix] More fixings into valvulad-mgr.py -y option
+
+	* [fix] Fixed mysql database configuration through valvulad-mgr.py   when no previous configuration is done.
+
+	* [fix] More references to include valvulad-mgr.py into debian packages.
+
+	* [fix] Added valvulad-mgr.py to installation.
+
+	* [new] Updated valvulad server to support reporting whether the database   connection is ok or not (--check-db -b). Updated valvulad-mgr.py to allow   configuring database settings and to check them before saving.
+	* [fix] Fixed valvulad-mgr.py while adding modules. Added regression test_02
+	  to reproduce bug and check fix introduced.
+
+	* [fix] Fix regression test to avoid using valvula.example.conf
+
+2014-03-25  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Connected test_01.py with test_01.c
+
+	* [fix] Making valvula.example.conf to have a default listener declaration.   Fixed valvulad_run.c error message when no listener is declared.
+
+2014-03-24  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvulad db module to support % declarations through   #.
+	* [fix] Updated mod-ticket to support multi user declaration at sasl user
+	  and/or domain. Now it is possible to apply the same ticket, sharing its
+	  quota to a set of users or domains.
+
+2014-03-20  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More fixings into valvula addition system. Updated regression test to   support those changes.
+
+	* [fix] More regression tests..
+
+	* [fix] Adding missing base files..
+
+	* [fix] Updated valvula-mgr.py to fix several problems while detecting   postfix section configurations and reading postfix configurations at   different locations.
+
+2014-03-19  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Several modifications into valvulad-mgr.py to allow adding   modules, listeners and connecting valvula listeners into postfix   configuration through command line. Added regression test to check   valvulad-mgr.py to ensure it works in all cases.
+
+	* [fix] Added initial regression test to check valvulad-mgr.py to ensure   its internal function.
+
+2014-03-17  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More updates to debian packaging..
+
+	* [fix] Fixed references to packages at squeeze and ubuntu precise.
+
+	* [fix] Adding ubuntu precise support for valvula..
+
+	* [fix] More changes into debian..
+
+	* [fix] Moving installation directories for modules created.
+
+	* [fix] More updates to include mod-ticket support.
+
+	* [fix] Added debian files to create a package for mod-ticket. Added   postinst file to create postinstall file.
+
+	valvula. * [fix] More debian fixings..
+
+	* [fix] Mores updates into debian files..
+
+	* [fix] Making libvalvulad compilation to install include headers..
+
+	* [fix] fixed Makefile.am to install files at include_dir/valvula.
+
+	* [fix] More debian files..
+
+	* [fix] More debian files..
+
+	* [fix] More debian files..
+
+	* [fix] Adding more debian files..
+
+	* [fix] Adding initial code to implement documentation.
+
+	valvula. * [fix] Updated control files..
+
+	* [fix] More updates into debian files..
+
+	* [fix] Added support for syslog (valvulad-server) and support to detach   the process from console (for init.d scripts). Added initial debian files..
+
+	* [fix] Adding debian-files squeeze files..
+
+	* [fix] Fixed configure.ac file to remove BEEP reference.
+
+2014-03-16  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated library and server to include a mechanism to register a cleanup   handler to release mysql per thread resources on finalization.
+
+2014-03-15  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated valvulad_db_attr_exists and valvulad_db_table_exists to check for   common names that aren't supported by MySQL.
+	* [fix] General update to make mod-ticket to track day and month history for an
+	  ticket account.
+
+2014-03-09  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Finished initial working version for mod-ticket. Test 03 now covers all   requirements needed by mod-ticket.
+
+	* [fix] More fixings into test_03 (mod-ticket regression test). Check day change    support. Everything keep on working..
+
+	* [fix] Nice! First fully functional mod-ticket limiting tickets per day   as defined in the plan assigned to the sasl user. test_03 working without   leaking or bad memory access. Still more work required.
+
+2014-03-07  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added missing file..
+
+2014-03-05  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Several modifications to make valvula server to keep track   and notify every time day and/or month changes so modules can receive   those notifications through handlers. API added:
+	  - valvulad_add_on_day_change
+	  - valvulad_add_on_month_change
+	  - valvulad_notify_date_change
+	  - ValvuladOnDateChange
+	  - ValvuladDateItem
+
+	* [fix] Applied several updates into test_01 (test 03) to check mod-ticket
+	  function. Still more work required.
+
+2014-03-04  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	valvulad: * [fix] Several updates into test_02 regression test.
+	* [new] Added new general functions to provide general support for
+	  all modules. API added:
+
+	   - valvula_now
+	   - valvula_get_day
+	   - valvula_get_month
+	   - valvulad_reject
+	   - valvulad_add_on_day_change
+	   - valvulad_notify_day_change
+
+	* [new] Updated db module to include new functions and to add general
+	  types to avoid binding the project to mysql:
+
+	   - valvulad_db_get_row
+	   - valvulad_db_get_cell_as_long
+	   - valvulad_db_run_query_as_long
+	   - valvulad_db_release_result
+	   - ValvuladHandlerPtr
+	   - ValvuladRes
+	   - ValvuladRow
+	   - ValvuladOnDayChange
+	   - valvulad_db_run_query
+	   - GET_CELL_AS_LONG
+	   - GET_ROW
+
+	* [fix] Several updates to make valvula server to keep track and update
+	  about current month and current day. Added initial code to allow valvula
+	  server to notify when this changes so modules can trigger additional code
+	  to reset counters or database values.
+
+2014-03-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added TODO file..
+
+2014-03-03  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [new] Updated base API to include more functions to provide   basic information to help writing modules quickly. New api functions are:
+	  - valvula_get_sender_domain
+	  - valvula_get_sasl_user
+	  - valvulad_db_boolean_query
+	  - valvulad_db_run_non_query
+
+
+	* [fix] Several updates into mod-ticket, test_02 and test_03 regression tests
+	  to keep on supporting and testing functions required for those two functions.
+	  Added new regression test to check basic functions used to test access to
+	  received request.
+
+2014-02-28  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Several modifications and fixings to valvulad_db module   and mod-ticket. Updated test_03 to progress.
+	* [fix] Updated engine to load request functions and to configure
+	  them according to the port and the priority..
+
+	* [fix] More fixings and updates on regression tests to ensure   valvulad db module works.
+
+	* [fix] More fixings around valvulad_db module to fix various issues.   Updated test_02 reg test to check several API functions from that module.   New api added:
+	  - valvulad_db_table_remove
+
+2014-02-27  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More updates on valvula db module. Added new API functions:
+	  - valvulad_db_attr_exists
+	  - valvulad_db_table_exists
+	  - valvulad_db_run_query
+	  - valvulad_db_check_conn
+
+2014-02-27  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [new] Added mysql support and initial configuration to make   the server to use current configuration to check startup and to   fail if something do not work.
+	* [fix] Updated regression test to allow providing a --debug flag
+	  to enable all debug during execution.
+
+	* [new] Added initial files for mod-ticket.
+
+2014-02-23  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added more code to support running tests against local valvula   server without having to connect it into a postfix server. Added   new regression test to check default behaviour when no handler or   module rejects a particular translation.
+
+2014-02-22  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added first regression test to load a configuration, startup a   server and then stop (to check memory handling and memory release).
+
+	* [fix] Updated CR.
+
+	* [fix] Adding initial files to implement a regression test. Updated   valvulvad server code to avoid using exarg directly from the library.
+
+2014-02-10  kb  <kb@7b0dd4af-71cf-42cc-8deb-632136f1e5f4>
+
+	Added list of restrictions to be implemented
+
+2014-01-19  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding some declarations to default valvula.example.conf
+
+2014-01-18  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Fixed server/Makefile.am
+
+	* [fix] Several modifications to add initial support to load plugins that   will complete all functions that will provide valvulad.
+
+2014-01-12  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Additional code to release previous value received from postfix in the   case it is repeated.
+
+	* [fix] Added initial cleanups to ensure all memory is released   after some basic functions. Added initial code to get some basic   signal handling. Added initial code to get a backtrace when   a bad signa is received.
+
+	* [fix] First version that is able to to talk with postfix to give it   a reply "DUNNO" when no handler is defined.
+
+	* [fix] More updates to allow valvula to process request received and to delete   them to external handler. Still more work is required. Defined initial postfix   policy states.
+
+2014-01-07  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More updates to make the library to parse   content from new connections. Still more work is required.
+
+2014-01-06  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added run time module to valvula server code. Now the server   is able to load a simple configuration and to start listening ports.
+
+	* [fix] More updates on server code. Added initialization stuff..
+
+2014-01-05  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Added initial server configuration example. Added initial code to load   it and start the server..
+
+	* [fix] Adding more files to valvulad server. Still nothing to show.
+
+	* [fix] Adding exarg support to valvulad.
+
+	* [fix] Fixing more things (compilation errors and wrong references). Still nothing   concrete.
+
+2014-01-04  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More changes. Adding initial files for valvula server..
+
+	* [fix] Adding more initial files. Still nothing to show.
+
+	* [fix] Adding more files to valvula..
+
+2013-12-29  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Uploading more files to complete base library code.
+
+2013-12-28  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Adding initial files to the project. Still nothing to show...
