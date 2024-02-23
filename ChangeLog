@@ -1,3 +1,7 @@
+2024-01-15  Francis Brosnan Blázquez  <francis.brosnan@aspl.es>
+
+	* [fix] Adding complete ChangeLog as suggested by https://github.com/ASPLes/valvula/issues/2   and script helper to allow refreshing it.
+
 2023-12-14  Francis Brosnan Blázquez  <francis@aspl.es>
 
 	* [fix] Adding files for Ubuntu Focal 22.04 support
