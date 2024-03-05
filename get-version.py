@@ -12,14 +12,12 @@ if release_name in no_github_com_access:
     sys.exit (0)
 # end if
 
-# (status, info) = command.run ("LANG=C svn update . | grep revision")
 (status, info) = command.run ("""LANG=C git log | grep "^commit " | wc -l""")
 if status:
-    print "ERROR: unable to get subversion version: %s" % info
+    print "ERROR: unable to get git version: %s" % info
     sys.exit (-1)
 
 # get versision
-# revision = info.split (" ")[2].replace (".", "").strip ()
 revision = info.strip ()
 print "INFO: Revision found: %s" % revision
 
