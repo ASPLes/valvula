@@ -1,3 +1,23 @@
+2024-03-13  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] More changes to update interpreter for python files deployed   for ubuntu jammy
+
+	* [fix] Added python interpreter adjustment to ensure it points to /usr/bin/python2.7   for jammy distribution
+
+2024-03-09  Francis Brosnan Blázquez  <francis.brosnan@aspl.es>
+
+	* [fix] More updates to support Debian BookWorm
+
+	* [fix] Adding packaging files for Debian BookWorm
+
+2024-03-05  Francis Brosnan Blázquez  <francis@aspl.es>
+
+	* [fix] Updated get-version.py to remove all references to subversion
+
+2024-02-23  Francis Brosnan Blázquez  <francis.brosnan@aspl.es>
+
+	* [fix] Adding changes to prepare valvula repo for ubuntu jammy and   removing all subversion usage.
+
 2024-01-15  Francis Brosnan Blázquez  <francis.brosnan@aspl.es>
 
 	* [fix] Adding complete ChangeLog as suggested by https://github.com/ASPLes/valvula/issues/2   and script helper to allow refreshing it.
