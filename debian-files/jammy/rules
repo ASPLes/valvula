@@ -59,6 +59,8 @@ install: build
 
 # install the package 
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+# adjust python for cron
+	sed -i 's@#!/usr/bin/python@#!/usr/bin/python2.7@g' $(CURDIR)/debian/tmp/etc/cron.d/check-valvulad
 
 # install documentation
 #	cd doc/; $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install-doc; cd ..
