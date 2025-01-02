@@ -1,6 +1,6 @@
 /* 
  *  Valvula: a high performance policy daemon
- *  Copyright (C) 2020 Advanced Software Production Line, S.L.
+ *  Copyright (C) 2025 Advanced Software Production Line, S.L.
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@ const char * pid_file_path  = "/var/run/valvulad.pid";
 const char * valvula_status = "/var/run/valvulad.status";
 
 #define HELP_HEADER "ValvulaD: a high performance policy daemon\n\
-Copyright (C) 2020  Advanced Software Production Line, S.L.\n\n"
+Copyright (C) 2025  Advanced Software Production Line, S.L.\n\n"
 
 #define POST_HEADER "\n\
 If you have question, bugs to report, patches, you can reach us\n\
