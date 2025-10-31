@@ -743,6 +743,12 @@ int main (int argc, char ** argv)
 	if (HAS_ATTR_VALUE (node, "debug", "yes"))
 		ctx->debug_queries = axl_true;
 
+	/* get debug queries status */
+	node = axl_doc_get (ctx->config, "/valvula/global-settings/debug");
+	if (HAS_ATTR_VALUE (node, "debug", "yes")) {
+	      valvula_log_enable (ctx->ctx, axl_true);
+	}
+
 	/* install signal handling */
 	signal (SIGINT,  valvulad_signal); 		
 	signal (SIGSEGV, valvulad_signal);
