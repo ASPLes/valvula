@@ -43,6 +43,9 @@ ValvuladCtx * ctx = NULL;
 
 ValvulaMutex  work_mutex;
 
+/* debug status */
+axl_bool      __mod_ticket_enable_debug = axl_false;
+
 /** 
  * @brief Handler called when day changes.
  */
@@ -127,6 +130,8 @@ void ticket_change_month (ValvuladCtx * ctx, long new_value, axlPointer user_dat
  */
 static int  ticket_init (ValvuladCtx * _ctx)
 {
+	axlNode         * node;
+  
 	/* configure the module */
 	ctx = _ctx;
 
@@ -228,6 +233,11 @@ static int  ticket_init (ValvuladCtx * _ctx)
 
 	/* init lock */
 	valvula_mutex_create (&work_mutex);
+
+	/* get debug status */
+	node = axl_doc_get (_ctx->config, "/valvula/enviroment/mod-ticket");
+	if (HAS_ATTR_VALUE (node, "debug", "yes"))
+		__mod_ticket_enable_debug = axl_true;	
 
 	return axl_true;
 }
@@ -419,12 +429,36 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 	
 	const char   * query;
 	int            count_update;
+	
+	/* time tracking on debug */
+	long                      total_microsecs;	
+	struct timeval            start;
+	struct timeval            stop;
+	struct timeval            diff;
+	const  char * sender_domain = valvula_get_sender_domain (request) ? valvula_get_sender_domain (request) : "<no-sender-domain>";
+	const  char * sasl_user     = valvula_get_sasl_user (request) ? valvula_get_sasl_user (request) : "<no-sasl-user>";
+	
+
+	if (__mod_ticket_enable_debug) {
+	  /* start tracking */
+	  gettimeofday (&start, NULL);	  
+	  msg ("(ticket): starting check for sender-domain=%s, sender-sasl=%s", sender_domain, sasl_user);
+	}
+	
 
 	/* check if the domain is limited by ticket */
 	if (valvula_get_sender_domain (request))
 		domain_in_tickets    = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE domain = '%s'", valvula_get_sender_domain (request));
 	if (valvula_get_sasl_user (request))
 		sasl_user_in_tickets = valvulad_db_boolean_query (ctx, "SELECT * FROM domain_ticket WHERE sasl_user = '%s'", valvula_get_sasl_user (request));
+
+	if (__mod_ticket_enable_debug) {
+	  /* start tracking */
+	  gettimeofday (&stop, NULL);
+	  valvula_timeval_substract (&stop, &start, &diff);
+	  total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
+	  msg ("(ticket): step 1: (took %ld us) after checking limited by ticket for sender-domain=%s, sender-sasl=%s", total_microsecs, sender_domain, sasl_user);
+	}	
 
 	/* check for alternative names */
 	if (! domain_in_tickets && ! sasl_user_in_tickets) {
@@ -443,6 +477,14 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* update alternative user flag */
 		alternative_user = domain_in_tickets || sasl_user_in_tickets;
 	}
+
+	if (__mod_ticket_enable_debug) {
+	  /* start tracking */
+	  gettimeofday (&stop, NULL);
+	  valvula_timeval_substract (&stop, &start, &diff);
+	  total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
+	  msg ("(ticket): step 2: (took %ld us) after checking alternative names for sender-domain=%s, sender-sasl=%s", total_microsecs, sender_domain, sasl_user);
+	}		
 
 	/* skip if the domain or the sasl user in the request is not
 	 * limited by the domain request */
@@ -473,6 +515,14 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		/* run query */
 		result = valvulad_db_run_query (ctx, query, valvula_get_sender_domain (request));
 	} /* end if */
+
+	if (__mod_ticket_enable_debug) {
+	  /* start tracking */
+	  gettimeofday (&stop, NULL);
+	  valvula_timeval_substract (&stop, &start, &diff);
+	  total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
+	  msg ("(ticket): step 3: (took %ld us) after getting current limits for sender-domain=%s, sender-sasl=%s", total_microsecs, sender_domain, sasl_user);
+	}		
 
 	if (! result) {
 		/* unlock */
@@ -544,6 +594,14 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 		return __mod_ticket_return_dunno_or_filter (ctx, descriptive_user, has_outgoing_ip, outgoing_ip_id, message);
 	} /* end if */
 
+	if (__mod_ticket_enable_debug) {
+	  /* start tracking */
+	  gettimeofday (&stop, NULL);
+	  valvula_timeval_substract (&stop, &start, &diff);
+	  total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
+	  msg ("(ticket): step 4: (took %ld us) after getting mail limits for plan sender-domain=%s, sender-sasl=%s", total_microsecs, sender_domain, sasl_user);
+	}		
+
 	/* get row from result */
 	row = __ticket_get_row_or_fail (ctx, result);
 	if (row == NULL) {
@@ -605,6 +663,14 @@ ValvulaState ticket_process_request (ValvulaCtx        * _ctx,
 
 	/* unlock */
 	valvula_mutex_unlock (&work_mutex);
+
+	if (__mod_ticket_enable_debug) {
+	  /* start tracking */
+	  gettimeofday (&stop, NULL);
+	  valvula_timeval_substract (&stop, &start, &diff);
+	  total_microsecs = (diff.tv_sec * 1000000) + diff.tv_usec;
+	  msg ("(ticket): step 5: (took %ld us) after updating ticket limits sender-domain=%s, sender-sasl=%s", total_microsecs, sender_domain, sasl_user);
+	}		
 
 	
 	/* by default report return dunno */
