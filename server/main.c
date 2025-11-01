@@ -515,6 +515,9 @@ void install_arguments (int argc, char ** argv)
 	exarg_install_arg ("debug", "d", EXARG_NONE,
 			   "Activates debug information to be showed in the console (terminal).");
 
+	exarg_install_arg ("debug2", NULL, EXARG_NONE,
+			   "Activates second level debug (more debugging) information to be showed in the console (terminal).");	
+
 	/* install default debug options. */
 	exarg_install_arg ("verbose", "o", EXARG_NONE,
 			   "Makes valvula server to produce some logs while operating.");
@@ -683,6 +686,12 @@ int main (int argc, char ** argv)
 		valvula_log_enable (ctx->ctx, axl_true);
 		valvula_color_log_enable (ctx->ctx, axl_true);
 	}
+	if (exarg_is_defined ("debug2")) {
+		valvula_log_enable (ctx->ctx, axl_true);
+		valvula_log2_enable (ctx->ctx, axl_true);		
+		valvula_color_log_enable (ctx->ctx, axl_true);
+	}
+	
 	if (exarg_is_defined ("debug-queries"))
 		ctx->debug_queries = axl_true;
 

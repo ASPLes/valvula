@@ -190,7 +190,7 @@ axl_bool __valvula_reader_find_next_registry (axlPointer key, axlPointer data, a
 	return axl_false; /* dont stop iterating */
 }
 
-void __valvula_reader_send (ValvulaConnection * connection, const char * _status, const char * _message)
+void __valvula_reader_send (ValvulaConnection * connection, ValvulaRequest * request, const char * _status, const char * _message)
 {
 	ValvulaCtx * ctx = connection->ctx;
 	int          bytes_written;
@@ -199,8 +199,8 @@ void __valvula_reader_send (ValvulaConnection * connection, const char * _status
 	/* build message */
 	if (_message)
 		message = axl_strdup_printf ("action=%s %s\n\n", _status, _message);
-	else if (connection->request->message_reply)
-		message = axl_strdup_printf ("action=%s %s\n\n", _status, connection->request->message_reply);
+	else if (request->message_reply)
+		message = axl_strdup_printf ("action=%s %s\n\n", _status, request->message_reply);
 	else
 		message = axl_strdup_printf ("action=%s\n\n", _status);
 
@@ -239,27 +239,27 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 
 	switch (state) {
 	case VALVULA_STATE_OK:
-		__valvula_reader_send (connection, "ok", message);
+		__valvula_reader_send (connection, request, "ok", message);
 		break;
 	case VALVULA_STATE_DUNNO:
-		__valvula_reader_send (connection, "dunno", message);
+		__valvula_reader_send (connection, request, "dunno", message);
 		break;
 	case VALVULA_STATE_REJECT:
-		__valvula_reader_send (connection, "reject", message);
+		__valvula_reader_send (connection, request, "reject", message);
 		break;
 	case VALVULA_STATE_DEFER_IF_PERMIT:
-		__valvula_reader_send (connection, "defer_if_permit", message);
+		__valvula_reader_send (connection, request, "defer_if_permit", message);
 		break;
 	case VALVULA_STATE_DEFER_IF_REJECT:
-		__valvula_reader_send (connection, "defer_is_reject", message);
+		__valvula_reader_send (connection, request, "defer_is_reject", message);
 		break;
 	case VALVULA_STATE_DEFER:
-		__valvula_reader_send (connection, "defer", message);
+		__valvula_reader_send (connection, request, "defer", message);
 		break;
 	case VALVULA_STATE_BCC:
 		break;
 	case VALVULA_STATE_DISCARD:
-		__valvula_reader_send (connection, "discard", message);
+		__valvula_reader_send (connection, request, "discard", message);
 		break;
 	case VALVULA_STATE_REDIRECT:
 		break;
@@ -272,7 +272,7 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 	case VALVULA_STATE_GENERIC_ERROR:
 		break;
 	case VALVULA_STATE_FILTER:
-		__valvula_reader_send (connection, "filter", message);
+		__valvula_reader_send (connection, request, "filter", message);
 		break;
 	/* do not place here a default; we want an error here when some case is not handled */
 	} /* end if */
@@ -281,7 +281,8 @@ void __valvula_reader_send_reply (ValvulaCtx        * ctx,
 	/* DO NOT UNCOMMENT THE FOLLOWING CODE: this is for handle
 	   procesing a request for each connection it is showed to
 	   work better */
-	/* connection->process_launched = axl_false; */ 
+	/* connection->process_launched = axl_false; */
+	
 
 	return;
 }
@@ -374,7 +375,7 @@ void __valvula_reader_record_handle_stop (ValvulaCtx * ctx, axlPointer _process)
 }
 
 
-axlPointer valvula_reader_process_request (axlPointer _connection)
+axlPointer valvula_reader_process_request (axlPointer _connection, ValvulaRequest * request)
 {
 	/* get variables */
 	ValvulaConnection       * connection    = _connection;
@@ -407,7 +408,12 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 	long                      total_microsecs;
 
 	/* update port reported */
-	connection->request->listener_port = listener_port;
+	request->listener_port = listener_port;
+
+	if (ctx->debug) {
+		/* drop debug starting, take starting time */
+		valvula_log (VALVULA_LEVEL_DEBUG, "valvula_reader_process_request: starting request handling");
+	}
 
 	if (ctx->process_handler_registry && valvula_hash_size (ctx->process_handler_registry) > 0) {
 		/* get first element from the registry */
@@ -424,7 +430,7 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			axl_list_free (selected);
 
 			/* no handlers defined so no policy can be delegated, replying default */
-			__valvula_reader_send_reply (ctx, connection, connection->request, ctx->default_state, NULL);
+			__valvula_reader_send_reply (ctx, connection, request, ctx->default_state, NULL);
 			return NULL;
 		} /* end if */
 
@@ -442,11 +448,11 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 			gettimeofday (&start_m, NULL);
 
 			/* record we are about to enter in a handler with a particular name */
-			record_id = __valvula_reader_record_handle_start (ctx, handler_name, connection->request);
+			record_id = __valvula_reader_record_handle_start (ctx, handler_name, request);
 
 			/* call to notify request and get a response */
 			message = NULL;
-			state   = handler (ctx, connection, connection->request, user_data, &message);
+			state   = handler (ctx, connection, request, user_data, &message);
 
 			/* call to record that we finished */
 			__valvula_reader_record_handle_stop (ctx, record_id);
@@ -488,7 +494,7 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 		} while (registry);
 
 		valvula_log (VALVULA_LEVEL_DEBUG, "Reply to request %p was state=%d (%s), message=%s",
-			     connection->request, state, valvula_support_state_str (state), message ? message : "");
+			     request, state, valvula_support_state_str (state), message ? message : "");
 		axl_list_free (selected);
 
 		/* finish time tracking */
@@ -517,7 +523,7 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 		valvula_mutex_unlock (&ctx->stats_mutex);
 		
 		/* send reply */
-		__valvula_reader_send_reply (ctx, connection, connection->request, state, message);
+		__valvula_reader_send_reply (ctx, connection, request, state, message);
 		axl_free (message);
 
 		/* free cursor */
@@ -537,7 +543,7 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 
 	/* no handlers defined so no policy can be delegated, replying
 	   default */
-	__valvula_reader_send_reply (ctx, connection, connection->request, 
+	__valvula_reader_send_reply (ctx, connection, request, 
 				     ctx->default_state, NULL);
 
 	return NULL;
@@ -546,10 +552,26 @@ axlPointer valvula_reader_process_request (axlPointer _connection)
 axlPointer valvula_reader_process_request_proxy (axlPointer _connection)
 {
 	/* get call from process request */
-	axlPointer result = valvula_reader_process_request (_connection);
+	ValvulaConnection * connection = _connection;
+	ValvulaRequest    * request;
+	axlPointer          result;
+
+	/* get request reference */
+	request = connection->request;
+	/* clear it from connection */
+	connection->request = NULL;
+	/* flag connection as ready */
+	connection->process_launched = axl_false;
+	connection->lines_found = 0;
+	
+	/* pass reference as static to process request */
+	result  = valvula_reader_process_request (connection, request);	
 
 	/* release connection reference */
 	valvula_connection_unref (_connection, "valvula reader (process request)");
+	/* release request */
+	valvula_connection_request_free (request);
+
 
 	/* return value found from call */
 	return result;

@@ -561,6 +561,11 @@ void valvulad_log_engine (ValvulaCtx * _ctx, ValvulaDebugLevel level, const char
 		wrn ("%s:%d %s", file, line, message);
 		break;
 	default:
+		if (valvula_log_is_enabled(_ctx)) {
+			/* show debug if enabled (--debug/--debug2) */
+			wrn ("%s:%d %s", file, line, message);
+		} /* end if */
+		
 		/* not reported, just failures */
 		break;
 	}

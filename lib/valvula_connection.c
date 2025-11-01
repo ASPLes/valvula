@@ -620,6 +620,52 @@ void                valvula_connection_close                  (ValvulaConnection
 	return;
 }
 
+/** 
+ * Allows to release all resources allocated associated to a single
+ * valvula request.
+ */
+void                valvula_connection_request_free (ValvulaRequest * request) {
+	
+	if (request) {
+		/* release */
+		axl_free (request->request);
+		axl_free (request->protocol_state);
+		axl_free (request->protocol_name);
+		axl_free (request->queue_id);
+		
+		axl_free (request->sender);
+		axl_free (request->recipient);
+		axl_free (request->helo_name);
+		
+		axl_free (request->client_address);
+		axl_free (request->client_name);
+		axl_free (request->reverse_client);
+		axl_free (request->instance);
+		
+		
+		axl_free (request->sasl_method);
+		axl_free (request->sasl_username);
+		axl_free (request->sasl_sender);
+		
+		axl_free (request->ccert_subject);
+		axl_free (request->ccert_issuer);
+		axl_free (request->ccert_fingerprint);
+		axl_free (request->ccert_pubkey_fingerprint);
+		
+		axl_free (request->encryption_protocol);
+		axl_free (request->encryption_cipher);
+		axl_free (request->encryption_keysize);
+		
+		axl_free (request->etrn_domain);
+		axl_free (request->stress);
+
+		axl_free (request->message_reply);
+		
+		axl_free (request);
+	} /* end if */
+	return;
+}
+
 void                valvula_connection_free (ValvulaConnection * conn)
 {
 	if (conn == NULL)
@@ -635,42 +681,9 @@ void                valvula_connection_free (ValvulaConnection * conn)
 	axl_free (conn->local_addr);
 	axl_free (conn->local_port);
 
-	if (conn->request) {
-		axl_free (conn->request->request);
-		axl_free (conn->request->protocol_state);
-		axl_free (conn->request->protocol_name);
-		axl_free (conn->request->queue_id);
-		
-		axl_free (conn->request->sender);
-		axl_free (conn->request->recipient);
-		axl_free (conn->request->helo_name);
-		
-		axl_free (conn->request->client_address);
-		axl_free (conn->request->client_name);
-		axl_free (conn->request->reverse_client);
-		axl_free (conn->request->instance);
-		
-		
-		axl_free (conn->request->sasl_method);
-		axl_free (conn->request->sasl_username);
-		axl_free (conn->request->sasl_sender);
-		
-		axl_free (conn->request->ccert_subject);
-		axl_free (conn->request->ccert_issuer);
-		axl_free (conn->request->ccert_fingerprint);
-		axl_free (conn->request->ccert_pubkey_fingerprint);
-		
-		axl_free (conn->request->encryption_protocol);
-		axl_free (conn->request->encryption_cipher);
-		axl_free (conn->request->encryption_keysize);
-		
-		axl_free (conn->request->etrn_domain);
-		axl_free (conn->request->stress);
-
-		axl_free (conn->request->message_reply);
-		
-		axl_free (conn->request);
-	} /* end if */
+	/* clear internal reference if any */
+	valvula_connection_request_free (conn->request);
+	conn->request = NULL;
 
 	axl_free (conn);
 	return;

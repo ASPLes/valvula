@@ -68,6 +68,8 @@ axl_bool            valvula_connection_is_ok                  (ValvulaConnection
 
 void                valvula_connection_close                  (ValvulaConnection * connection);
 
+void                valvula_connection_request_free           (ValvulaRequest * request);
+
 void                valvula_connection_free                   (ValvulaConnection * connection);
 
 VALVULA_SOCKET       valvula_connection_get_socket             (ValvulaConnection * connection);
