@@ -511,10 +511,11 @@ void install_arguments (int argc, char ** argv)
 	exarg_install_arg ("version", "v", EXARG_NONE,
 			   "Show Valvulad version.");
 
-	/* install default debug options. */
+	/* install default debug options (--debug) */
 	exarg_install_arg ("debug", "d", EXARG_NONE,
 			   "Activates debug information to be showed in the console (terminal).");
 
+	/* --debug2 */
 	exarg_install_arg ("debug2", NULL, EXARG_NONE,
 			   "Activates second level debug (more debugging) information to be showed in the console (terminal).");	
 
