@@ -16,6 +16,7 @@ EXTRA_DIST = valvula.doxygen \
 	     adding-modules.png \
 	     valvulad-open-source.png \
 	     hacha-100x171.png \
+	     logo-aspl-white-100.png \
 	     valvulad-init.d \
              valvulad-rpm-init.d
 
