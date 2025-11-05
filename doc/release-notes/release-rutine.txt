@@ -1,3 +1,12 @@
+* preparar release:
+
+  # desde debian-bookworm-amd64:
+  1. actualizar VERSION
+  2. actualizar ChangeLog, y otros ficheros
+     >> ./get-version.py
+     Revisar ChangeLog y limpiar
+  3. Revisamos y subimos cambios (VERSION, ChangeLog, LATEST-VERSION)
+
 * actualizar documentación (doc center) del producto en la web.
 
   >> cd doc
